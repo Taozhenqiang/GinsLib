@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles\353ecf0a471da83c8dca4564b8adf199\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{5D4634AB-84E0-3D9A-88E2-DFF99CB0EDD5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

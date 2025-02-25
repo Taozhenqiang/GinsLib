@@ -1,0 +1,28 @@
+BasedOnStyle: LLVM  # 基础风格为 LLVM
+IndentWidth: 4      # 设置缩进宽度为 4 个空格
+UseTab: Never        # 不使用制表符，使用空格进行缩进
+ColumnLimit: 0      # 不限制行宽，允许长行
+AllowShortBlocksOnASingleLine: true  # 允许短块在同一行中
+AllowShortIfStatementsOnASingleLine: true  # 允许短 if 语句在同一行中
+BreakBeforeBraces: Attach  # 括号前不换行
+BinPackParameters: true  # 打包函数参数，减少行数
+BinPackArguments: true    # 打包函数参数列表，减少行数
+AlignAfterOpenBracket: Align  # 括号后参数对齐
+SpacesBeforeTrailingComments: 1  # 在尾随注释前保留一个空格
+SpaceAfterCStyleCast: true  # C 风格类型转换后保留空格
+CompactNamespaces: true  # 紧凑命名空间
+KeepEmptyLinesAtTheStartOfBlocks: false  # 不保留块开始处的空行
+
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesInAngles:  false
+SpacesInConditionalStatement: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false

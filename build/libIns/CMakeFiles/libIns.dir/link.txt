@@ -1,0 +1,2 @@
+D:\TDM-GCC-64\bin\ar.exe qc ..\Lib\liblibInsd.a CMakeFiles/libIns.dir/ins.c.obj
+D:\TDM-GCC-64\bin\ranlib.exe ..\Lib\liblibInsd.a

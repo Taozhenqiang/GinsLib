@@ -1,0 +1,326 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|win32">
+      <Configuration>Release</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C3BDE1E2-EA5D-3053-AC0F-074553374EBB}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>win32</Platform>
+    <ProjectName>libGnss</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">libGnss.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">libGnssd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|win32'">libGnss.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|win32'">libGnss</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">libGnss.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">libGnsss</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">libGnss.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">libGnssrd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) WIN32 ENAGLO ENAGAL ENACMP ENAQZS NEXOBS=3 NFREQ=5</AdditionalOptions>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) WIN32 ENAGLO ENAGAL ENACMP ENAQZS NEXOBS=3 NFREQ=5</AdditionalOptions>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) WIN32 ENAGLO ENAGAL ENACMP ENAQZS NEXOBS=3 NFREQ=5</AdditionalOptions>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) WIN32 ENAGLO ENAGAL ENACMP ENAQZS NEXOBS=3 NFREQ=5</AdditionalOptions>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Navigation_Learn\GNSS\RTKLIB-b34k\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Building Custom Rule E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">setlocal
+"D:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -HE:/Navigation_Learn/GNSS/RTKLIB-b34k -Be:/Navigation_Learn/GNSS/RTKLIB-b34k/build --check-stamp-file E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|win32'">Building Custom Rule E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|win32'">setlocal
+"D:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -HE:/Navigation_Learn/GNSS/RTKLIB-b34k -Be:/Navigation_Learn/GNSS/RTKLIB-b34k/build --check-stamp-file E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|win32'">E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">Building Custom Rule E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">setlocal
+"D:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -HE:/Navigation_Learn/GNSS/RTKLIB-b34k -Be:/Navigation_Learn/GNSS/RTKLIB-b34k/build --check-stamp-file E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">Building Custom Rule E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">setlocal
+"D:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -HE:/Navigation_Learn/GNSS/RTKLIB-b34k -Be:/Navigation_Learn/GNSS/RTKLIB-b34k/build --check-stamp-file E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\binex.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\comnav.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\crescent.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\javad.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\novatel.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\nvs.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\rt17.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\septentrio.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\skytraq.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\swiftnav.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\tersus.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\ublox.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\unicore.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c" />
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\ZERO_CHECK.vcxproj">
+      <Project>{25828A90-DE7D-30A6-B124-5DDCF578950A}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

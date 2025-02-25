@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\binex.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\comnav.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\crescent.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\javad.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\novatel.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\nvs.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\rt17.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\septentrio.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\skytraq.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\swiftnav.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\tersus.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\ublox.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcv\unicore.c">
+      <Filter>Source Files\rcv</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\CMakeLists.txt">
+      <Filter>CMake Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{92F73D54-AD7F-3AE7-81CC-5EF03A6DD709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rcv">
+      <UniqueIdentifier>{15A7B7B0-9D2D-3AA9-B61F-B6A8895FA669}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
