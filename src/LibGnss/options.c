@@ -41,6 +41,7 @@ static char exsats_[1024];
 static char snrmask_[NFREQ][1024];
 static char time_[2][1024];
 static char fre_[RNX_NUMSYS][1024];
+static char install_angle_[1024];
 static char initpose_[3][1024];
 static char initunc_[3][1024];
 static char lever_[1024];
@@ -89,7 +90,7 @@ EXPORT opt_t sysopts[]={
     {"pos1-snrmask_L2", 2,  (void *)snrmask_[1],         ""     },
     {"pos1-snrmask_L5", 2,  (void *)snrmask_[2],         ""     },
     {"pos1-dynamics",   3,  (void *)&prcopt_.dynamics,   SWTOPT },
-    {"pos1-tidecorr",   3,  (void *)&prcopt_.tidecorr,   TIDEOPT},
+    {"pos1-tidecorr",   0,  (void *)&prcopt_.tidecorr,   ""     },
     {"pos1-sysisb",     0,  (void *)&prcopt_.sysisb,     ""     },
     {"pos1-ionoopt",    3,  (void *)&prcopt_.ionoopt,    IONOPT },
     {"pos1-ionoise",    0,  (void *)&prcopt_.ionoise,    ""     },
@@ -138,10 +139,13 @@ EXPORT opt_t sysopts[]={
     {"pos2-baselen",    1,  (void *)&prcopt_.baseline[0],"m"    },
     {"pos2-basesig",    1,  (void *)&prcopt_.baseline[1],"m"    },
 
+    {"ins-type",        2,  (void *)&filopt_.ins_type,   ""     }, 
+    {"ins-dataorder",   2,  (void *)&prcopt_.imu_order,  ""     },
     {"ins-imudatype",   0,  (void *)&prcopt_.imudatype,  ""     },
     {"ins-nnts",        0,  (void *)&prcopt_.nn,         ""     },
-    {"ins-insample",    1,  (void *)&prcopt_.insample,  ""      },
+    {"ins-insample",    0,  (void *)&prcopt_.insample,   ""     },
     {"ins-aligntype",   0,  (void *)&prcopt_.alingetype,  ""    },
+    {"ins-install_angle",2, (void *)&install_angle_,      ""    },
     {"ins-initpos",     2,  (void *)&initpose_[0],       ""     },
     {"ins-initvel",     2,  (void *)&initpose_[1],       ""     },
     {"ins-initatt",     2,  (void *)&initpose_[2],       ""     },
@@ -176,6 +180,7 @@ EXPORT opt_t sysopts[]={
     {"out-nmeaintv1",   1,  (void *)&solopt_.nmeaintv[0],"s"    },
     {"out-nmeaintv2",   1,  (void *)&solopt_.nmeaintv[1],"s"    },
     {"out-outstat",     3,  (void *)&solopt_.sstat,      STSOPT },
+    {"out-outipos",     3,  (void *)&solopt_.ipos,       SWTOPT },
     {"out-statopt",     2,  (void *)&stat_,              ""     },
 
     {"stats-eratio1",   1,  (void *)&prcopt_.eratio[0],  ""     },
@@ -224,7 +229,7 @@ EXPORT opt_t sysopts[]={
     {"misc-rnxopt1",    2,  (void *)prcopt_.rnxopt[0],   ""     },
     {"misc-rnxopt2",    2,  (void *)prcopt_.rnxopt[1],   ""     },
     {"misc-pppopt",     2,  (void *)prcopt_.pppopt,      ""     },
-
+   
     {"file-solpath",    2,  (void *)&filopt_.sol_path,   ""     },
     {"file-obsufile",   2,  (void *)&filopt_.obs_u,      ""     },
     {"file-obsbfile",   2,  (void *)&filopt_.obs_b,      ""     },
@@ -453,7 +458,7 @@ extern int saveopts(const char *file, const char *mode, const char *comment,
 static void buff2sysopts(void)
 {
     double es[6],pos[3],*rr;
-    char buff[1024],*p,*id;
+    char buff[1024],*p,*q,*id;
     int i,j,sat,ps;
 
     /* start time */
@@ -484,38 +489,34 @@ static void buff2sysopts(void)
     for (i=0;i<MAXSAT;i++) prcopt_.exsats[i]=0;
     if (exsats_[0]!='\0') {
         strcpy(buff,exsats_);
-        char *q;
         for (p=strtok_r(buff," ",&q);p;p=strtok_r(NULL," ",&q)) {
             if (*p=='+') id=p+1; else id=p;
             if (!(sat=satid2no(id))) continue;
             prcopt_.exsats[sat-1]=*p=='+'?2:1;
         }
     }
-    /*exclude BDS2*/
+    /* exclude BDS2 */
     if(1==prcopt_.bdsflag[0]) {
         strcpy(buff,BDS2);
-        char *q;
         for (p=strtok_r(buff," ",&q);p;p=strtok_r(NULL," ",&q)) {
             if (*p=='+') id=p+1; else id=p;
             if (!(sat=satid2no(id))) continue;
             prcopt_.exsats[sat-1]=*p=='+'?2:1;
         }
     }
-    /*exclude BDS3*/
+    /* exclude BDS3 */
     if(1==prcopt_.bdsflag[1]) {
         strcpy(buff,BDS3);
-        char *q;
         for (p=strtok_r(buff," ",&q);p;p=strtok_r(NULL," ",&q)) {
             if (*p=='+') id=p+1; else id=p;
             if (!(sat=satid2no(id))) continue;
             prcopt_.exsats[sat-1]=*p=='+'?2:1;
         }
     }
-    /* snrmask */
-    for (i=0;i<NFREQ;i++) {
+    /* snrmask, currently, only triple-frequency is supported */
+    for (i=0;i<3;i++) {
         for (j=0;j<9;j++) prcopt_.snrmask.mask[i][j]=0.0;
         strcpy(buff,snrmask_[i]);
-        char *q;
         for (p=strtok_r(buff,",",&q),j=0;p&&j<9;p=strtok_r(NULL,",",&q)) {
             prcopt_.snrmask.mask[i][j++]=atof(p);
         }
@@ -524,34 +525,40 @@ static void buff2sysopts(void)
     for (i=0;i<RNX_NUMSYS;i++) {
         for (j=0;j<MAXFREQ;j++) prcopt_.fre[i][j]=0;
         strcpy(buff,fre_[i]);
-        char *q;
         for (p=strtok_r(buff,",",&q),j=0;p&&j<MAXFREQ;p=strtok_r(NULL,",",&q)) {
             prcopt_.fre[i][j++]=atoi(p);
         }
     }
 
-    /* init ins position */
+    /* ins installation angle */
+    for (j=0;j<3;j++) prcopt_.install_angle[j]=0.0;
+    strcpy(buff,install_angle_);
+    for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+        prcopt_.install_angle[j++]=atof(p)*D2R;
+    }
+
+    /* init ins position (ecef [X,Y,Z] (m) )*/
     for (j=0;j<3;j++) prcopt_.initpos[j]=0.0;
     strcpy(buff,initpose_[0]);
-    char *q;
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         pos[j++]=atof(p);
     }
     ecef2pos(pos,prcopt_.initpos);
 
-    /* init ins velocity */
+    /* init ins velocity (n [E,N,U] (m/s) )*/
     for (j=0;j<3;j++) prcopt_.initvel[j]=0.0;
     strcpy(buff,initpose_[1]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         prcopt_.initvel[j++]=atof(p);
     }  
 
-    /* init ins attitude */
+    /* init ins attitude ([pitch,roll,yaw] (deg) )*/
     for (j=0;j<3;j++) prcopt_.initatt[j]=0.0;
     strcpy(buff,initpose_[2]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         prcopt_.initatt[j++]=atof(p)*D2R;
     }
+    if (prcopt_.initatt[2]>PI) prcopt_.initatt[2]-=2*PI; /* yaw is in range [-pi,pi] */
     prcopt_.initatt[2]=-prcopt_.initatt[2];
 
     /* init ins position std */

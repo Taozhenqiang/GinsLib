@@ -1,212 +1,212 @@
 [
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convgpx.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convgpx.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convgpx.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convgpx.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convgpx.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convgpx.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convkml.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convkml.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convkml.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convkml.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convkml.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convkml.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/convkml.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convrnx.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convrnx.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convrnx.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convrnx.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convrnx.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convrnx.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\datum.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\datum.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/datum.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\datum.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\datum.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/datum.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/datum.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\download.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\download.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/download.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\download.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\download.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/download.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/download.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ephemeris.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ephemeris.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ephemeris.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ephemeris.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ephemeris.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ephemeris.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\geoid.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\geoid.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/geoid.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\geoid.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\geoid.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/geoid.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/geoid.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\gis.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\gis.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/gis.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\gis.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\gis.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/gis.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/gis.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ionex.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ionex.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ionex.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ionex.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ionex.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ionex.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/ionex.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\lambda.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\lambda.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/lambda.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\lambda.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\lambda.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/lambda.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/lambda.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\options.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\options.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/options.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\options.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\options.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/options.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/options.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\pntpos.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\pntpos.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/pntpos.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\pntpos.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\pntpos.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/pntpos.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\postpos.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\postpos.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/postpos.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\postpos.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\postpos.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/postpos.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/postpos.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/ppp.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp_ar.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp_ar.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp_ar.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp_ar.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp_ar.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp_ar.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\preceph.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\preceph.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/preceph.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\preceph.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\preceph.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/preceph.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/preceph.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rcvraw.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rcvraw.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rcvraw.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rcvraw.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rcvraw.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rcvraw.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rinex.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rinex.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rinex.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rinex.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rinex.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rinex.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rinex.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm2.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm2.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm2.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm2.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm2.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm2.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3e.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3e.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3e.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3e.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3e.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3e.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkcmn.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkcmn.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkcmn.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkcmn.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkcmn.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkcmn.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkpos.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkpos.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkpos.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkpos.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkpos.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkpos.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtksvr.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtksvr.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtksvr.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtksvr.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtksvr.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtksvr.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\sbas.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\sbas.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/sbas.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\sbas.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\sbas.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/sbas.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/sbas.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\solution.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\solution.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/solution.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\solution.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\solution.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/solution.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/solution.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\stream.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\stream.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/stream.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\stream.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\stream.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/stream.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/stream.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\streamsvr.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\streamsvr.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/streamsvr.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\streamsvr.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\streamsvr.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/streamsvr.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tides.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tides.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tides.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tides.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tides.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tides.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/tides.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tle.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tle.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tle.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tle.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tle.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tle.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/tle.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\trace.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\trace.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/trace.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\trace.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\trace.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/trace.c",
   "output": "libGnss/CMakeFiles/libGnss.dir/trace.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libIns.dir/includes_C.rsp -g -o CMakeFiles\\libIns.dir\\ins.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibIns\\ins.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libIns.dir/includes_C.rsp -g -o CMakeFiles\\libIns.dir\\ins.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibIns\\ins.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c",
   "output": "libIns/CMakeFiles/libIns.dir/ins.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libFusion.dir/includes_C.rsp -g -o CMakeFiles\\libFusion.dir\\lc_gins.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibFusion\\lc_gins.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion/lc_gins.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libFusion.dir/includes_C.rsp -g -o CMakeFiles\\libFusion.dir\\lc_gins.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibFusion\\lc_gins.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion/lc_gins.c",
   "output": "libFusion/CMakeFiles/libFusion.dir/lc_gins.c.obj"
 },
 {
-  "directory": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB",
-  "command": "D:\\TDM-GCC-64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/rnx2rtkp.dir/includes_C.rsp -g -o CMakeFiles\\rnx2rtkp.dir\\rnx2rtkp.c.obj -c F:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\app\\rnx2rtkp.c",
-  "file": "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app/rnx2rtkp.c",
+  "directory": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB",
+  "command": "D:\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/rnx2rtkp.dir/includes_C.rsp -g -o CMakeFiles\\rnx2rtkp.dir\\rnx2rtkp.c.obj -c E:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\app\\rnx2rtkp.c",
+  "file": "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app/rnx2rtkp.c",
   "output": "iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj"
 }
 ]

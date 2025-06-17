@@ -572,7 +572,6 @@ static void *rtksvrthread(void *arg)
     double tt;
     uint32_t tick,ticknmea,tick1hz,tickreset;
     uint8_t *p,*q;
-    char msg[128];
     int i,j,n,cycle,cputime;
     
     tracet(3,"rtksvrthread:\n");
@@ -617,8 +616,8 @@ static void *rtksvrthread(void *arg)
         /* averaging single base pos */
         if (fobs[1]>0&&svr->rtk.opt.refpos==POSOPT_SINGLE) {
             if ((svr->rtk.opt.maxaveep<=0||svr->nave<svr->rtk.opt.maxaveep)&&
-                pntpos(svr->obs[1][0].data,svr->obs[1][0].n,&svr->nav,
-                       &svr->rtk.opt,&sol,NULL,NULL,msg)) {
+                pntpos(&svr->rtk,svr->obs[1][0].data,svr->obs[1][0].n,&svr->nav,
+                       &svr->rtk.opt,&sol,NULL,NULL)) {
                 svr->nave++;
                 for (i=0;i<3;i++) {
                     svr->rb_ave[i]+=(sol.rr[i]-svr->rb_ave[i])/svr->nave;

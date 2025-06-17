@@ -38,16 +38,16 @@ extern void att2Cnb(const double *att, double *Cnb)
 /* transform direction cosine matirx(DCM) to attitude --------------------------
 *
 *args   : double *Cnb      I   direction cosine matirx form b frame to n frame
-*         double *att      O   attitude {pitch,roll,yaw} (rad)
+*         double *att      O   attitude {pitch [-pi/2,pi/2],roll [-pi,pi],yaw [0,2*pi]} (rad)
 *return : none
 *-------------------------------------------------------------------------------*/
 extern void Cnb2att(const double *Cnb, double *att)
 {
     double roll=0.0,pitch=0.0,yaw=0.0;
 
-    pitch=atan2(Cnb[7],sqrt(Cnb[6]*Cnb[6]+Cnb[8]*Cnb[8]));
-    roll =atan2(-Cnb[6],Cnb[8]);
-    yaw  =atan2(-Cnb[1],Cnb[4]);
+    pitch=atan(Cnb[7]/sqrt(Cnb[6]*Cnb[6]+Cnb[8]*Cnb[8]));
+    roll =-atan2(Cnb[6],Cnb[8]);
+    yaw  =-atan2(Cnb[1],Cnb[4]);
 
     att[0]=pitch; att[1]=roll; att[2]=yaw;
 }
@@ -164,7 +164,7 @@ extern void vnmul(const int n, const double *v1, double f1, double *vo)
 
 /* nx1 vector add the nx1 vector --------------------------
 *
-*args   : int     n        I   size of the vector (3x3)
+*args   : int     n        I   size of the vector
 *         double *v1       I   input  vector1 (nx1)
 *         double  f1       I   coefficient of vector1
 *         double *v2       I   input  vector2 (nx1)
@@ -223,6 +223,28 @@ extern void Mat3mulv(double f, const double *mat, const double *vi, double *vo)
     }
 }
 
+/* 1x3 vector multiply 3x3 matrix  --------------------------
+*
+*args   : double  f        I   matrix coefficient
+*         double *vi       I   input  vector (3x1)
+*         double *mat      I   input  matrix (3x3)
+          double *vo       O   output vector (3x1)
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void vmulMat3(double f, const double *vi, const double *mat, double *vo)
+{
+    int i;
+
+    vo[0]=vi[0]*mat[0]+vi[1]*mat[3]+vi[2]*mat[6];
+    vo[1]=vi[0]*mat[1]+vi[1]*mat[4]+vi[2]*mat[7];
+    vo[2]=vi[0]*mat[2]+vi[1]*mat[5]+vi[2]*mat[8];
+
+    for (i=0;i<3;i++)
+    {
+        vo[i]*=f;
+    }
+}
+
 /* Skew-symmetric matrix multiply the vector --------------------------
 *
 *args   : double  f       I   Skew-symmetric matrix coefficient
@@ -237,8 +259,26 @@ extern void vskewmv(double f, const double *v1, const double *v2, double *vx)
 
     mat[0]=0;            mat[1]=-f*v1[2];   mat[2]= f*v1[1];
     mat[3]= f*v1[2];     mat[4]=0;          mat[5]=-f*v1[0];
-    mat[6]=-f*v1[1];     mat[7]= f*v1[0];    mat[8]=0; 
+    mat[6]=-f*v1[1];     mat[7]= f*v1[0];   mat[8]=0; 
     Mat3mulv(1.0,mat,v2,vx);
+}
+
+/* vector multiply the Skew-symmetric matrix --------------------------
+*
+*args   : double  f       I   Skew-symmetric matrix coefficient
+*         double *v1      I   vector (1x3)
+*         double *v2      I   vector (3x1)
+*         double *vx      O   vector (3x1)
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void vmvskew(double f, const double *v1, const double *v2, double *vx)
+{
+    double mat[9]={0};
+
+    mat[0]=0;            mat[1]=-f*v2[2];   mat[2]= f*v2[1];
+    mat[3]= f*v2[2];     mat[4]=0;          mat[5]=-f*v2[0];
+    mat[6]=-f*v2[1];     mat[7]= f*v2[0];   mat[8]=0; 
+    vmulMat3(1.0,v1,mat,vx);
 }
 
 /* Skew-symmetric matrix multiply the 3x3 matrix --------------------------
@@ -376,43 +416,107 @@ static int addimudata(imu_t *imu, const imud_t *data)
 }
 
 /* read imu data -----------------------------------------------*/
-extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu)
+extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week)
 {
     FILE *fp;
     imud_t imud;
     gtime_t time;
     int i,stat=0;
     char buff[256];
-    double week,sec,data[6],factor=1.0;
+    double week,sec,data[6]={0.0},factor=1.0,dw[3],dv[3],Cbv[9]={0.0};
 
     if (GINS_OFF==prcopt->GI_mode) return 0;
+    if (ts.time!=0) ts.time-=1;
+
+    /* calculate the installation angle from v frame to b frame */
+    att2Cnb(prcopt->install_angle,Cbv);
 
     if (!(fp=fopen(file,"r")))
     {
-        trace(1,"IMU file open error: %s!\n",file);
+        trace(7,"IMU file open error: %s!\n",file);
         return 0;
     }
 
     imu->data=NULL; imu->n=imu->nmax=0;
 
-    /* convert rate mode to incremental mode */
+    /* convert rate to incremental measurement */
     if (IMUT_RATE==prcopt->imudatype)
     {
-        factor=1/prcopt->insample;
+        factor=1.0/prcopt->insample;
     }
 
     while (fgets(buff,sizeof(buff),fp))
     {
-        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5)<8) continue;
+        /* replace spaces with commas */
+        repspace(buff);
+        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)<7) continue;
+        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5)==8) week=gps_week;
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)==7) week=gps_week;
+        else continue; 
         imud.time=gpst2time(week,sec);
 
         /* screen data by time */
         if ((ts.time!=0&&timediff(imud.time,ts)<0.0)||(te.time!=0&&timediff(imud.time,te)>0.5/prcopt->insample)) continue;
 
-        for (i=0;i<6;i++)
-        {
-            if (i<3) imud.dw[i]=factor*data[i];
-            else if (i<6) imud.dv[i-3]=factor*data[i];
+        if (strstr(prcopt->imu_order,"AgGd")!=NULL) {
+            for (i=0;i<6;i++)
+            {
+                if (i<3) {
+                    dv[i]  =factor*data[i];
+                    data[i]=0.0;
+                }     
+                else if (i<6) {
+                    dw[i-3]=factor*data[i]*D2R; 
+                    data[i]=0.0;
+                }
+            }            
+        }
+        else if (strstr(prcopt->imu_order,"AgGr")!=NULL) {
+            for (i=0;i<6;i++)
+            {
+                if (i<3) {
+                    dv[i]  =factor*data[i];
+                    data[i]=0.0;
+                }     
+                else if (i<6) {
+                    dw[i-3]=factor*data[i]; 
+                    data[i]=0.0;
+                }
+            }            
+        }
+        else if (strstr(prcopt->imu_order,"GdAg")!=NULL) {
+            for (i=0;i<6;i++)
+            {
+                if (i<3) {
+                    dw[i]  =factor*data[i]*D2R;
+                    data[i]=0.0;
+                }     
+                else if (i<6) {
+                    dv[i-3]=factor*data[i]; 
+                    data[i]=0.0;
+                }
+            }            
+        }
+        else if (strstr(prcopt->imu_order,"GrAg")!=NULL) {
+            for (i=0;i<6;i++)
+            {
+                if (i<3) {
+                    dw[i]  =factor*data[i];
+                    data[i]=0.0;
+                }     
+                else if (i<6) {
+                    dv[i-3]=factor*data[i]; 
+                    data[i]=0.0;
+                }
+            }            
+        } 
+        /* installation angle compensation */
+        vmulMat3(1.0,dw,Cbv,imud.dw);
+        vmulMat3(1.0,dv,Cbv,imud.dv);
+
+        if (norm(imud.dw,3)<=0.0||norm(imud.dv,3)<=0.0) {
+            showerr("IMU measurement output is zero: %s, week=%.0f, sec=%.4f!",file,week,sec); 
+            trace(7,"IMU measurement output is zero: %s, week=%.0f, sec=%.4f\n!",file,week,sec);
         }
         stat=addimudata(imu,&imud);
     }
@@ -546,9 +650,11 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
     ins->time.sec=0.0; ins->time.time=0.0;
     ins->interval=1.0/prcopt->insample;
     ins->nn=prcopt->nn;
-    ins->dttol=ins->interval/100.0;
-
-    ins->corr_time=prcopt->corr_time;
+    ins->dttol=ins->interval/1e3;
+    ins->discretime=(prcopt->insample%10)==0?1e-1:((prcopt->insample%25)==0?25*ins->interval:ins->interval);
+    
+     
+    ins->corr_time=prcopt->corr_time; 
     ins->psd_gyro=prcopt->psd_gyro;
     ins->psd_acce=prcopt->psd_acce;
     ins->psd_bg=prcopt->psd_bg;
@@ -556,10 +662,12 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
 
     for (i=0;i<15;i++)
     {
-        if (i<3)             ins->Q[i+i*nx]=ins->psd_gyro*1e-1;
-        else if(i>=3&&i<6)   ins->Q[i+i*nx]=ins->psd_acce*1e-1;
-        else if(i>=9&&i<12)  ins->Q[i+i*nx]=ins->psd_bg*1e-1;
-        else if(i>=12&&i<15) ins->Q[i+i*nx]=ins->psd_ba*1e-1;
+        ins->xa[i]=0.0;
+        
+        if (i<3)             ins->Q[i+i*nx]=ins->psd_gyro*ins->discretime;
+        else if(i>=3&&i<6)   ins->Q[i+i*nx]=ins->psd_acce*ins->discretime;
+        else if(i>=9&&i<12)  ins->Q[i+i*nx]=ins->psd_bg*ins->discretime;
+        else if(i>=12&&i<15) ins->Q[i+i*nx]=ins->psd_ba*ins->discretime;
     }
     /* trace(12,"Q=\n"); tracemat(12,ins->Q,nx,nx,20,16,0); */ /*ok*/
 
@@ -588,28 +696,276 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
     att2Cnb(ins->att,ins->Cnb);
 }
 
-/* ins initial alignment -------------------------------------------*/
-extern int ins_align(ins_t *ins, const prcopt_t *prcopt){
-
+/* initialize INS position, velocity and attitude */
+extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att) 
+{
     int i;
 
-    if (INSALIT_DIRECT==prcopt->alingetype)
-    {   
-        for (i=0;i<3;i++)
-        {
-            ins->p1pos[i]=prcopt->initpos[i];
-            ins->pos[i]=prcopt->initpos[i];
-            ins->p1vel[i]=prcopt->initvel[i];
-            ins->p2vel[i]=prcopt->initvel[i];
-            ins->vel[i]=prcopt->initvel[i];
-            ins->att[i]=prcopt->initatt[i];
-        }
-        att2Cnb(ins->att,ins->Cnb);     
-
-        earth_init(ins->pos,ins->vel,&ins->eth);  
+    for (i=0;i<3;i++)
+    {
+        ins->p1pos[i]=pos[i];
+        ins->pos[i]=pos[i];
+        ins->p1vel[i]=vel[i];
+        ins->p2vel[i]=vel[i];
+        ins->vel[i]=vel[i];
+        ins->att[i]=att[i];
     }
-    return 1;
+    att2Cnb(ins->att,ins->Cnb);     
+
+    earth_init(ins->pos,ins->vel,&ins->eth);  
 }
+
+/* ins initial alignment -------------------------------------------*/
+extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt)
+{
+    rtk_t rtk_=*rtk;
+    ins_t *ins=&rtk->ins;
+    int i,align_flag;
+    double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
+
+    /* initialize INS position using GNSS solution */
+    rtk_.opt.GI_mode=GINS_OFF; /* set to GINS_OFF mode */
+
+    /* manual alignment */
+    if (INSALI_MANUAL==opt->alingetype&&opt->ts.time)
+    {   
+        if ((fabs(timediff(imu[0].time,opt->ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
+            /* initialize ins position, velocity and attitude */
+            init_inspva(ins,opt->initpos,opt->initvel,opt->initatt); 
+            return 1;            
+        }
+        else if (timediff(imu[0].time,opt->ts)>0) {
+            showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); return 0;
+        }
+
+    }
+
+    /* velocity vector assisted yaw initialization based on tdcp */
+    if (INSALI_VELTOR==opt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
+        if (align_flag=tdcp_align(rtk,obs,obs_old,n,n_old,nav,opt)) {
+            if (!rtkpos(&rtk_,obs,n,nav)) {
+                trace(7,"error : rtkpos error in ins_align!\n");
+                return 0;
+            }
+            /* initialize position and velocity*/
+            ecef2pos(rtk_.sol.rr,pos);
+            ecef2enu(pos,rtk->sol.rr+3,vn);
+            /* initialize pitch and yaw using the velocity in the n frame */
+            att[0]=atan2(vn[2],sqrt(vn[0]*vn[0]+vn[1]*vn[1])); /* pitch angle */
+            att[2]=-atan2(vn[0],vn[1]); /* yaw angle */
+
+            /* initialize ins position, velocity and attitude */
+            init_inspva(ins,pos,vn,att);
+            trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
+            showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
+
+            return 1;            
+
+        }
+    }
+
+    return 0;
+}
+
+/* TDCP-assisted motion alignment */
+extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
+{
+    prcopt_t opt_=*opt;
+    sol_t sol={0},sol_old={0};
+    double *rs,*rs_old,*dts,*dts_old,*vare,*vare_old,*resp,*resp_old,*azel,*azel_old;
+    double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres=3.0;
+    double *v,*H,*var,*P,dx[4]={0},Q[4*4];
+    int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
+    int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,iok=1,mode=Robust_OFF;
+    int vsat[MAXOBS]={0},vsat_old[MAXOBS]={0},svh[MAXOBS]={0},svh_old[MAXOBS]={0};
+
+    /* initializing memory*/
+    rs=mat(n,6);    rs_old=mat(n_old,6);   dts=mat(n,2);   dts_old=mat(n_old,2);
+    vare=mat(n,1);  vare_old=mat(n_old,1); resp=mat(n,1);  resp_old=mat(n_old,1);
+    azel=zeros(n,2);azel_old=zeros(n_old,2);
+    v=mat(nf*n,1);  H=mat(nf*n,nx); var=mat(nf*n,1); P=zeros(nf*n,nf*n); 
+
+    /* configured in spp mode */
+    if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) {
+        opt_.mode=PMODE_SINGLE;
+        opt_.GI_mode=GINS_OFF;
+        opt_.sateph =EPHOPT_BRDC;
+        opt_.ionoopt=IONOOPT_BRDC;
+        opt_.tropopt=TROPOPT_SAAS;
+    }
+
+    /* satellite positons, velocities and clocks of current and previous epoch */
+    satposs(obs[0].time,obs,n,nav,opt_.sateph,rs,dts,vare,svh);
+    satposs(obs_old[0].time,obs_old,n_old,nav,opt_.sateph,rs_old,dts_old,vare_old,svh_old);
+
+    /* satellite positons, velocities and clocks of current and previous epoch */
+    stat=estpos(rtk,obs,n,rs,dts,vare,svh,nav,&opt_,NULL,&sol,azel,vsat,resp);
+    stat_old=estpos(rtk,obs_old,n_old,rs_old,dts_old,vare_old,svh_old,nav,&opt_,NULL,&sol_old,azel_old,vsat_old,resp_old);
+
+    /* check solution status */
+    if (!stat||!stat_old) {
+        trace(7,"tdcp_align: estpos error stat=%d, stat_old=%d\n",stat,stat_old);
+        free(rs);   free(rs_old);   free(dts);  free(dts_old);
+        free(vare); free(vare_old); free(resp); free(resp_old);
+        free(azel); free(azel_old);
+        free(v);    free(H);        free(var);  free(P);        
+        return 0;        
+    }
+    else {
+        /* receiver position in the previous epoch and the current epoch in spp mode */
+        for (i=0;i<3;i++) {
+            rr[i]=sol.rr[i];
+            rr_old[i]=sol_old.rr[i];
+        }
+    }
+
+    /* if GNSS outage, tdcp fails */
+    if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
+        iok=0;
+        trace(7,"tdcp_align: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
+    }
+
+    /* epoch-to-epoch average velocity estimation based on tdcp */
+    if (iok) {
+        /* check whether a cycle slip occurs in the current epoch observation */
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<rtk->opt.nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                rtk->ssat[i].slip[fr]=0;
+            }
+        }
+
+        /* detect cycle slip by LLI/geometry-free/Melbourne-Wubbena linear combination */
+        detslp_ll_ppp(rtk,obs,n);
+        detslp_gf_ppp(rtk,obs,n,nav);
+        detslp_mw_ppp(rtk,obs,n,nav);
+
+        /* select the common satellites between the previous epoch and the current epoch */
+        for (i=0,j=0,k=0;i<n_old&&j<n;i++,j++)
+        {
+            sys=satsys(obs[j].sat,NULL);   
+            if      (obs_old[i].sat<obs[j].sat) j--;
+            else if (obs_old[i].sat>obs[j].sat) i--;
+            else {
+                /* exclude satellites that are not involved in the solution or have unhealthy ephemeris */
+                if (satexclude(obs_old[i].sat,vare_old[i],svh_old[i],&opt_)||satexclude(obs[j].sat,vare[i],svh[j],&opt_)) continue;      
+                /* exclude satellites with large residuals*/
+                if (!vsat_old[i]||!vsat[j]) continue;
+                /* exclude satellites that have cycle slips */
+                for (m=0;m<nv;m++) {
+                    fr=sys2freid(sys,m,&opt_);
+                    if (rtk->ssat[obs[j].sat-1].slip[fr]) break; 
+                }
+                if (m<nv) continue;
+
+                /* save common satellites idx of the previous epoch and the current epoch */
+                sat[k]=obs[j].sat;ir_old[k]=i;ir[k++]=j;
+            }
+        }
+
+        /* construct the error equation with v and H */
+        for (m=0;m<nf;m++) {    
+            fr=sys2freid(sys,m,&opt_);
+            for (i=0;i<k;i++) {
+                er=er_old=0.0;
+                sys=satsys(sat[i],NULL);            
+                freq=sat2freq(sat[i],obs[ir[i]].code[fr],nav);
+
+                /* excluding satellites with missing observations */
+                if (obs[ir[i]].L[fr]==0.0||obs_old[ir_old[i]].L[fr]==0.0) continue;
+
+                if ((r=geodist(rs_old+ir_old[i]*6,rr_old,e_old))<=0.0) continue;
+                if ((r=geodist(rs+ir[i]*6,rr,e))<=0.0) continue;
+
+                vnadd(3,rs_old+ir_old[i]*6,1.0,rr_old,-1.0,dr_old);
+                vnadd(3,rs+ir[i]*6,1.0,rr_old,-1.0,dr);
+                
+                for (j=0;j<3;j++) {
+                    er+=e[j]*dr[j];
+                    er_old+=e_old[j]*dr_old[j];
+                }
+                /* observation vector */
+                v[nv]=CLIGHT/freq*(obs[ir[i]].L[fr]-obs_old[ir_old[i]].L[fr])+CLIGHT*(dts[ir[i]*2]-dts_old[ir_old[i]*2])-(er-er_old);
+
+                /* design matrix */   
+                for (j=0;j<4;j++) {
+                    H[j+nv*4]=j<3?-e[j]:(j==3?1.0:0.0);
+                }   
+
+                /* determine the variance of the observations */
+                var[nv++]=varerr_spp(&opt_,NULL,&obs[ir[i]],azel[1+ir[i]*2],sys)+vare[ir[i]];
+                /* valid satellite observations at the current frequency */
+                vnv[m]++;
+            }  
+        }         
+
+        /* determine the maximum number of satellites available on a single frequency */
+        for (i=0;i<nf;i++) {
+            if (!i) max_vnv=vnv[i];
+            else if (vnv[i]>max_vnv) max_vnv=vnv[i];
+        }
+
+        if (max_vnv<nx) {
+            iok=0;trace(7,"tdcp_align: not enough valid satellites nv=%d\n",nv);
+        }
+        else {
+
+            /* mode=(max_vnv>nx)?Robust_OFF:Robust_RES; */
+
+            /* calculate the weight matrix */
+            for (i=0;i<nv;i++) {
+                for (j=0;j<nv;j++) {
+                    P[i+j*nv]=0.0;
+                    if (i==j) P[i+j*nv]=1.0/var[i];
+                }
+            }
+
+            /* trace(12,"TDCP H=\n");tracemat(12,H,nv,nx,9,4,0);
+            trace(12,"TDCP v=\n");tracemat(12,v,nv,1,9,4,0);
+            trace(12,"TDCP P=\n");tracemat(12,P,nv,nv,9,4,0); */
+
+            /* least square estimation */
+            if ((info=lsq_roubst(H,v,P,4,nv,dx,Q,mode))) {
+                iok=0;trace(7,"tdcp lsq error info=%d\n!",info);
+            }
+            
+            if (iok) {
+                for (i=0;i<3;i++) rtk->sol.rr[i+3]=dx[i]/rtk->interval;  
+
+                /* matcpy(rtk->sol.tdcp_vel,rtk->sol.rr+3,3,1);
+                outsolstat(rtk,nav);  */                  
+            }           
+        }      
+    }
+
+    /* if tdcp fails, velocity estimation is performed using Doppler observations */
+    if (!iok&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
+        iok=1;
+        matcpy(rtk->sol.rr+3,sol.rr+3,3,1);
+    }
+
+    /* if tdcp and dopple fail, velocity estimation is performed using the spp position difference between epochs */
+    if (!iok) {
+        iok=1;
+        /* calculate the average velocity between epochs */
+        for (i=0;i<3;i++) rtk->sol.rr[i+3]=(rr[i]-rr_old[i])/rtk->interval;
+    }
+
+    /* when the vehicle velocity exceeds the threshold, the alignment is considered complete */
+    if (iok&&norm(rtk->sol.rr+3,3)<thres) {
+        iok=0;
+    }
+
+    /* freeing up memory */
+    free(rs);   free(rs_old);   free(dts);  free(dts_old);
+    free(vare); free(vare_old); free(resp); free(resp_old);
+    free(azel); free(azel_old);
+    free(v);    free(H);        free(var);  free(P);        
+
+    return iok;
+}
+
 /* ins mechanization -----------------------------------------------*/
 extern void ins_mech(ins_t *ins, imud_t *imu) 
 {
@@ -788,7 +1144,7 @@ extern void phi_update(ins_t *ins)
             } 
         }                                                   
     }
-    matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,1e-1,1.0);
+    matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
     /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16,0);
     trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16,0); */
     /* trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4,0); */ /*ok*/
@@ -804,12 +1160,11 @@ extern void ins2gnss(rtk_t *rtk, double *pv_g, int n)
     int i;
     double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
 
-    if (n==3) {
-        Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
-        Mat3mulv(1.0,F1,ins->lever,lever_n);
-        vnadd(3,ins->pos,1.0,lever_n,1.0,pv);       
-    }
-    else if (n==6) {
+    Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
+    Mat3mulv(1.0,F1,ins->lever,lever_n);
+    vnadd(3,ins->pos,1.0,lever_n,1.0,pv);       
+
+    if (n==6) {
         DCMT(ins->Cnb,Cbn);
         Mat3mulv(1.0,Cbn,ins->eth.wnie,wbie);
         Mat3add2(ins->wbib,1.0,wbie,-1.0,wbeb);
@@ -818,12 +1173,9 @@ extern void ins2gnss(rtk_t *rtk, double *pv_g, int n)
         vnadd(3,ins->vel,1.0,d_v,1.0,pv+3);        
     }
 
-    if (GINS_LC==rtk->opt.GI_mode)
+    for (i=0;i<n;i++)
     {
-        for (i=0;i<n;i++)
-        {
-            pv_g[i]=pv[i];
-        }
+        pv_g[i]=pv[i];
     }
 }
 
@@ -858,7 +1210,7 @@ extern void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int n)
     }
 }
 
-/* Update INS previous related parameters  --------------------------
+/* update INS previous related parameters  --------------------------
 *
 *args   : ins_t *ins     I    ins struct
 *return : none
@@ -871,7 +1223,8 @@ extern void update_ins(ins_t *ins)
     {
         ins->p1dw[i]=ins->dw[i];
         ins->p1dv[i]=ins->dv[i];
-        ins->p2vel[i]=ins->p1vel[i];        
+        ins->p2vel[i]=ins->p1vel[i]; 
+        /* update previous epoch pos/vel by ins prediction information */       
         ins->p1vel[i]=ins->vel[i];
         ins->p1pos[i]=ins->pos[i];
     }
@@ -885,7 +1238,7 @@ extern int inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t 
 
     ins_t *ins = (ins_t *)malloc(sizeof(ins_t));
 
-    readimu(ts,te,infile,popt,&imus);
+    readimu(ts,te,infile,popt,&imus,0);
 
     outhead(outfile,imus,sopt);
     FILE *fp=openfile(outfile);
@@ -896,7 +1249,7 @@ extern int inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t 
 
     for (i=0;i<n;i++)
     {
-        DebugTime(imus.data[i].time,436804,2188);
+        /* DebugTime(imus.data[i].time,436804,2188); */
         sec=imus.data[i].time.sec;
         thres=sec>0.5?(1-sec):sec;
         earth_init(ins->pos,ins->vel,&ins->eth);

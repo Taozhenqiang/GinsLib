@@ -106,7 +106,7 @@ static const int nmea_solq[]={  /* NMEA GPS quality indicator [1] */
     /* 7=Manual Input Mode */
     /* 8=Simulation Mode */
     SOLQ_NONE ,SOLQ_SINGLE, SOLQ_DGPS, SOLQ_PPP , SOLQ_FIX,
-    SOLQ_FLOAT,SOLQ_DR    , SOLQ_NONE, SOLQ_NONE, SOLQ_NONE
+    SOLQ_FLOAT,SOLQ_INS    , SOLQ_NONE, SOLQ_NONE, SOLQ_NONE
 };
 /* solution option to field separator ----------------------------------------*/
 static const char *opt2sep(const solopt_t *opt)
@@ -1220,12 +1220,22 @@ static int outecef(uint8_t *buff, const char *s, const sol_t *sol,
                sqvar(sol->qr[5]),sep,sol->age,sep,sol->ratio);
     
     if (opt->outvel) { /* output velocity */
-        p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
-                   "%8.5f%s%8.5f",
-                   sep,sol->vel[0],sep,sol->vel[1],sep,sol->vel[2],sep,
-                   SQRT(sol->qv[0]),sep,SQRT(sol->qv[1]),sep,SQRT(sol->qv[2]),
-                   sep,sqvar(sol->qv[3]),sep,sqvar(sol->qv[4]),sep,
-                   sqvar(sol->qv[5]));
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+            p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
+                    "%8.5f%s%8.5f",
+                    sep,sol->vel[0],sep,sol->vel[1],sep,sol->vel[2],sep,
+                    SQRT(sol->qv[0]),sep,SQRT(sol->qv[1]),sep,SQRT(sol->qv[2]),
+                    sep,sqvar(sol->qv[3]),sep,sqvar(sol->qv[4]),sep,
+                    sqvar(sol->qv[5]));            
+        }
+        else {
+            p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
+                    "%8.5f%s%8.5f",
+                    sep,sol->rr[3],sep,sol->rr[4],sep,sol->rr[5],sep,
+                    SQRT(sol->qv[0]),sep,SQRT(sol->qv[1]),sep,SQRT(sol->qv[2]),
+                    sep,sqvar(sol->qv[3]),sep,sqvar(sol->qv[4]),sep,
+                    sqvar(sol->qv[5]));              
+        }
     }
     if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
         if (opt->outatt) { /* output attitude */
@@ -1530,12 +1540,13 @@ extern int outnmea_gsv(uint8_t *buff, const sol_t *sol, const ssat_t *ssat)
 *-----------------------------------------------------------------------------*/
 extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
 {
+    int fr;
     const int sys[]={
-        SYS_GPS,SYS_GLO,SYS_GAL,SYS_CMP,SYS_QZS,SYS_IRN,SYS_SBS,0
+        SYS_GPS,SYS_GLO,SYS_GAL,SYS_QZS,SYS_CMP,SYS_IRN,SYS_SBS,0
     };
     const char *s1[]={
         "SPP","PPD","PPK","PPS","GNSS-TC","Static-Start","Moving-Base","Fixed",
-        "PPP Kinematic","PPP Static","PPP Fixed","","",""
+        "PPP","PPP Static","PPP Fixed","","",""
     };
     char s2[4];
     const char *s3[]={
@@ -1570,13 +1581,14 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     else if (GINS_TC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS TC\r\n",COMMENTH,s1[opt->mode],'/');
     else p+=sprintf(p,"%s pos mode  : %s\r\n",COMMENTH,s1[opt->mode]);
     
-    if (PMODE_DGPS<=opt->mode&&opt->mode<=PMODE_FIXED) {
+    if (PMODE_DGPS<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
         p+=sprintf(p,"%s freqs     : ",COMMENTH);
         for (i=0;sys[i];i++) {
             if (opt->navsys&sys[i]) {
                 if (k>0) p+=sprintf(p,"/");
                 for (j=0;j<opt->nf;j++,k++) {
-                    sys2frech(sys[i],j,s2);
+                    fr=sys2freid(sys[i],j,opt);
+                    sys2frech(sys[i],fr,s2);
                     if (j>0) p+=sprintf(p,"+");
                     p+=sprintf(p,"%s",s2);
                 }
@@ -1592,9 +1604,8 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         p+=sprintf(p,"%s dynamics  : %s\r\n",COMMENTH,opt->dynamics?"on":"off");
         p+=sprintf(p,"%s tidecorr  : %s\r\n",COMMENTH,opt->tidecorr?"on":"off");
     }
-    if (opt->mode<=PMODE_FIXED) {
-        p+=sprintf(p,"%s ionos opt : %s\r\n",COMMENTH,s4[opt->ionoopt]);
-    }
+
+    p+=sprintf(p,"%s ionos opt : %s\r\n",COMMENTH,s4[opt->ionoopt]);
     p+=sprintf(p,"%s tropo opt : %s\r\n",COMMENTH,s5[opt->tropopt]);
     p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);
         p+=sprintf(p,"%s system    :",COMMENTH);
@@ -1602,7 +1613,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
             if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
         }
     p+=sprintf(p,"\r\n");
-    if (PMODE_KINEMA<=opt->mode&&opt->mode<=PMODE_FIXED) {
+    if (PMODE_KINEMA<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
         p+=sprintf(p,"%s amb res   : %s\r\n",COMMENTH,s8[opt->modear]);
         if (opt->navsys&SYS_GLO) {
             p+=sprintf(p,"%s amb glo   : %s\r\n",COMMENTH,s9[opt->glomodear]);
@@ -1633,7 +1644,7 @@ extern int outsolheads(uint8_t *buff, const prcopt_t *popt, const solopt_t *opt)
 {
     const char *s1[]={"WGS84","Tokyo"},*s2[]={"ellipsoidal","geodetic"};
     const char *s3[]={"GPST","UTC ","JST "},*sep=opt2sep(opt);
-    const char *leg1="Q=1:fix,2:float,3:sbas,4:dgps,5:single,6:ppp,7:DR,8:LC,9:TC";
+    const char *leg1="Q=1:fix,2:float,3:sbas,4:dgps,5:single,6:ppp,7:INS,8:LC,9:TC";
     const char *leg2="ns=# of satellites";
     char *p=(char *)buff;
     int timeu=opt->timeu<0?0:(opt->timeu>20?20:opt->timeu);
@@ -1735,8 +1746,7 @@ static double sol_std(const sol_t *sol)
 *          solopt_t *opt    I   solution options
 * return : number of output bytes
 *-----------------------------------------------------------------------------*/
-extern int outsols(uint8_t *buff, const sol_t *sol, const double *rb,
-                   const prcopt_t *popt, const solopt_t *opt)
+extern int outsols(uint8_t *buff, sol_t *sol, const double *rb, const prcopt_t *popt, const solopt_t *opt)
 {
     gtime_t time,ts={0};
     double gpst;
@@ -1754,7 +1764,12 @@ extern int outsols(uint8_t *buff, const sol_t *sol, const double *rb,
         if (!screent(sol->time,ts,ts,opt->nmeaintv[0])) return 0;
     }
     if (sol->stat<=SOLQ_NONE||(opt->posf==SOLF_ENU&&norm(rb,3)<=0.0)) {
-        return 0;
+        p+=sprintf(p,"\r\n");
+        return (int)(p-buff);
+    }
+    if (sol->stat==SOLQ_INS) {
+        sol->ns=0;
+        sol->ratio=0.0;
     }
     timeu=opt->timeu<0?0:(opt->timeu>20?20:opt->timeu);
     
@@ -1853,8 +1868,7 @@ extern void outsolhead(FILE *fp, const prcopt_t *popt, const solopt_t *sopt)
 *          solopt_t *opt    I   solution options
 * return : none
 *-----------------------------------------------------------------------------*/
-extern void outsol(FILE *fp, const sol_t *sol, const double *rb,
-                   const prcopt_t *popt, const solopt_t *opt)
+extern void outsol(FILE *fp, sol_t *sol, const double *rb, const prcopt_t *popt, const solopt_t *opt)
 {
     uint8_t buff[MAXSOLMSG+1];
     int n;

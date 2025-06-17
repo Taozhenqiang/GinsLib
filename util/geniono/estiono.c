@@ -70,7 +70,7 @@ static void init_bias(const obsd_t *obs, double *x, double *P, int nx)
     bias=(obs->L[0]-obs->L[1])-(obs->P[0]-obs->P[1]);
     initx(x,P,nx,IB(obs->sat),bias,VAR_BIAS);
 }
-/* temporal update of states --------------------------------------------------*/
+/* time update of states --------------------------------------------------*/
 static void udstate(const obsd_t *obs, int n, const nav_t *nav, double *x,
                     double *P, int nx, ssat_t *ssat)
 {

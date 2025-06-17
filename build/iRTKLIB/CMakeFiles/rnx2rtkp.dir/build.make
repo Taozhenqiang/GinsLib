@@ -43,19 +43,19 @@ cmake_force:
 SHELL = cmd.exe
 
 # The CMake executable.
-CMAKE_COMMAND = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe"
+CMAKE_COMMAND = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe
 
 # The command to remove a file.
-RM = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe" -E rm -f
+RM = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k
+CMAKE_SOURCE_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k\build
+CMAKE_BINARY_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k\build
 
 # Include any dependencies generated for this target.
 include iRTKLIB/CMakeFiles/rnx2rtkp.dir/depend.make
@@ -70,18 +70,18 @@ include iRTKLIB/CMakeFiles/rnx2rtkp.dir/flags.make
 
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj: iRTKLIB/CMakeFiles/rnx2rtkp.dir/flags.make
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj: iRTKLIB/CMakeFiles/rnx2rtkp.dir/includes_C.rsp
-iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app/rnx2rtkp.c
+iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app/rnx2rtkp.c
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj: iRTKLIB/CMakeFiles/rnx2rtkp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj -MF CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.obj.d -o CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj -MF CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.obj.d -o CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c
 
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c > CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c > CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.i
 
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c -o CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app\rnx2rtkp.c -o CMakeFiles\rnx2rtkp.dir\rnx2rtkp.c.s
 
 # Object files for target rnx2rtkp
 rnx2rtkp_OBJECTS = \
@@ -101,18 +101,18 @@ Bin/rnx2rtkp.exe: Lib/liblibFusiond.a
 Bin/rnx2rtkp.exe: iRTKLIB/CMakeFiles/rnx2rtkp.dir/linkLibs.rsp
 Bin/rnx2rtkp.exe: iRTKLIB/CMakeFiles/rnx2rtkp.dir/objects1.rsp
 Bin/rnx2rtkp.exe: iRTKLIB/CMakeFiles/rnx2rtkp.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable ..\Bin\rnx2rtkp.exe"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\rnx2rtkp.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable ..\Bin\rnx2rtkp.exe"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\rnx2rtkp.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/build: Bin/rnx2rtkp.exe
 .PHONY : iRTKLIB/CMakeFiles/rnx2rtkp.dir/build
 
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/clean:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && $(CMAKE_COMMAND) -P CMakeFiles\rnx2rtkp.dir\cmake_clean.cmake
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB && $(CMAKE_COMMAND) -P CMakeFiles\rnx2rtkp.dir\cmake_clean.cmake
 .PHONY : iRTKLIB/CMakeFiles/rnx2rtkp.dir/clean
 
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" F:\Navigation_Learn\GNSS\RTKLIB-b34k F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app F:\Navigation_Learn\GNSS\RTKLIB-b34k\build F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB\CMakeFiles\rnx2rtkp.dir\DependInfo.cmake "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\Navigation_Learn\GNSS\RTKLIB-b34k E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\app E:\Navigation_Learn\GNSS\RTKLIB-b34k\build E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB\CMakeFiles\rnx2rtkp.dir\DependInfo.cmake "--color=$(COLOR)"
 .PHONY : iRTKLIB/CMakeFiles/rnx2rtkp.dir/depend
 

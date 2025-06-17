@@ -1,2 +1,2 @@
-D:\TDM-GCC-64\bin\ar.exe qc ..\Lib\liblibFusiond.a CMakeFiles/libFusion.dir/lc_gins.c.obj
-D:\TDM-GCC-64\bin\ranlib.exe ..\Lib\liblibFusiond.a
+D:\mingw64\bin\ar.exe qc ..\Lib\liblibFusiond.a CMakeFiles/libFusion.dir/lc_gins.c.obj
+D:\mingw64\bin\ranlib.exe ..\Lib\liblibFusiond.a

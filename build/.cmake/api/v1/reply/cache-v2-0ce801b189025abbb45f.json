@@ -15,7 +15,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/addr2line.exe"
+			"value" : "D:/mingw64/bin/addr2line.exe"
 		},
 		{
 			"name" : "CMAKE_AR",
@@ -31,7 +31,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/ar.exe"
+			"value" : "D:/mingw64/bin/ar.exe"
 		},
 		{
 			"name" : "CMAKE_BUILD_TYPE",
@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "f:/Navigation_Learn/GNSS/RTKLIB-b34k/build"
+			"value" : "e:/Navigation_Learn/GNSS/RTKLIB-b34k/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -119,7 +119,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/bin/cmake.exe"
+			"value" : "D:/cmake-3.30.3-windows-x86_64/bin/cmake.exe"
 		},
 		{
 			"name" : "CMAKE_CPACK_COMMAND",
@@ -131,7 +131,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/bin/cpack.exe"
+			"value" : "D:/cmake-3.30.3-windows-x86_64/bin/cpack.exe"
 		},
 		{
 			"name" : "CMAKE_CTEST_COMMAND",
@@ -143,7 +143,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/bin/ctest.exe"
+			"value" : "D:/cmake-3.30.3-windows-x86_64/bin/ctest.exe"
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER",
@@ -159,7 +159,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/g++.exe"
+			"value" : "D:/mingw64/bin/g++.exe"
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER_AR",
@@ -175,7 +175,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/gcc-ar.exe"
+			"value" : "D:/mingw64/bin/gcc-ar.exe"
 		},
 		{
 			"name" : "CMAKE_CXX_COMPILER_RANLIB",
@@ -191,7 +191,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/gcc-ranlib.exe"
+			"value" : "D:/mingw64/bin/gcc-ranlib.exe"
 		},
 		{
 			"name" : "CMAKE_CXX_FLAGS",
@@ -303,7 +303,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/gcc.exe"
+			"value" : "D:/mingw64/bin/gcc.exe"
 		},
 		{
 			"name" : "CMAKE_C_COMPILER_AR",
@@ -319,7 +319,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/gcc-ar.exe"
+			"value" : "D:/mingw64/bin/gcc-ar.exe"
 		},
 		{
 			"name" : "CMAKE_C_COMPILER_RANLIB",
@@ -335,7 +335,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/gcc-ranlib.exe"
+			"value" : "D:/mingw64/bin/gcc-ranlib.exe"
 		},
 		{
 			"name" : "CMAKE_C_FLAGS",
@@ -447,7 +447,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/dlltool.exe"
+			"value" : "D:/mingw64/bin/dlltool.exe"
 		},
 		{
 			"name" : "CMAKE_EDIT_COMMAND",
@@ -459,7 +459,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/bin/cmake-gui.exe"
+			"value" : "D:/cmake-3.30.3-windows-x86_64/bin/cmake-gui.exe"
 		},
 		{
 			"name" : "CMAKE_EXECUTABLE_FORMAT",
@@ -587,7 +587,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/CMakeFiles/pkgRedirects"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -659,7 +659,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -687,7 +687,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/ld.exe"
+			"value" : "D:/mingw64/bin/ld.exe"
 		},
 		{
 			"name" : "CMAKE_MAKE_PROGRAM",
@@ -703,7 +703,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/mingw32-make.exe"
+			"value" : "D:/mingw64/bin/mingw32-make.exe"
 		},
 		{
 			"name" : "CMAKE_MODULE_LINKER_FLAGS",
@@ -799,7 +799,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/nm.exe"
+			"value" : "D:/mingw64/bin/nm.exe"
 		},
 		{
 			"name" : "CMAKE_NUMBER_OF_MAKEFILES",
@@ -827,7 +827,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/objcopy.exe"
+			"value" : "D:/mingw64/bin/objcopy.exe"
 		},
 		{
 			"name" : "CMAKE_OBJDUMP",
@@ -843,7 +843,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/objdump.exe"
+			"value" : "D:/mingw64/bin/objdump.exe"
 		},
 		{
 			"name" : "CMAKE_PLATFORM_INFO_INITIALIZED",
@@ -967,7 +967,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/ranlib.exe"
+			"value" : "D:/mingw64/bin/ranlib.exe"
 		},
 		{
 			"name" : "CMAKE_RC_COMPILER",
@@ -983,7 +983,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/windres.exe"
+			"value" : "D:/mingw64/bin/windres.exe"
 		},
 		{
 			"name" : "CMAKE_RC_COMPILER_WORKS",
@@ -1091,7 +1091,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/readelf.exe"
+			"value" : "D:/mingw64/bin/readelf.exe"
 		},
 		{
 			"name" : "CMAKE_ROOT",
@@ -1103,7 +1103,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/share/cmake-3.30"
+			"value" : "D:/cmake-3.30.3-windows-x86_64/share/cmake-3.30"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1311,7 +1311,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/TDM-GCC-64/bin/strip.exe"
+			"value" : "D:/mingw64/bin/strip.exe"
 		},
 		{
 			"name" : "CMAKE_TAPI",
@@ -1379,7 +1379,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build"
 		},
 		{
 			"name" : "RTKNav_IS_TOP_LEVEL",
@@ -1403,7 +1403,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k"
 		},
 		{
 			"name" : "_CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED",
@@ -1427,7 +1427,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB"
 		},
 		{
 			"name" : "iRTKLIB_IS_TOP_LEVEL",
@@ -1451,7 +1451,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app"
 		},
 		{
 			"name" : "libFusion_BINARY_DIR",
@@ -1463,7 +1463,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion"
 		},
 		{
 			"name" : "libFusion_IS_TOP_LEVEL",
@@ -1499,7 +1499,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion"
 		},
 		{
 			"name" : "libGnss_BINARY_DIR",
@@ -1511,7 +1511,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss"
 		},
 		{
 			"name" : "libGnss_IS_TOP_LEVEL",
@@ -1547,7 +1547,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss"
 		},
 		{
 			"name" : "libIns_BINARY_DIR",
@@ -1559,7 +1559,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns"
 		},
 		{
 			"name" : "libIns_IS_TOP_LEVEL",
@@ -1595,7 +1595,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns"
+			"value" : "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns"
 		}
 	],
 	"kind" : "cache",

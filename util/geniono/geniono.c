@@ -130,7 +130,7 @@ static int raw_obs(const obsd_t *obs, const nav_t *nav, double *P1, double *P2,
     if (obs->code[0]==CODE_L1C) *P1+=nav->cbias[obs->sat-1][1];
     return 1;
 }
-/* temporal update of states --------------------------------------------------*/
+/* time update of states --------------------------------------------------*/
 static void ud_state(const obsd_t *obs, int n, const nav_t *nav,
                      const double *pos, const double *azel, ekf_t *ekf,
                      sstat_t *sstat)

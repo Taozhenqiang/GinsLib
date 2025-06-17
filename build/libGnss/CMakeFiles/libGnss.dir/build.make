@@ -43,19 +43,19 @@ cmake_force:
 SHELL = cmd.exe
 
 # The CMake executable.
-CMAKE_COMMAND = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe"
+CMAKE_COMMAND = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe
 
 # The command to remove a file.
-RM = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe" -E rm -f
+RM = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k
+CMAKE_SOURCE_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k\build
+CMAKE_BINARY_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k\build
 
 # Include any dependencies generated for this target.
 include libGnss/CMakeFiles/libGnss.dir/depend.make
@@ -70,483 +70,483 @@ include libGnss/CMakeFiles/libGnss.dir/flags.make
 
 libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convgpx.c
+libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convgpx.c
 libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj -MF CMakeFiles\libGnss.dir\convgpx.c.obj.d -o CMakeFiles\libGnss.dir\convgpx.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj -MF CMakeFiles\libGnss.dir\convgpx.c.obj.d -o CMakeFiles\libGnss.dir\convgpx.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c
 
 libGnss/CMakeFiles/libGnss.dir/convgpx.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/convgpx.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c > CMakeFiles\libGnss.dir\convgpx.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c > CMakeFiles\libGnss.dir\convgpx.c.i
 
 libGnss/CMakeFiles/libGnss.dir/convgpx.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/convgpx.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c -o CMakeFiles\libGnss.dir\convgpx.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convgpx.c -o CMakeFiles\libGnss.dir\convgpx.c.s
 
 libGnss/CMakeFiles/libGnss.dir/convkml.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/convkml.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/convkml.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convkml.c
+libGnss/CMakeFiles/libGnss.dir/convkml.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convkml.c
 libGnss/CMakeFiles/libGnss.dir/convkml.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object libGnss/CMakeFiles/libGnss.dir/convkml.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convkml.c.obj -MF CMakeFiles\libGnss.dir\convkml.c.obj.d -o CMakeFiles\libGnss.dir\convkml.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object libGnss/CMakeFiles/libGnss.dir/convkml.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convkml.c.obj -MF CMakeFiles\libGnss.dir\convkml.c.obj.d -o CMakeFiles\libGnss.dir\convkml.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c
 
 libGnss/CMakeFiles/libGnss.dir/convkml.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/convkml.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c > CMakeFiles\libGnss.dir\convkml.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c > CMakeFiles\libGnss.dir\convkml.c.i
 
 libGnss/CMakeFiles/libGnss.dir/convkml.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/convkml.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c -o CMakeFiles\libGnss.dir\convkml.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convkml.c -o CMakeFiles\libGnss.dir\convkml.c.s
 
 libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convrnx.c
+libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convrnx.c
 libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj -MF CMakeFiles\libGnss.dir\convrnx.c.obj.d -o CMakeFiles\libGnss.dir\convrnx.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj -MF CMakeFiles\libGnss.dir\convrnx.c.obj.d -o CMakeFiles\libGnss.dir\convrnx.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c
 
 libGnss/CMakeFiles/libGnss.dir/convrnx.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/convrnx.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c > CMakeFiles\libGnss.dir\convrnx.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c > CMakeFiles\libGnss.dir\convrnx.c.i
 
 libGnss/CMakeFiles/libGnss.dir/convrnx.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/convrnx.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c -o CMakeFiles\libGnss.dir\convrnx.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\convrnx.c -o CMakeFiles\libGnss.dir\convrnx.c.s
 
 libGnss/CMakeFiles/libGnss.dir/datum.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/datum.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/datum.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/datum.c
+libGnss/CMakeFiles/libGnss.dir/datum.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/datum.c
 libGnss/CMakeFiles/libGnss.dir/datum.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object libGnss/CMakeFiles/libGnss.dir/datum.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/datum.c.obj -MF CMakeFiles\libGnss.dir\datum.c.obj.d -o CMakeFiles\libGnss.dir\datum.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object libGnss/CMakeFiles/libGnss.dir/datum.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/datum.c.obj -MF CMakeFiles\libGnss.dir\datum.c.obj.d -o CMakeFiles\libGnss.dir\datum.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c
 
 libGnss/CMakeFiles/libGnss.dir/datum.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/datum.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c > CMakeFiles\libGnss.dir\datum.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c > CMakeFiles\libGnss.dir\datum.c.i
 
 libGnss/CMakeFiles/libGnss.dir/datum.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/datum.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c -o CMakeFiles\libGnss.dir\datum.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\datum.c -o CMakeFiles\libGnss.dir\datum.c.s
 
 libGnss/CMakeFiles/libGnss.dir/download.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/download.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/download.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/download.c
+libGnss/CMakeFiles/libGnss.dir/download.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/download.c
 libGnss/CMakeFiles/libGnss.dir/download.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object libGnss/CMakeFiles/libGnss.dir/download.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/download.c.obj -MF CMakeFiles\libGnss.dir\download.c.obj.d -o CMakeFiles\libGnss.dir\download.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object libGnss/CMakeFiles/libGnss.dir/download.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/download.c.obj -MF CMakeFiles\libGnss.dir\download.c.obj.d -o CMakeFiles\libGnss.dir\download.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c
 
 libGnss/CMakeFiles/libGnss.dir/download.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/download.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c > CMakeFiles\libGnss.dir\download.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c > CMakeFiles\libGnss.dir\download.c.i
 
 libGnss/CMakeFiles/libGnss.dir/download.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/download.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c -o CMakeFiles\libGnss.dir\download.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\download.c -o CMakeFiles\libGnss.dir\download.c.s
 
 libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ephemeris.c
+libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ephemeris.c
 libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj -MF CMakeFiles\libGnss.dir\ephemeris.c.obj.d -o CMakeFiles\libGnss.dir\ephemeris.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj -MF CMakeFiles\libGnss.dir\ephemeris.c.obj.d -o CMakeFiles\libGnss.dir\ephemeris.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c
 
 libGnss/CMakeFiles/libGnss.dir/ephemeris.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/ephemeris.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c > CMakeFiles\libGnss.dir\ephemeris.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c > CMakeFiles\libGnss.dir\ephemeris.c.i
 
 libGnss/CMakeFiles/libGnss.dir/ephemeris.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/ephemeris.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c -o CMakeFiles\libGnss.dir\ephemeris.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ephemeris.c -o CMakeFiles\libGnss.dir\ephemeris.c.s
 
 libGnss/CMakeFiles/libGnss.dir/geoid.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/geoid.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/geoid.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/geoid.c
+libGnss/CMakeFiles/libGnss.dir/geoid.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/geoid.c
 libGnss/CMakeFiles/libGnss.dir/geoid.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object libGnss/CMakeFiles/libGnss.dir/geoid.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/geoid.c.obj -MF CMakeFiles\libGnss.dir\geoid.c.obj.d -o CMakeFiles\libGnss.dir\geoid.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object libGnss/CMakeFiles/libGnss.dir/geoid.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/geoid.c.obj -MF CMakeFiles\libGnss.dir\geoid.c.obj.d -o CMakeFiles\libGnss.dir\geoid.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c
 
 libGnss/CMakeFiles/libGnss.dir/geoid.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/geoid.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c > CMakeFiles\libGnss.dir\geoid.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c > CMakeFiles\libGnss.dir\geoid.c.i
 
 libGnss/CMakeFiles/libGnss.dir/geoid.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/geoid.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c -o CMakeFiles\libGnss.dir\geoid.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\geoid.c -o CMakeFiles\libGnss.dir\geoid.c.s
 
 libGnss/CMakeFiles/libGnss.dir/gis.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/gis.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/gis.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/gis.c
+libGnss/CMakeFiles/libGnss.dir/gis.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/gis.c
 libGnss/CMakeFiles/libGnss.dir/gis.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object libGnss/CMakeFiles/libGnss.dir/gis.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/gis.c.obj -MF CMakeFiles\libGnss.dir\gis.c.obj.d -o CMakeFiles\libGnss.dir\gis.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object libGnss/CMakeFiles/libGnss.dir/gis.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/gis.c.obj -MF CMakeFiles\libGnss.dir\gis.c.obj.d -o CMakeFiles\libGnss.dir\gis.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c
 
 libGnss/CMakeFiles/libGnss.dir/gis.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/gis.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c > CMakeFiles\libGnss.dir\gis.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c > CMakeFiles\libGnss.dir\gis.c.i
 
 libGnss/CMakeFiles/libGnss.dir/gis.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/gis.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c -o CMakeFiles\libGnss.dir\gis.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\gis.c -o CMakeFiles\libGnss.dir\gis.c.s
 
 libGnss/CMakeFiles/libGnss.dir/ionex.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/ionex.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/ionex.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ionex.c
+libGnss/CMakeFiles/libGnss.dir/ionex.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ionex.c
 libGnss/CMakeFiles/libGnss.dir/ionex.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object libGnss/CMakeFiles/libGnss.dir/ionex.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ionex.c.obj -MF CMakeFiles\libGnss.dir\ionex.c.obj.d -o CMakeFiles\libGnss.dir\ionex.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object libGnss/CMakeFiles/libGnss.dir/ionex.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ionex.c.obj -MF CMakeFiles\libGnss.dir\ionex.c.obj.d -o CMakeFiles\libGnss.dir\ionex.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c
 
 libGnss/CMakeFiles/libGnss.dir/ionex.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/ionex.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c > CMakeFiles\libGnss.dir\ionex.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c > CMakeFiles\libGnss.dir\ionex.c.i
 
 libGnss/CMakeFiles/libGnss.dir/ionex.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/ionex.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c -o CMakeFiles\libGnss.dir\ionex.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ionex.c -o CMakeFiles\libGnss.dir\ionex.c.s
 
 libGnss/CMakeFiles/libGnss.dir/lambda.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/lambda.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/lambda.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/lambda.c
+libGnss/CMakeFiles/libGnss.dir/lambda.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/lambda.c
 libGnss/CMakeFiles/libGnss.dir/lambda.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object libGnss/CMakeFiles/libGnss.dir/lambda.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/lambda.c.obj -MF CMakeFiles\libGnss.dir\lambda.c.obj.d -o CMakeFiles\libGnss.dir\lambda.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object libGnss/CMakeFiles/libGnss.dir/lambda.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/lambda.c.obj -MF CMakeFiles\libGnss.dir\lambda.c.obj.d -o CMakeFiles\libGnss.dir\lambda.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c
 
 libGnss/CMakeFiles/libGnss.dir/lambda.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/lambda.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c > CMakeFiles\libGnss.dir\lambda.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c > CMakeFiles\libGnss.dir\lambda.c.i
 
 libGnss/CMakeFiles/libGnss.dir/lambda.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/lambda.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c -o CMakeFiles\libGnss.dir\lambda.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\lambda.c -o CMakeFiles\libGnss.dir\lambda.c.s
 
 libGnss/CMakeFiles/libGnss.dir/options.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/options.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/options.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/options.c
+libGnss/CMakeFiles/libGnss.dir/options.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/options.c
 libGnss/CMakeFiles/libGnss.dir/options.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object libGnss/CMakeFiles/libGnss.dir/options.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/options.c.obj -MF CMakeFiles\libGnss.dir\options.c.obj.d -o CMakeFiles\libGnss.dir\options.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object libGnss/CMakeFiles/libGnss.dir/options.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/options.c.obj -MF CMakeFiles\libGnss.dir\options.c.obj.d -o CMakeFiles\libGnss.dir\options.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c
 
 libGnss/CMakeFiles/libGnss.dir/options.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/options.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c > CMakeFiles\libGnss.dir\options.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c > CMakeFiles\libGnss.dir\options.c.i
 
 libGnss/CMakeFiles/libGnss.dir/options.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/options.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c -o CMakeFiles\libGnss.dir\options.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\options.c -o CMakeFiles\libGnss.dir\options.c.s
 
 libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/pntpos.c
+libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/pntpos.c
 libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj -MF CMakeFiles\libGnss.dir\pntpos.c.obj.d -o CMakeFiles\libGnss.dir\pntpos.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj -MF CMakeFiles\libGnss.dir\pntpos.c.obj.d -o CMakeFiles\libGnss.dir\pntpos.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c
 
 libGnss/CMakeFiles/libGnss.dir/pntpos.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/pntpos.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c > CMakeFiles\libGnss.dir\pntpos.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c > CMakeFiles\libGnss.dir\pntpos.c.i
 
 libGnss/CMakeFiles/libGnss.dir/pntpos.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/pntpos.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c -o CMakeFiles\libGnss.dir\pntpos.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\pntpos.c -o CMakeFiles\libGnss.dir\pntpos.c.s
 
 libGnss/CMakeFiles/libGnss.dir/postpos.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/postpos.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/postpos.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/postpos.c
+libGnss/CMakeFiles/libGnss.dir/postpos.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/postpos.c
 libGnss/CMakeFiles/libGnss.dir/postpos.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object libGnss/CMakeFiles/libGnss.dir/postpos.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/postpos.c.obj -MF CMakeFiles\libGnss.dir\postpos.c.obj.d -o CMakeFiles\libGnss.dir\postpos.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object libGnss/CMakeFiles/libGnss.dir/postpos.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/postpos.c.obj -MF CMakeFiles\libGnss.dir\postpos.c.obj.d -o CMakeFiles\libGnss.dir\postpos.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c
 
 libGnss/CMakeFiles/libGnss.dir/postpos.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/postpos.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c > CMakeFiles\libGnss.dir\postpos.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c > CMakeFiles\libGnss.dir\postpos.c.i
 
 libGnss/CMakeFiles/libGnss.dir/postpos.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/postpos.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c -o CMakeFiles\libGnss.dir\postpos.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\postpos.c -o CMakeFiles\libGnss.dir\postpos.c.s
 
 libGnss/CMakeFiles/libGnss.dir/ppp.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/ppp.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/ppp.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp.c
+libGnss/CMakeFiles/libGnss.dir/ppp.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp.c
 libGnss/CMakeFiles/libGnss.dir/ppp.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object libGnss/CMakeFiles/libGnss.dir/ppp.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ppp.c.obj -MF CMakeFiles\libGnss.dir\ppp.c.obj.d -o CMakeFiles\libGnss.dir\ppp.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object libGnss/CMakeFiles/libGnss.dir/ppp.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ppp.c.obj -MF CMakeFiles\libGnss.dir\ppp.c.obj.d -o CMakeFiles\libGnss.dir\ppp.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c
 
 libGnss/CMakeFiles/libGnss.dir/ppp.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/ppp.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c > CMakeFiles\libGnss.dir\ppp.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c > CMakeFiles\libGnss.dir\ppp.c.i
 
 libGnss/CMakeFiles/libGnss.dir/ppp.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/ppp.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c -o CMakeFiles\libGnss.dir\ppp.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp.c -o CMakeFiles\libGnss.dir\ppp.c.s
 
 libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp_ar.c
+libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp_ar.c
 libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj -MF CMakeFiles\libGnss.dir\ppp_ar.c.obj.d -o CMakeFiles\libGnss.dir\ppp_ar.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj -MF CMakeFiles\libGnss.dir\ppp_ar.c.obj.d -o CMakeFiles\libGnss.dir\ppp_ar.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c
 
 libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/ppp_ar.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c > CMakeFiles\libGnss.dir\ppp_ar.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c > CMakeFiles\libGnss.dir\ppp_ar.c.i
 
 libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/ppp_ar.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c -o CMakeFiles\libGnss.dir\ppp_ar.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\ppp_ar.c -o CMakeFiles\libGnss.dir\ppp_ar.c.s
 
 libGnss/CMakeFiles/libGnss.dir/preceph.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/preceph.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/preceph.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/preceph.c
+libGnss/CMakeFiles/libGnss.dir/preceph.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/preceph.c
 libGnss/CMakeFiles/libGnss.dir/preceph.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object libGnss/CMakeFiles/libGnss.dir/preceph.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/preceph.c.obj -MF CMakeFiles\libGnss.dir\preceph.c.obj.d -o CMakeFiles\libGnss.dir\preceph.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object libGnss/CMakeFiles/libGnss.dir/preceph.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/preceph.c.obj -MF CMakeFiles\libGnss.dir\preceph.c.obj.d -o CMakeFiles\libGnss.dir\preceph.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c
 
 libGnss/CMakeFiles/libGnss.dir/preceph.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/preceph.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c > CMakeFiles\libGnss.dir\preceph.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c > CMakeFiles\libGnss.dir\preceph.c.i
 
 libGnss/CMakeFiles/libGnss.dir/preceph.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/preceph.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c -o CMakeFiles\libGnss.dir\preceph.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\preceph.c -o CMakeFiles\libGnss.dir\preceph.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rcvraw.c
+libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rcvraw.c
 libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj -MF CMakeFiles\libGnss.dir\rcvraw.c.obj.d -o CMakeFiles\libGnss.dir\rcvraw.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj -MF CMakeFiles\libGnss.dir\rcvraw.c.obj.d -o CMakeFiles\libGnss.dir\rcvraw.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c
 
 libGnss/CMakeFiles/libGnss.dir/rcvraw.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rcvraw.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c > CMakeFiles\libGnss.dir\rcvraw.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c > CMakeFiles\libGnss.dir\rcvraw.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rcvraw.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rcvraw.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c -o CMakeFiles\libGnss.dir\rcvraw.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rcvraw.c -o CMakeFiles\libGnss.dir\rcvraw.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rinex.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rinex.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rinex.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rinex.c
+libGnss/CMakeFiles/libGnss.dir/rinex.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rinex.c
 libGnss/CMakeFiles/libGnss.dir/rinex.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object libGnss/CMakeFiles/libGnss.dir/rinex.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rinex.c.obj -MF CMakeFiles\libGnss.dir\rinex.c.obj.d -o CMakeFiles\libGnss.dir\rinex.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object libGnss/CMakeFiles/libGnss.dir/rinex.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rinex.c.obj -MF CMakeFiles\libGnss.dir\rinex.c.obj.d -o CMakeFiles\libGnss.dir\rinex.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c
 
 libGnss/CMakeFiles/libGnss.dir/rinex.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rinex.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c > CMakeFiles\libGnss.dir\rinex.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c > CMakeFiles\libGnss.dir\rinex.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rinex.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rinex.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c -o CMakeFiles\libGnss.dir\rinex.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rinex.c -o CMakeFiles\libGnss.dir\rinex.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm.c
+libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm.c
 libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj -MF CMakeFiles\libGnss.dir\rtcm.c.obj.d -o CMakeFiles\libGnss.dir\rtcm.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj -MF CMakeFiles\libGnss.dir\rtcm.c.obj.d -o CMakeFiles\libGnss.dir\rtcm.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c
 
 libGnss/CMakeFiles/libGnss.dir/rtcm.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtcm.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c > CMakeFiles\libGnss.dir\rtcm.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c > CMakeFiles\libGnss.dir\rtcm.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtcm.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtcm.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c -o CMakeFiles\libGnss.dir\rtcm.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm.c -o CMakeFiles\libGnss.dir\rtcm.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm2.c
+libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm2.c
 libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj -MF CMakeFiles\libGnss.dir\rtcm2.c.obj.d -o CMakeFiles\libGnss.dir\rtcm2.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj -MF CMakeFiles\libGnss.dir\rtcm2.c.obj.d -o CMakeFiles\libGnss.dir\rtcm2.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c
 
 libGnss/CMakeFiles/libGnss.dir/rtcm2.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtcm2.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c > CMakeFiles\libGnss.dir\rtcm2.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c > CMakeFiles\libGnss.dir\rtcm2.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtcm2.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtcm2.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c -o CMakeFiles\libGnss.dir\rtcm2.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm2.c -o CMakeFiles\libGnss.dir\rtcm2.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3.c
+libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3.c
 libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj -MF CMakeFiles\libGnss.dir\rtcm3.c.obj.d -o CMakeFiles\libGnss.dir\rtcm3.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj -MF CMakeFiles\libGnss.dir\rtcm3.c.obj.d -o CMakeFiles\libGnss.dir\rtcm3.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtcm3.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c > CMakeFiles\libGnss.dir\rtcm3.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c > CMakeFiles\libGnss.dir\rtcm3.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtcm3.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c -o CMakeFiles\libGnss.dir\rtcm3.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3.c -o CMakeFiles\libGnss.dir\rtcm3.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3e.c
+libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3e.c
 libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj -MF CMakeFiles\libGnss.dir\rtcm3e.c.obj.d -o CMakeFiles\libGnss.dir\rtcm3e.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj -MF CMakeFiles\libGnss.dir\rtcm3e.c.obj.d -o CMakeFiles\libGnss.dir\rtcm3e.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtcm3e.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c > CMakeFiles\libGnss.dir\rtcm3e.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c > CMakeFiles\libGnss.dir\rtcm3e.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtcm3e.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c -o CMakeFiles\libGnss.dir\rtcm3e.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtcm3e.c -o CMakeFiles\libGnss.dir\rtcm3e.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkcmn.c
+libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkcmn.c
 libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj -MF CMakeFiles\libGnss.dir\rtkcmn.c.obj.d -o CMakeFiles\libGnss.dir\rtkcmn.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj -MF CMakeFiles\libGnss.dir\rtkcmn.c.obj.d -o CMakeFiles\libGnss.dir\rtkcmn.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c
 
 libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtkcmn.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c > CMakeFiles\libGnss.dir\rtkcmn.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c > CMakeFiles\libGnss.dir\rtkcmn.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtkcmn.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c -o CMakeFiles\libGnss.dir\rtkcmn.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkcmn.c -o CMakeFiles\libGnss.dir\rtkcmn.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkpos.c
+libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkpos.c
 libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj -MF CMakeFiles\libGnss.dir\rtkpos.c.obj.d -o CMakeFiles\libGnss.dir\rtkpos.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj -MF CMakeFiles\libGnss.dir\rtkpos.c.obj.d -o CMakeFiles\libGnss.dir\rtkpos.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c
 
 libGnss/CMakeFiles/libGnss.dir/rtkpos.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtkpos.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c > CMakeFiles\libGnss.dir\rtkpos.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c > CMakeFiles\libGnss.dir\rtkpos.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtkpos.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtkpos.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c -o CMakeFiles\libGnss.dir\rtkpos.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtkpos.c -o CMakeFiles\libGnss.dir\rtkpos.c.s
 
 libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtksvr.c
+libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtksvr.c
 libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj -MF CMakeFiles\libGnss.dir\rtksvr.c.obj.d -o CMakeFiles\libGnss.dir\rtksvr.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj -MF CMakeFiles\libGnss.dir\rtksvr.c.obj.d -o CMakeFiles\libGnss.dir\rtksvr.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c
 
 libGnss/CMakeFiles/libGnss.dir/rtksvr.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/rtksvr.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c > CMakeFiles\libGnss.dir\rtksvr.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c > CMakeFiles\libGnss.dir\rtksvr.c.i
 
 libGnss/CMakeFiles/libGnss.dir/rtksvr.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/rtksvr.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c -o CMakeFiles\libGnss.dir\rtksvr.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\rtksvr.c -o CMakeFiles\libGnss.dir\rtksvr.c.s
 
 libGnss/CMakeFiles/libGnss.dir/sbas.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/sbas.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/sbas.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/sbas.c
+libGnss/CMakeFiles/libGnss.dir/sbas.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/sbas.c
 libGnss/CMakeFiles/libGnss.dir/sbas.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object libGnss/CMakeFiles/libGnss.dir/sbas.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/sbas.c.obj -MF CMakeFiles\libGnss.dir\sbas.c.obj.d -o CMakeFiles\libGnss.dir\sbas.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object libGnss/CMakeFiles/libGnss.dir/sbas.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/sbas.c.obj -MF CMakeFiles\libGnss.dir\sbas.c.obj.d -o CMakeFiles\libGnss.dir\sbas.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c
 
 libGnss/CMakeFiles/libGnss.dir/sbas.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/sbas.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c > CMakeFiles\libGnss.dir\sbas.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c > CMakeFiles\libGnss.dir\sbas.c.i
 
 libGnss/CMakeFiles/libGnss.dir/sbas.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/sbas.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c -o CMakeFiles\libGnss.dir\sbas.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\sbas.c -o CMakeFiles\libGnss.dir\sbas.c.s
 
 libGnss/CMakeFiles/libGnss.dir/solution.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/solution.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/solution.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/solution.c
+libGnss/CMakeFiles/libGnss.dir/solution.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/solution.c
 libGnss/CMakeFiles/libGnss.dir/solution.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object libGnss/CMakeFiles/libGnss.dir/solution.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/solution.c.obj -MF CMakeFiles\libGnss.dir\solution.c.obj.d -o CMakeFiles\libGnss.dir\solution.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object libGnss/CMakeFiles/libGnss.dir/solution.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/solution.c.obj -MF CMakeFiles\libGnss.dir\solution.c.obj.d -o CMakeFiles\libGnss.dir\solution.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c
 
 libGnss/CMakeFiles/libGnss.dir/solution.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/solution.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c > CMakeFiles\libGnss.dir\solution.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c > CMakeFiles\libGnss.dir\solution.c.i
 
 libGnss/CMakeFiles/libGnss.dir/solution.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/solution.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c -o CMakeFiles\libGnss.dir\solution.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\solution.c -o CMakeFiles\libGnss.dir\solution.c.s
 
 libGnss/CMakeFiles/libGnss.dir/stream.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/stream.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/stream.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/stream.c
+libGnss/CMakeFiles/libGnss.dir/stream.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/stream.c
 libGnss/CMakeFiles/libGnss.dir/stream.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object libGnss/CMakeFiles/libGnss.dir/stream.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/stream.c.obj -MF CMakeFiles\libGnss.dir\stream.c.obj.d -o CMakeFiles\libGnss.dir\stream.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object libGnss/CMakeFiles/libGnss.dir/stream.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/stream.c.obj -MF CMakeFiles\libGnss.dir\stream.c.obj.d -o CMakeFiles\libGnss.dir\stream.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c
 
 libGnss/CMakeFiles/libGnss.dir/stream.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/stream.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c > CMakeFiles\libGnss.dir\stream.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c > CMakeFiles\libGnss.dir\stream.c.i
 
 libGnss/CMakeFiles/libGnss.dir/stream.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/stream.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c -o CMakeFiles\libGnss.dir\stream.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\stream.c -o CMakeFiles\libGnss.dir\stream.c.s
 
 libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/streamsvr.c
+libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/streamsvr.c
 libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj -MF CMakeFiles\libGnss.dir\streamsvr.c.obj.d -o CMakeFiles\libGnss.dir\streamsvr.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj -MF CMakeFiles\libGnss.dir\streamsvr.c.obj.d -o CMakeFiles\libGnss.dir\streamsvr.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c
 
 libGnss/CMakeFiles/libGnss.dir/streamsvr.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/streamsvr.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c > CMakeFiles\libGnss.dir\streamsvr.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c > CMakeFiles\libGnss.dir\streamsvr.c.i
 
 libGnss/CMakeFiles/libGnss.dir/streamsvr.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/streamsvr.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c -o CMakeFiles\libGnss.dir\streamsvr.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\streamsvr.c -o CMakeFiles\libGnss.dir\streamsvr.c.s
 
 libGnss/CMakeFiles/libGnss.dir/tides.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/tides.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/tides.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tides.c
+libGnss/CMakeFiles/libGnss.dir/tides.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tides.c
 libGnss/CMakeFiles/libGnss.dir/tides.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object libGnss/CMakeFiles/libGnss.dir/tides.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/tides.c.obj -MF CMakeFiles\libGnss.dir\tides.c.obj.d -o CMakeFiles\libGnss.dir\tides.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object libGnss/CMakeFiles/libGnss.dir/tides.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/tides.c.obj -MF CMakeFiles\libGnss.dir\tides.c.obj.d -o CMakeFiles\libGnss.dir\tides.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c
 
 libGnss/CMakeFiles/libGnss.dir/tides.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/tides.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c > CMakeFiles\libGnss.dir\tides.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c > CMakeFiles\libGnss.dir\tides.c.i
 
 libGnss/CMakeFiles/libGnss.dir/tides.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/tides.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c -o CMakeFiles\libGnss.dir\tides.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tides.c -o CMakeFiles\libGnss.dir\tides.c.s
 
 libGnss/CMakeFiles/libGnss.dir/tle.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/tle.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/tle.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tle.c
+libGnss/CMakeFiles/libGnss.dir/tle.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tle.c
 libGnss/CMakeFiles/libGnss.dir/tle.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object libGnss/CMakeFiles/libGnss.dir/tle.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/tle.c.obj -MF CMakeFiles\libGnss.dir\tle.c.obj.d -o CMakeFiles\libGnss.dir\tle.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object libGnss/CMakeFiles/libGnss.dir/tle.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/tle.c.obj -MF CMakeFiles\libGnss.dir\tle.c.obj.d -o CMakeFiles\libGnss.dir\tle.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c
 
 libGnss/CMakeFiles/libGnss.dir/tle.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/tle.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c > CMakeFiles\libGnss.dir\tle.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c > CMakeFiles\libGnss.dir\tle.c.i
 
 libGnss/CMakeFiles/libGnss.dir/tle.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/tle.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c -o CMakeFiles\libGnss.dir\tle.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\tle.c -o CMakeFiles\libGnss.dir\tle.c.s
 
 libGnss/CMakeFiles/libGnss.dir/trace.c.obj: libGnss/CMakeFiles/libGnss.dir/flags.make
 libGnss/CMakeFiles/libGnss.dir/trace.c.obj: libGnss/CMakeFiles/libGnss.dir/includes_C.rsp
-libGnss/CMakeFiles/libGnss.dir/trace.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/trace.c
+libGnss/CMakeFiles/libGnss.dir/trace.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/trace.c
 libGnss/CMakeFiles/libGnss.dir/trace.c.obj: libGnss/CMakeFiles/libGnss.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object libGnss/CMakeFiles/libGnss.dir/trace.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/trace.c.obj -MF CMakeFiles\libGnss.dir\trace.c.obj.d -o CMakeFiles\libGnss.dir\trace.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object libGnss/CMakeFiles/libGnss.dir/trace.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libGnss/CMakeFiles/libGnss.dir/trace.c.obj -MF CMakeFiles\libGnss.dir\trace.c.obj.d -o CMakeFiles\libGnss.dir\trace.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c
 
 libGnss/CMakeFiles/libGnss.dir/trace.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libGnss.dir/trace.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c > CMakeFiles\libGnss.dir\trace.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c > CMakeFiles\libGnss.dir\trace.c.i
 
 libGnss/CMakeFiles/libGnss.dir/trace.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libGnss.dir/trace.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c -o CMakeFiles\libGnss.dir\trace.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss\trace.c -o CMakeFiles\libGnss.dir\trace.c.s
 
 # Object files for target libGnss
 libGnss_OBJECTS = \
@@ -620,19 +620,19 @@ Lib/liblibGnssd.a: libGnss/CMakeFiles/libGnss.dir/tle.c.obj
 Lib/liblibGnssd.a: libGnss/CMakeFiles/libGnss.dir/trace.c.obj
 Lib/liblibGnssd.a: libGnss/CMakeFiles/libGnss.dir/build.make
 Lib/liblibGnssd.a: libGnss/CMakeFiles/libGnss.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Linking C static library ..\Lib\liblibGnssd.a"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -P CMakeFiles\libGnss.dir\cmake_clean_target.cmake
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\libGnss.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Linking C static library ..\Lib\liblibGnssd.a"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -P CMakeFiles\libGnss.dir\cmake_clean_target.cmake
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\libGnss.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libGnss/CMakeFiles/libGnss.dir/build: Lib/liblibGnssd.a
 .PHONY : libGnss/CMakeFiles/libGnss.dir/build
 
 libGnss/CMakeFiles/libGnss.dir/clean:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -P CMakeFiles\libGnss.dir\cmake_clean.cmake
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss && $(CMAKE_COMMAND) -P CMakeFiles\libGnss.dir\cmake_clean.cmake
 .PHONY : libGnss/CMakeFiles/libGnss.dir/clean
 
 libGnss/CMakeFiles/libGnss.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" F:\Navigation_Learn\GNSS\RTKLIB-b34k F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss F:\Navigation_Learn\GNSS\RTKLIB-b34k\build F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\libGnss.dir\DependInfo.cmake "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\Navigation_Learn\GNSS\RTKLIB-b34k E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibGnss E:\Navigation_Learn\GNSS\RTKLIB-b34k\build E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libGnss\CMakeFiles\libGnss.dir\DependInfo.cmake "--color=$(COLOR)"
 .PHONY : libGnss/CMakeFiles/libGnss.dir/depend
 

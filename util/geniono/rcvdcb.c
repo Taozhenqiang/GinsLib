@@ -111,7 +111,7 @@ static void ekf_pred(ekf_t *ekf, double *F, int ix, int nx)
     
     free(Q);
 }
-/* temporal update of states --------------------------------------------------*/
+/* time update of states --------------------------------------------------*/
 static void ud_state(const obsd_t *obs, int n, const nav_t *nav,
                      const double *pos, const double *azel, ekf_t *ekf,
                      sstat_t *sstat)

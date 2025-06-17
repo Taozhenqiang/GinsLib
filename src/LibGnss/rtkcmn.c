@@ -199,13 +199,30 @@ const double chisqr[100]={/* chi-sqr(n) (alpha=0.001) */
                            113,114,115,116,118,119,120,122,123,125,
                            126,127,128,129,131,132,133,134,135,137,
                            138,139,140,142,143,144,145,147,148,149};
+/* initialize debug time options */
 Debug_Glo_t Debug_Glo={
     {0},
     {0},
     0,
     0,
     {""},
-};                      
+};         
+
+sim_t sim={
+    0,       /* outage simulation flag (0:off, 1:on) */
+    2188,    /* GPS week */
+    30,      /* outage interval (s) = outage end time- outage start time */
+    {436955,
+     437360,
+     437600,
+     437770,
+     437920,
+     438150,
+     438360,
+     438560,
+     438760} /* outage start time series */
+};
+
 const prcopt_t prcopt_default={
     /* defaults processing options */
     GINS_OFF,
@@ -295,6 +312,7 @@ const solopt_t solopt_default={
     0,/* degf,outhead,outopt,outvel,datum,height,geoid */
     0,
     0,
+    0,
     {0},
     0,         /* solstatic,sstat,statopt,trace */
     {0.0,0.0},/* nmeaintv */
@@ -330,7 +348,7 @@ static char sysfre[MAXSYS][MAXFREQ][5]={
     {"G1","G2","G3"},                               /* GLONASS */
     {"E1","E5b","E5a","E6","E5ab"},                 /* Gelileo */
     {"B1I","B2I","B3I","B1C","B2a","B2b","B2ab"},   /* BDS */    
-    {"L1","L2","L5","LEX"}                          /* QZSS */
+    {"L1","L2","L5","L6"}                           /* QZSS */
 };
 static char *obscodes[]={
     /* observation code strings */
@@ -469,18 +487,73 @@ extern void add_fatal(fatalfunc_t *func) {
     fatalfunc=func;
 }
 /* pause of Debug -------------------------------------------------
-*Pause at a specified timestamp
+*pause at a specified timestamp
 *args  :gtime_t    t    I   obs time
 *         int        t1   I   target second
 *         int        t2   I   target week
 *return:none
  *-----------------------------------------------------------------------------*/
-extern void DebugTime(gtime_t t,int t1,int t2) {
+extern void DebugTime(rtk_t *rtk, gtime_t t, int t1, int t2) 
+{
     int week,flag;
     double sec;
     sec=time2gpst(t,&week);
-    if ((int) floor(sec+0.5)==t1&&week==t2) {
+
+    if (GINS_OFF==rtk->opt.GI_mode&&(int) floor(sec+0.5)==t1&&week==t2) {
         flag=1;
+    }
+    else if ((int) floor(sec+rtk->ins.interval/2.0)==t1&&week==t2) {
+        flag=1;
+    }
+}
+/* GNSS outage simulation ------------------------------------
+* determine whether the current epoch GNSS is outaged
+*args  :gtime_t    t    I   obs time
+*       sim_t      sim  I   outage options
+*return:outage flag (1:outage,0:not outage or off)
+*--------------------------------------------------------------*/
+extern int isoutage(rtk_t *rtk, gtime_t t, sim_t sim) 
+{
+    int week,i,time;
+    double sec;
+    sec=time2gpst(t,&week);
+
+    if (sim.sim_flag==0) return 0;
+    if (week!=sim.week) return 0;
+    if (GINS_OFF==rtk->opt.GI_mode) time=(int) floor(sec+0.5);
+    else time=(int) floor(sec+rtk->ins.interval/2.0);
+
+    for (i=0;i<MAXOUT;i++) {
+        if (sim.outage[i]&&time>=sim.outage[i]&&time<=(sim.outage[i]+sim.interval)) {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+/* initialize state and covariance -------------------------------------------*/
+extern void initx(rtk_t *rtk, double xi, double var, int i)
+{
+    int j;
+    rtk->x[i]=xi;
+    for (j=0;j<rtk->nx;j++) rtk->P[i+j*rtk->nx]=0.0;
+    for (j=0;j<rtk->nx;j++) rtk->P[j+i*rtk->nx]=0.0;
+    rtk->P[i+i*rtk->nx]=var;
+}
+/* reset cross-covariance -------------------------------------------
+*args  :  rtk_t    *rtk   I   rtk structure
+*         int        ns   I   number of ins state
+*         int        n    I   number of integrated system state
+*return:none
+*-----------------------------------------------------------------------------*/
+extern void init_crosscov(rtk_t *rtk, int ns, int n)
+{
+    int i,j;
+    for (i=0;i<n;i++) {
+        for (j=0;j<n;j++) {
+            if (i<ns&&j>=ns) rtk->P[j+i*n]=0.0;
+            if (i>=ns&&j<ns) rtk->P[j+i*n]=0.0; 
+        }
     }
 }
 /* satellite system+prn/slot number to satellite number ------------------------
@@ -738,7 +811,7 @@ extern int satexclude(int sat,double var,int svh,const prcopt_t *opt) {
             return 1;/* excluded satellite */
         if (opt->exsats[sat-1]==2)
             return 0;/* included satellite */
-        if (!(sys & opt->navsys))
+        if (!(sys&opt->navsys))
             return 1;/* unselected sat sys */
     }
     if (sys==SYS_QZS)
@@ -1299,6 +1372,31 @@ extern int decode_word(uint32_t word,uint8_t *data) {
         data[i]=(uint8_t)(word >> (22-i*8));
     return 1;
 }
+/* replace spaces with commas ---------------------------------------------------
+* replace consecutive spaces in a string with a single comma
+* args  :char*    str     I   original string
+* return:string pointer 
+ *-----------------------------------------------------------------------------*/
+extern void repspace(char *str)
+{
+    char *p=str,*q=str;
+    int in_space=0;
+
+    while (*p) {
+        if (isspace((unsigned char)*p)) {
+            if (!in_space) {
+                *q++=',';
+                in_space=1;
+            }
+        }
+        else {
+            *q++=*p;
+            in_space=0;
+        }
+        p++;
+    }
+    *q='\0';
+}
 /* new matrix ------------------------------------------------------------------
 *allocate memory of matrix
 *args  :int    n,m       I   number of rows and columns of matrix
@@ -1442,14 +1540,51 @@ extern void matcpy(double *A,const double *B,int n,int m) {
 }
 /* partial copy matrix -----------------------------------------------------------------
 *copy matrix
-*args  :double *A        O   destination matrix A (n x m)
+*args  :  double *A        O   destination matrix A (n x m)
+*         int    no,mo     I   number of rows and columns of matrix A
+*         int    rs_o,cs_o I   starting position of row index and column index of matrix A
+*         int    re_o,ce_o I   ending   position of row index and column index of matrix A
 *         double *B        I   source matrix B (n x m)
-*         int    n,m       I   number of rows and columns of matrix
+*         int    ni,mi     I   number of rows and columns of matrix B
+*         int    rs_i,cs_i I   starting position of row index and column index of matrix B
+*         int    re_i,ce_i I   ending   position of row index and column index of matrix B
 *return:none
  *-----------------------------------------------------------------------------*/
-extern void matcpy(double *A,const double *B,int n,int m) {
-    memcpy(A,B,sizeof(double)*n*m);
+extern void pmatcpy(double *A, int no, int mo, int rs_o, int cs_o, int re_o, int ce_o, const double *B, int ni, int mi, int rs_i, int cs_i, int re_i, int ce_i)
+{
+    int i,j,row,col;
+
+    if ((re_o-rs_o)!=(re_i-rs_i)||(ce_o-cs_o)!=(ce_i-cs_i)) fatalerr("pmatcpy: The input and output matrix sizes do not match!\n");
+
+    row=re_i-rs_i;
+    col=ce_i-cs_i;
+
+    if ((rs_o+row>no)||(cs_o+col)>mo) fatalerr("pmatcpy: The input matrix size parameter is incorrect!\n");
+    if ((rs_i+row>ni)||(cs_i+col)>mi) fatalerr("pmatcpy: The output matrix size parameter is incorrect!\n");
+
+    for(i=0;i<row;i++) {
+        for(j=0;j<col;j++) A[(cs_o+j)+(rs_o+i)*mo]=B[(cs_i+j)+(rs_i+i)*mi];
+    }
 }
+
+/* Matrix Transpose --------------------------
+*
+*args   : double *A    I   matrix (nxm)
+*         double *B    O   transpose of matrix A (mxn)
+*         int     m    I   row of matrix A
+*         int     n    I   column of matrix A
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void MatirxT(const double *A, double *B, int m, int n) 
+{
+    int i,j;
+    for (i=0;i<m;i++) {
+        for (j=0;j<n;j++) {
+            B[j*m+i]=A[i*n+j];
+        }
+    }
+}
+
 /* matrix routines -----------------------------------------------------------*/
 
 #ifdef LAPACK /* with LAPACK/BLAS or MKL */
@@ -1686,7 +1821,7 @@ extern int solve(const char *tr,const double *A,const double *Y,int n,
 
 /* least square estimation -----------------------------------------------------
 *least square estimation by solving normal equation (x=(A*A')^-1*A*y)
-*args  :double *A        I   transpose of (weighted) design matrix (n x m)
+*args  :double *A        I   transpose of (weighted) design matrix (m x n)
 *         double *y        I   (weighted) measurements (m x 1)
 *         int    n,m       I   number of parameters and measurements (n<=m)
 *         double *x        O   estimated parameters (n x 1)
@@ -1716,7 +1851,72 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
     }
     else {trace(7,"spp lsq error! measurement matrix rank deficiency.\n");}
         
-    free(Ay);;
+    free(Ay);
+    return info;
+}
+extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode) 
+{
+    double *AP,*Ay,*AQ,*D,*vx;
+    double dv,alpha,k0=1.0,k1=2.0;
+    int info,i,j,k,iter=(mode==Robust_OFF)?1:2;
+
+    if (m<n) {
+        trace(7,"spp lsq error! The number of observations is less than the number of parameters to be estimated.\n");
+        return -1;        
+    }
+
+    AP=mat(n,m); Ay=mat(n,1); AQ=mat(m,n); D=mat(m,m); vx=mat(m,1);
+
+    for (i=0;i<iter;i++) {
+
+        /* initialization */
+        matcpy(vx,y,m,1);
+        matcpy(D,P,m,m);            
+
+        /* measurement noise covariance matirx D */
+        if ((info=matinv(D,m))) {
+            trace(7,"spp lsq error! measurement matrix rank deficiency.\n");
+            break;
+        }
+
+        /* lsq*/
+        matmul("TN",n,m,m,A,P,AP,1.0,0.0);  /* AP=A'*P */
+        matmul("NN",n,m,n,AP,A,Q,1.0,0.0);  /* Q=A'*P*A */
+
+        if (!(info=matinv(Q,n))) {
+            matmul("NN",n,m,1,AP,y,Ay,1.0,0.0); /* Ay=A'*P*L */
+            matmul("NN",n,n,1,Q,Ay,x,1.0,0.0);  /* x=Q^-1*Ay */
+
+            if (mode==Robust_RES&&i<iter-1) {
+                matmul("NN",m,n,1,A,x,vx,-1.0,1.0); /* vx=z-A*x */          
+                matmul("NN",m,n,n,A,Q,AQ,1.0,0.0);  /* AQ=A*Q */
+                matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); /* D=R-A*Q*A' */
+
+                for (k=0;k<m;k++) for (j=0;j<m;j++) {
+                    if (k==j) {
+                        /* remove auxiliary quantities that prevent least squares rank deficiency*/
+                        if (fabs(y[k])<1e-4) break;
+                        if (D[k+j*m]<=0.0) continue;
+                        /* standardized residuals */
+                        dv=fabs(vx[k])/sqrt(D[k+j*m]);
+
+                        /* IGG3 robust algorithm */
+                        if (dv<=k0) alpha=1.0;
+                        else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
+                        else alpha=1E-4;
+
+                        P[k+j*m]*=alpha; 
+                    }
+                }       
+            }
+        }
+        else {
+            trace(7,"spp lsq error! measurement matrix rank deficiency.\n");
+        }        
+    }
+
+        
+    free(AP); free(Ay); free(AQ); free(D); free(vx);
     return info;
 }
 /* kalman filter ---------------------------------------------------------------
@@ -1738,22 +1938,103 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
  *-----------------------------------------------------------------------------*/
 extern int filter_(const double *x,const double *P,const double *H,
                    const double *v,const double *R,int n,int m,
-                   double *xp,double *Pp) {
-    double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
+                   double *xp, double *Pp, int mode) {
+    double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=mat(n,n),*I_=eye(n);
+    double *IP=mat(n,n),*KR=mat(n,m);
+    double *vk=mat(m,1),*Hk=mat(m,m),*R_=mat(m,m),*D=mat(n,n),*Pv=mat(m,m);
     int info;
-
+    int i,j,iter=(Robust_RES==mode)?2:1;
+    double dv,alpha,k0=1.0,k1=2.0;
+                    
     matcpy(Q,R,m,m);
-    matcpy(xp,x,n,1);
     matmul("NT",n,n,m,P,H,F,1.0,0.0); /* F=PH' */
     matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */
 
-    if (!(info=matinv(Q,m))) {
-        matmul("NN",n,m,m,F,Q,K,1.0,0.0);   /* K=P*H'*Q^-1 */
-        matmul("NN",n,m,1,K,v,xp,1.0,1.0);  /* xp=x+K*v */
-        matmul("NN",n,m,n,K,H,I,-1.0,1.0);
-        matmul("NN",n,n,n,I,P,Pp,1.0,0.0);  /* Pp=(I-K*H)*P */
+    for (i=0;i<iter;i++) {
+
+        matcpy(xp,x,n,1);
+        matcpy(I,I_,n,n);
+        matcpy(vk,v,m,1);
+        matcpy(R_,R,m,m);
+
+        if (Robust_INO==mode) {
+        
+            for (j=0;j<m;j++) {
+                /* standardized innovation */
+                dv=fabs(v[j])/sqrt(Q[j+j*m]);
+
+                /* trace(12,"dv(%d)=%.4f/%.4f %.4f\n",j,fabs(v[j]),sqrt(Q[j+j*m]),dv); */
+
+                /* IGG3 robust algorithm */
+                if (dv<=k0) alpha=1.0;
+                else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
+                else alpha=1E-4;
+
+                R_[j+j*m]=R[j+j*m]/alpha; 
+
+                matcpy(Q,R_,m,m);
+                matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */                
+            }
+        }
+
+        if (!(info=matinv(Q,m))) {
+            matmul("NN",n,m,m,F,Q,K,1.0,0.0);    /* K=P*H'*Q^-1 */
+            matmul("NN",n,m,1,K,v,xp,1.0,1.0);   /* xp=x+K*v */
+            matmul("NN",n,m,n,K,H,I,-1.0,1.0);
+            matmul("NN",n,n,n,I,P,Pp,1.0,0.0);  /* Pp=(I-K*H)*P_pre */
+
+            /* matmul("NN",n,n,n,I,P,IP,1.0,0.0); */   /* IP=(I-K*H)*P_pre */
+            /* matmul("NT",n,n,n,IP,I,Pp,1.0,0.0); */  /* Pp=(I-K*H)*P_pre*(I-K*H)' */
+            /* matmul("NN",n,m,m,K,R,KR,1.0,0.0); */   /* KR=K*R */
+            /* matmul("NT",n,m,n,KR,K,Pp,1.0,1.0); */  /* Pp=(I-K*H)*P_pre*(I-K*H)'+K*R*K' */
+
+            /* trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0);
+            trace(12,"Kk=\n"); tracemat(12,K,n,m,15,9,0);
+            trace(12,"Pp=\n"); tracemat(12,Pp,n,n,15,9,0); */            
+        }
+        
+        if (iter>1) {
+            /* compute the residual vector and its covariance matrix */
+            matmul("NN",m,n,m,H,K,Hk,1.0,0.0);   /* Hk=H*K */
+            matmul("NN",m,m,1,Hk,v,vk,-1.0,1.0); /* vk=(I-H*K)*v */
+            matmul("NN",m,m,m,R_,Q,D,1.0,0.0);   /* D=R_*Q^-1 */
+            matmul("NT",m,m,m,D,R_,Pv,1.0,0.0);  /* Pv=R_*Q^-1*R' */
+            /* for (j=0;j<m;j++) trace(12,"Pv(%d)=%.4f\n",j,Pv[j+j*m]); */
+
+            for (j=0;j<m;j++) {
+                /* standardized residuals */
+                if (Pv[j+j*m]<0) continue; /* avoid sqrt negative value */
+                dv=fabs(vk[j])/sqrt(Pv[j+j*m]);
+
+                trace(12,"dvk(%d)=%.4f/%.4f %.4f\n",j,fabs(vk[j]),sqrt(Pv[j+j*m]),dv);
+
+                /* IGG3 robust algorithm */
+                if (dv<=k0) alpha=1.0;
+                else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
+                else alpha=1E-4;
+
+                R_[j+j*m]=R[j+j*m]/alpha;                 
+            }
+            /* update the innovation vector covariance matrix */
+            matcpy(Q,R_,m,m);
+            matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */ 
+            trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4,0);
+        }
+        
     }
-    free(F);free(Q);free(K);free(I);
+
+    for (i=0;i<n;i++) {
+        for(j=0;j<n;j++) {
+            if ((i==j)&&Pp[i+j*n]<0.0) {
+                trace(7,"The updated error covariance is not positive definite!\n");
+                return -1;
+            }
+        }
+    }
+
+    free(F); free(Q); free(K); free(I); free(I_);
+    free(IP); free(KR);
+    free(vk); free(Hk); free(R_); free(D); free(Pv);
     return info;
 }
 extern int filter(double *x,double *P,const double *H,const double *v,
@@ -1778,7 +2059,49 @@ extern int filter(double *x,double *P,const double *H,const double *v,
             H_[i+j*k]=H[ix[i]+j*n];
     }
     /* do kalman filter state update on compressed arrays */
-    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
+    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_,Robust_OFF);
+    /* copy values from compressed arrays back to full arrays */
+    for (i=0;i<k;i++) {
+        x[ix[i]]=xp_[i];
+        for (j=0;j<k;j++)
+            P[ix[i]+ix[j]*n]=Pp_[i+j*k];
+    }
+    free(ix); free(x_); free(xp_); free(P_); free(Pp_); free(H_);
+    return info;
+}
+extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const double *v, const double *R, int n, int m, int flag, int mode) 
+{
+    double *x_,*xp_,*P_,*Pp_,*H_;
+    int i,j,k,info,*ix,idx=0;
+
+    /* create list of non-zero states */
+    ix=imat(n,1);
+    if (KF_GNSS==flag) idx=0;
+    else idx=rtk->ins.nx;
+    for (i=k=0;i<idx;i++) ix[k++]=i;
+
+    for (i=idx;i<n;i++) {
+        if (x[i]!=0.0&&P[i+i*n]>0.0)
+            ix[k++]=i;        
+    }
+
+    x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
+    /* compress array by removing zero elements to save computation time */
+    for (i=0;i<k;i++) {
+        x_[i]=x[ix[i]];
+        for (j=0;j<k;j++)
+            P_[i+j*k]=P[ix[i]+ix[j]*n];
+        for (j=0;j<m;j++)
+            H_[i+j*k]=H[ix[i]+j*n];
+    }
+
+    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4,0);
+    trace(12,"H=\n"); tracemat(12,H_,m,k,9,4,0);
+    trace(12,"P=\n"); tracemat(12,P_,k,k,15,9,0);
+    trace(12,"R=\n"); tracemat(12,R,m,m,9,4,0); */
+
+    /* do kalman filter state update on compressed arrays */
+    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_,mode);
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) {
         x[ix[i]]=xp_[i];
@@ -1920,7 +2243,7 @@ extern gtime_t epoch2time(const double *ep) {
         return time;
 
     /* leap year if year%4==0 in 1901-2099 */
-    days=(year-1970)*365+(year-1969)/4+doy[mon-1]+day-2+(year % 4==0&&mon >=3?1:0);
+    days=(year-1970)*365+(year-1969)/4+doy[mon-1]+day-2+(year%4==0&&mon>=3?1:0);
     sec=(int) floor(ep[5]);
     time.time=(time_t) days*86400+(int) ep[3]*3600+(int) ep[4]*60+sec;
     time.sec=ep[5]-sec;
@@ -2949,19 +3272,19 @@ static int readantex(const char *file, spcvs_t *pcvs, rpcvs_t *pcvr) {
         if (!state)
             continue;
 
-        if (strstr(buff+60,"TYPE/SERIAL NO")) {
+        if (strstr(buff+60,"TYPE / SERIAL NO")) {
             strncpy(type,buff,20);    type[20]='\0';
             strncpy(code,buff+20,20); code[20]='\0';
             if (!strncmp(code+3,"        ",8)&&strncmp(code,temp,3)) {
                 spcv=spcv0;flag1=1; /* satellite antenna flag */                
                 spcv.sat=satid2no(code);
                 strncpy(spcv.type,type,20); spcv.type[20]='\0';
-                strncpy(spcv.code,code,20); spcv.code[20]='\0';
+                strncpy(spcv.code,code,3); spcv.code[4]='\0';
             }
             else {
                 rpcv=rpcv0;flag2=1; /* receiver antenna flag */
                 strncpy(rpcv.type,type,20); rpcv.type[20]='\0';
-                strncpy(rpcv.code,code,20); rpcv.code[20]='\0';
+                strncpy(rpcv.code,code,3); rpcv.code[4]='\0';
             }
         } 	
         else if (strstr(buff+60,"DAZI")) {
@@ -2972,7 +3295,7 @@ static int readantex(const char *file, spcvs_t *pcvs, rpcvs_t *pcvr) {
                 rpcv.dazi=str2num(buff,2,6); continue;
             }
 		} 
-        else if (strstr(buff+60,"ZEN1/ZEN2/DZEN")) {
+        else if (strstr(buff+60,"ZEN1 / ZEN2 / DZEN")) {
             if (1==flag1) {
                 spcv.zen1=str2num(buff,2,6); 
                 spcv.zen2=str2num(buff,8,6);
@@ -3016,17 +3339,11 @@ static int readantex(const char *file, spcvs_t *pcvs, rpcvs_t *pcvr) {
             } 
             else if (csys=='R') {
                 sys=1;
-                freq=f;                
+                if (f==1)
+                    freq=1;         /*R01->G1*/
+                else if (f==2)
+                    freq=2;         /*R02->G2*/    
             }
-            else if (csys=='C') {
-                sys=3;
-                if (f==2)
-                    freq=1;         /*C02->B1I*/
-                else if (f==7)
-                    freq=2;         /*C07->B2I*/
-                else if (f==6)
-                    freq=3;         /*C06->B3I*/
-            } 
             else if (csys=='E') {
                 sys=2;
                 if (f==1)
@@ -3039,22 +3356,40 @@ static int readantex(const char *file, spcvs_t *pcvs, rpcvs_t *pcvr) {
                     freq=4;         /*E06->E6*/
                 else if (f==8)
                     freq=5;         /*E08->E5ab*/
+            }             
+            else if (csys=='C') {
+                sys=3;
+                if (f==2)
+                    freq=1;         /*C02->B1I*/
+                else if (f==7)
+                    freq=2;         /*C07->B2I*/
+                else if (f==6)
+                    freq=3;         /*C06->B3I*/
+                else if (f==1)
+                    freq=4;         /*C01->B1C*/
+                else if (f==5)
+                    freq=5;         /*C05->B2a*/                                        
             } 
             else if (csys=='J') {
-                sys=5;
-                if (f<5)
-                    freq=f;
+                sys=4;
+                if (f==1)
+                    freq=1;         /*J01->L1*/
+                else if (f==2)
+                    freq=2;         /*J02->L2*/
                 else if (f==5)
-                    freq=3;
-                else
-                    freq=0;
-            } else
-                freq=0;
+                    freq=3;         /*J05->L5*/
+                else if (f==6)
+                    freq=4;         /*J06->L6*/
+            } else if (csys=='I') {
+                sys=5;
+                if (f=5)
+                    freq=3;         /*I05->L5*/
+            }          
         } 
         else if (strstr(buff+60,"END OF FREQUENCY")) {
             freq=0;
         } 
-        else if (strstr(buff+60,"NORTH/EAST/UP")) {
+        else if (strstr(buff+60,"NORTH / EAST / UP")) {
             if (decodef(buff,3,neu)<3) continue;
             if (freq<1) continue;
             if (1==flag1) {
@@ -3133,11 +3468,17 @@ extern int readpcv(const char *file,spcvs_t *pcvs,rpcvs_t *pcvr) {
     } else {
         stat=readngspcv(file,pcvs);
     }
+    /* file read failed */
+    if (0==pcvs->n) {
+        showerr("antenna file open error: %s!",file); 
+        trace(7,"antenna file open error: %s\n!",file);
+        return 0;
+    }
     for (i=0;i<pcvs->n;i++) {
         spcv=pcvs->pcv+i;
-        trace(9,"sat=%2d type=%20s code=%s off=%8.4f %8.4f %8.4f  %8.4f %8.4f %8.4f\n",
+        trace(9,"sat=%3d type=%20s code=%4s    L1_off=%8.4f %8.4f %8.4f    L2_off=%8.4f %8.4f %8.4f\n",
               spcv->sat,spcv->type,spcv->code,spcv->off[0][0],spcv->off[0][1],
-              spcv->off[0][2],spcv->off[1][0],spcv->off[1][1],spcv->off[1][2]);
+              spcv->off[0][2],spcv->off[1][0],spcv->off[1][1],spcv->off[1][2]);/*trace 9*/
     }
     return stat;
 }
@@ -3418,7 +3759,7 @@ extern int geterp(const erp_t *erp,gtime_t time,double *erpv) {
 /* compare ephemeris ---------------------------------------------------------*/
 static int cmpeph(const void *p1,const void *p2) {
     eph_t *q1=(eph_t *) p1,*q2=(eph_t *) p2;
-    return q1->ttr.time !=q2->ttr.time?(int) (q1->ttr.time-q2->ttr.time):(q1->toe.time !=q2->toe.time?(int) (q1->toe.time-q2->toe.time):q1->sat-q2->sat);
+    return q1->ttr.time!=q2->ttr.time?(int)(q1->ttr.time-q2->ttr.time):(q1->toe.time!=q2->toe.time?(int)(q1->toe.time-q2->toe.time):q1->sat-q2->sat);
 }
 /* sort and unique ephemeris -------------------------------------------------*/
 static void uniqeph(nav_t *nav) {
@@ -3433,14 +3774,13 @@ static void uniqeph(nav_t *nav) {
     qsort(nav->eph,nav->n,sizeof(eph_t),cmpeph);
 
     for (i=1,j=0;i<nav->n;i++) {
-        if (nav->eph[i].sat !=nav->eph[j].sat ||
-            nav->eph[i].iode !=nav->eph[j].iode) {
+        if (nav->eph[i].sat!=nav->eph[j].sat||nav->eph[i].iode!=nav->eph[j].iode) {
             nav->eph[++j]=nav->eph[i];
         }
     }
     nav->n=j+1;
 
-    if (!(nav_eph=(eph_t *) realloc(nav->eph,sizeof(eph_t)*nav->n))) {
+    if (!(nav_eph=(eph_t *)realloc(nav->eph,sizeof(eph_t)*nav->n))) {
         trace(1,"uniqeph malloc error n=%d\n",nav->n);
         free(nav->eph);
         nav->eph=NULL;
@@ -4175,9 +4515,9 @@ extern void dops(int ns,const double *azel,double elmin,double *dop) {
             continue;
         cosel=cos(azel[1+i*2]);
         sinel=sin(azel[1+i*2]);
-        H[4*n]=cosel*sin(azel[i*2]);
-        H[1+4*n]=cosel*cos(azel[i*2]);
-        H[2+4*n]=sinel;
+        H[4*n]=-cosel*sin(azel[i*2]);
+        H[1+4*n]=-cosel*cos(azel[i*2]);
+        H[2+4*n]=-sinel;
         H[3+4*n++]=1.0;
     }
     if (n<4)

@@ -1,4 +1,4 @@
-# Install script for directory: F:/Navigation_Learn/GNSS/RTKLIB-b34k
+# Install script for directory: E:/Navigation_Learn/GNSS/RTKLIB-b34k
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,15 +34,15 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "D:/TDM-GCC-64/bin/objdump.exe")
+  set(CMAKE_OBJDUMP "D:/mingw64/bin/objdump.exe")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/cmake_install.cmake")
-  include("F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns/cmake_install.cmake")
-  include("F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion/cmake_install.cmake")
-  include("F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB/cmake_install.cmake")
+  include("E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss/cmake_install.cmake")
+  include("E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns/cmake_install.cmake")
+  include("E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion/cmake_install.cmake")
+  include("E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB/cmake_install.cmake")
 
 endif()
 
@@ -61,6 +61,6 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-  file(WRITE "F:/Navigation_Learn/GNSS/RTKLIB-b34k/build/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "E:/Navigation_Learn/GNSS/RTKLIB-b34k/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

@@ -107,7 +107,7 @@
 
 /* ephemeris selections ------------------------------------------------------*/
 static int eph_sel[]={ /* GPS,GLO,GAL,QZS,BDS,IRN,SBS */
-    0,0,0,0,0,0,0
+    0,0,2,0,0,0,0
 };
 
 /* variance by ura ephemeris -------------------------------------------------*/
@@ -239,6 +239,7 @@ extern void eph2pos(gtime_t time, const eph_t *eph, double *rs, double *dts,
     }
     M=eph->M0+(sqrt(mu/(eph->A*eph->A*eph->A))+eph->deln)*tk;
 
+    /* solve kepler equation by newton's method */
     for (n=0,E=M,Ek=0.0;fabs(E-Ek)>RTOL_KEPLER&&n<MAX_ITER_KEPLER;n++) {
         Ek=E; E-=(E-eph->e*sin(E)-M)/(1.0-eph->e*cos(E));
     }
@@ -695,7 +696,7 @@ static int satpos_ssr(gtime_t time, gtime_t teph, int sat, const nav_t *nav,
 
     /* satellite antenna offset correction */
     if (opt) {
-        satantoff(time,rs,sat,nav,dant);
+        satantoff(time,rs,0,sat,nav,dant);
     }
     for (i=0;i<3;i++) {
         rs[i]+=-(er[i]*deph[0]+ea[i]*deph[1]+ec[i]*deph[2])+dant[i];

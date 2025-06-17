@@ -43,19 +43,19 @@ cmake_force:
 SHELL = cmd.exe
 
 # The CMake executable.
-CMAKE_COMMAND = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe"
+CMAKE_COMMAND = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe
 
 # The command to remove a file.
-RM = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe" -E rm -f
+RM = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k
+CMAKE_SOURCE_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k\build
+CMAKE_BINARY_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k\build
 
 # Include any dependencies generated for this target.
 include libIns/CMakeFiles/libIns.dir/depend.make
@@ -70,18 +70,18 @@ include libIns/CMakeFiles/libIns.dir/flags.make
 
 libIns/CMakeFiles/libIns.dir/ins.c.obj: libIns/CMakeFiles/libIns.dir/flags.make
 libIns/CMakeFiles/libIns.dir/ins.c.obj: libIns/CMakeFiles/libIns.dir/includes_C.rsp
-libIns/CMakeFiles/libIns.dir/ins.c.obj: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c
+libIns/CMakeFiles/libIns.dir/ins.c.obj: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c
 libIns/CMakeFiles/libIns.dir/ins.c.obj: libIns/CMakeFiles/libIns.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object libIns/CMakeFiles/libIns.dir/ins.c.obj"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libIns/CMakeFiles/libIns.dir/ins.c.obj -MF CMakeFiles\libIns.dir\ins.c.obj.d -o CMakeFiles\libIns.dir\ins.c.obj -c F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object libIns/CMakeFiles/libIns.dir/ins.c.obj"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT libIns/CMakeFiles/libIns.dir/ins.c.obj -MF CMakeFiles\libIns.dir\ins.c.obj.d -o CMakeFiles\libIns.dir\ins.c.obj -c E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c
 
 libIns/CMakeFiles/libIns.dir/ins.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/libIns.dir/ins.c.i"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c > CMakeFiles\libIns.dir\ins.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c > CMakeFiles\libIns.dir\ins.c.i
 
 libIns/CMakeFiles/libIns.dir/ins.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/libIns.dir/ins.c.s"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\TDM-GCC-64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c -o CMakeFiles\libIns.dir\ins.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && D:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns\ins.c -o CMakeFiles\libIns.dir\ins.c.s
 
 # Object files for target libIns
 libIns_OBJECTS = \
@@ -93,19 +93,19 @@ libIns_EXTERNAL_OBJECTS =
 Lib/liblibInsd.a: libIns/CMakeFiles/libIns.dir/ins.c.obj
 Lib/liblibInsd.a: libIns/CMakeFiles/libIns.dir/build.make
 Lib/liblibInsd.a: libIns/CMakeFiles/libIns.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C static library ..\Lib\liblibInsd.a"
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -P CMakeFiles\libIns.dir\cmake_clean_target.cmake
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\libIns.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C static library ..\Lib\liblibInsd.a"
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -P CMakeFiles\libIns.dir\cmake_clean_target.cmake
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\libIns.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libIns/CMakeFiles/libIns.dir/build: Lib/liblibInsd.a
 .PHONY : libIns/CMakeFiles/libIns.dir/build
 
 libIns/CMakeFiles/libIns.dir/clean:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -P CMakeFiles\libIns.dir\cmake_clean.cmake
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns && $(CMAKE_COMMAND) -P CMakeFiles\libIns.dir\cmake_clean.cmake
 .PHONY : libIns/CMakeFiles/libIns.dir/clean
 
 libIns/CMakeFiles/libIns.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" F:\Navigation_Learn\GNSS\RTKLIB-b34k F:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns F:\Navigation_Learn\GNSS\RTKLIB-b34k\build F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns\CMakeFiles\libIns.dir\DependInfo.cmake "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\Navigation_Learn\GNSS\RTKLIB-b34k E:\Navigation_Learn\GNSS\RTKLIB-b34k\src\LibIns E:\Navigation_Learn\GNSS\RTKLIB-b34k\build E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\libIns\CMakeFiles\libIns.dir\DependInfo.cmake "--color=$(COLOR)"
 .PHONY : libIns/CMakeFiles/libIns.dir/depend
 

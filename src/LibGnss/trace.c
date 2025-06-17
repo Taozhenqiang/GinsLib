@@ -50,7 +50,10 @@ extern void traceopen(const char *file)
     char path[1024];
 
     reppath(file,path,time,"","");
-    if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
+    if (!*path||!(fp_trace=fopen(path,"w"))) {
+        showerr("open trace file error! %s",path);
+        fp_trace=stderr;
+    }
     strcpy(file_trace,file);
     tick_trace=tickget();
     time_trace=time;

@@ -11,45 +11,22 @@
             "program": "${workspaceFolder}\\build\\Bin\\rnx2rtkp.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                "ins.conf",
+                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
+                // "KVH1750_Vehicle_open_20211217-nsh.conf",
+                // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
+                // "IGM-A1_Vehicle_open_20201210.conf",
+                // "KVH1750_Vehicle_open_20201210.conf",
+                "EG320N_Vehicle_open_20250419-CHC.conf",
 
                 //"E:\\GAMPII-GOOD\\dataset_Win\\obs\\2021\\351\\MGEX\\daily\\kir83510.21o",
                 //"E:\\GAMPII-GOOD\\dataset_Win\\obs\\2021\\351\\MGEX\\daily\\kiru3510.21o",
-                "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\IGM-A1_rover.21o",
+                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\IGM-A1_rover.21o",
                 // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\IGM-A1_base.21o",
-                "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\brdm3510.21p",
+                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\brdm3510.21p",
                 // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\wum21885.sp3",
                 // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\wum21885.clk",
                 // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\CAS0MGXRAP_20213510000_01D_01D_DCB.BSX",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\CAS0MGXRAP_20213510000_01D_01D_OSB.BIA",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\P1C12112.DCB",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\P2C22112.DCB",      
-                
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\cut02740.21o",
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\cut32740.21o",
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\brdm2740.21p",
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\kir80010.23o",
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\kiru0010.23o",
-                // "E:\\Navigation_Learn\\GNSS\\tight coupling\\brdm0010.23p",    
-
-
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\K70\\k701212.24o",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\P40\\p401212.24o",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\ublox\\ublox1212.24o",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\rover\\Rinex\\chc1212.24o",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\brdm3470.24p",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\wum23444.sp3",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\wum23444.clk",
-                // "E:\\Navigation_Learn\\user data\\20241212\\data\\CAS0MGXRAP_20243470000_01D_01D_DCB.BSX",
-                
-                // "E:\\Navigation_Learn\\user data\\20241208\\k70\\k701208.24o",
-                // "E:\\Navigation_Learn\\user data\\20241208\\um980\\um9801208.24o",
-                // "E:\\Navigation_Learn\\user data\\20241208\\ublox\\ublox1208.24o",
-                // "E:\\Navigation_Learn\\user data\\20241208\\rover\\Rinex\\chc1208.24o",
-                // "E:\\Navigation_Learn\\user data\\20241208\\brdm3430.24p",
-                // "E:\\Navigation_Learn\\user data\\20241208\\wum23440.sp3",
-                // "E:\\Navigation_Learn\\user data\\20241208\\wum23440.clk",
-                // "E:\\Navigation_Learn\\user data\\20241208\\CAS0MGXRAP_20243430000_01D_01D_DCB.BSX",
+                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\CAS0MGXRAP_20213510000_01D_01D_OSB.BIA",   
 
                 // "E:\\Navigation_Learn\\user data\\20241206\\k70\\k701206.24o",
                 // "E:\\Navigation_Learn\\user data\\20241206\\p40\\p401206.24o",
@@ -64,7 +41,7 @@
                 "-x",
                 "4240",
             ],
-            "cwd": "${workspaceFolder}\\conf" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\EG320N_Vehicle_open_20250419" ,//配置文件
             
         },        
         {

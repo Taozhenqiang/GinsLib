@@ -1194,14 +1194,12 @@ static void setopt_apppos(strfile_t *str, rnxopt_t *opt)
 {
     prcopt_t prcopt=prcopt_default;
     sol_t sol={{0}};
-    char msg[128];
     
     prcopt.navsys=opt->navsys;
     
     /* point positioning with last obs data */
-    if (!pntpos(str->obs->data,str->obs->n,str->nav,&prcopt,&sol,NULL,NULL,
-                msg)) {
-        trace(2,"point position error (%s)\n",msg);
+    if (!pntpos(NULL,str->obs->data,str->obs->n,str->nav,&prcopt,&sol,NULL,NULL)) {
+        trace(2,"point position error (%s)\n");
         return;
     }
     matcpy(opt->apppos,sol.rr,3,1);

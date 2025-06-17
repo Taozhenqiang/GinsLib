@@ -47,19 +47,19 @@ cmake_force:
 SHELL = cmd.exe
 
 # The CMake executable.
-CMAKE_COMMAND = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe"
+CMAKE_COMMAND = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe
 
 # The command to remove a file.
-RM = "D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe" -E rm -f
+RM = D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k
+CMAKE_SOURCE_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k\build
+CMAKE_BINARY_DIR = E:\Navigation_Learn\GNSS\RTKLIB-b34k\build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = F:\Navigation_Learn\GNSS\RTKLIB-b34k\build
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake cache editor..."
-	"D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake-gui.exe" -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	D:\cmake-3.30.3-windows-x86_64\bin\cmake-gui.exe -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -77,7 +77,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake to regenerate build system..."
-	"D:\Program Files (x86)\cmake-3.30.3-windows-x86_64\bin\cmake.exe" --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -86,14 +86,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -E cmake_progress_start F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB\\CMakeFiles\progress.marks
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/all
-	$(CMAKE_COMMAND) -E cmake_progress_start F:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles 0
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -E cmake_progress_start E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\iRTKLIB\\CMakeFiles\progress.marks
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/all
+	$(CMAKE_COMMAND) -E cmake_progress_start E:\Navigation_Learn\GNSS\RTKLIB-b34k\build\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/clean
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/clean
 .PHONY : clean
 
 # The main clean target
@@ -102,22 +102,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/preinstall
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/preinstall
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rule:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rule
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 iRTKLIB/CMakeFiles/rnx2rtkp.dir/rule
 .PHONY : iRTKLIB/CMakeFiles/rnx2rtkp.dir/rule
 
 # Convenience name for target.
@@ -126,7 +126,7 @@ rnx2rtkp: iRTKLIB/CMakeFiles/rnx2rtkp.dir/rule
 
 # fast build rule for target.
 rnx2rtkp/fast:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/build
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/build
 .PHONY : rnx2rtkp/fast
 
 rnx2rtkp.obj: rnx2rtkp.c.obj
@@ -134,7 +134,7 @@ rnx2rtkp.obj: rnx2rtkp.c.obj
 
 # target to build an object file
 rnx2rtkp.c.obj:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.obj
 .PHONY : rnx2rtkp.c.obj
 
 rnx2rtkp.i: rnx2rtkp.c.i
@@ -142,7 +142,7 @@ rnx2rtkp.i: rnx2rtkp.c.i
 
 # target to preprocess a source file
 rnx2rtkp.c.i:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.i
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.i
 .PHONY : rnx2rtkp.c.i
 
 rnx2rtkp.s: rnx2rtkp.c.s
@@ -150,7 +150,7 @@ rnx2rtkp.s: rnx2rtkp.c.s
 
 # target to generate assembly for a file
 rnx2rtkp.c.s:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.s
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(MAKE) $(MAKESILENT) -f iRTKLIB\CMakeFiles\rnx2rtkp.dir\build.make iRTKLIB/CMakeFiles/rnx2rtkp.dir/rnx2rtkp.c.s
 .PHONY : rnx2rtkp.c.s
 
 # Help Target
@@ -176,6 +176,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d F:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d E:\Navigation_Learn\GNSS\RTKLIB-b34k\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -75,15 +75,30 @@ static void init_bias_ix(void) {
         
     /*OSB*/
     /* GPS */
+    /* satellite signals with accurately DCB corrections based on .BSX file */
     code_Obias_ix[0][CODE_L1C]=0;
     code_Obias_ix[0][CODE_L1W]=1;
     code_Obias_ix[0][CODE_L2W]=2;
     code_Obias_ix[0][CODE_L2L]=3;
     code_Obias_ix[0][CODE_L2S]=4;
     code_Obias_ix[0][CODE_L2X]=5;
-    code_Obias_ix[0][CODE_L5Q]=6;
-    code_Obias_ix[0][CODE_L5X]=7;
-    code_Obias_ix[0][CODE_L2C]=8;
+    code_Obias_ix[0][CODE_L2C]=6;
+    code_Obias_ix[0][CODE_L5Q]=7;
+    code_Obias_ix[0][CODE_L5X]=8;
+
+    /* satellite signals with approximately DCB corrections based on .BSX file */
+    code_Obias_ix[0][CODE_L1S]=1;
+    code_Obias_ix[0][CODE_L1L]=1;
+    code_Obias_ix[0][CODE_L1X]=1;
+    code_Obias_ix[0][CODE_L1P]=1;
+    code_Obias_ix[0][CODE_L1Y]=1;
+    code_Obias_ix[0][CODE_L1M]=1;
+
+    code_Obias_ix[0][CODE_L2D]=2;
+    code_Obias_ix[0][CODE_L2P]=2;
+    code_Obias_ix[0][CODE_L2Y]=2;
+    code_Obias_ix[0][CODE_L2M]=2;
+    code_Obias_ix[0][CODE_L5I]=6;
 
     /* GLONASS */
     code_Obias_ix[1][CODE_L1C]=0;
@@ -92,6 +107,7 @@ static void init_bias_ix(void) {
     code_Obias_ix[1][CODE_L2P]=3;
 
     /* Galileo */
+    /* satellite signals with accurately DCB corrections based on .BSX file */
     code_Obias_ix[2][CODE_L1C]=0;
     code_Obias_ix[2][CODE_L1X]=1;
     code_Obias_ix[2][CODE_L5Q]=2;
@@ -102,20 +118,46 @@ static void init_bias_ix(void) {
     code_Obias_ix[2][CODE_L8Q]=7;   
     code_Obias_ix[2][CODE_L8X]=8;
 
+    /* satellite signals with approximately DCB corrections based on .BSX file */
+    code_Obias_ix[2][CODE_L1A]=1;
+    code_Obias_ix[2][CODE_L1B]=1;
+    code_Obias_ix[2][CODE_L1Z]=1;
+    code_Obias_ix[2][CODE_L5I]=3;
+    code_Obias_ix[2][CODE_L7I]=6;
+    code_Obias_ix[2][CODE_L8I]=8;
+    code_Obias_ix[2][CODE_L6A]=4;
+    code_Obias_ix[2][CODE_L6B]=4;
+    code_Obias_ix[2][CODE_L6X]=4;
+    code_Obias_ix[2][CODE_L6Z]=4;
+
     /* Beidou */
+    /* satellite signals with accurately DCB corrections based on .BSX file */
     code_Obias_ix[3][CODE_L2I]=0;
     code_Obias_ix[3][CODE_L6I]=1;
     code_Obias_ix[3][CODE_L7I]=2;
-    code_Obias_ix[3][CODE_L1P]=3;
-    code_Obias_ix[3][CODE_L1X]=4;
-    code_Obias_ix[3][CODE_L5P]=5;
-    code_Obias_ix[3][CODE_L5X]=6;
-    code_Obias_ix[3][CODE_L7Z]=7;
-    code_Obias_ix[3][CODE_L8X]=8;
-    code_Obias_ix[3][CODE_L1D]=9;
-    code_Obias_ix[3][CODE_L5D]=10;
+    code_Obias_ix[3][CODE_L1D]=3;
+    code_Obias_ix[3][CODE_L1P]=4;
+    code_Obias_ix[3][CODE_L1X]=5;
+    code_Obias_ix[3][CODE_L5D]=6;
+    code_Obias_ix[3][CODE_L5P]=7;
+    code_Obias_ix[3][CODE_L5X]=8;
+    code_Obias_ix[3][CODE_L7Z]=9;
+    code_Obias_ix[3][CODE_L8X]=10;
+
+    /* satellite signals with approximately DCB corrections based on .BSX file */
+    code_Obias_ix[3][CODE_L2Q]=0;
+    code_Obias_ix[3][CODE_L2X]=0;
+    code_Obias_ix[3][CODE_L6Q]=1;
+    code_Obias_ix[3][CODE_L6X]=1;
+    code_Obias_ix[3][CODE_L7Q]=2;
+    code_Obias_ix[3][CODE_L7X]=2;
+    code_Obias_ix[3][CODE_L7D]=7;
+    code_Obias_ix[3][CODE_L7P]=7;
+    code_Obias_ix[3][CODE_L8D]=8;
+    code_Obias_ix[3][CODE_L8P]=8;
 
     /* QZSS */
+    /* satellite signals with accurately DCB corrections based on .BSX file */
     code_Obias_ix[4][CODE_L1C]=0;
     code_Obias_ix[4][CODE_L1X]=1;
     code_Obias_ix[4][CODE_L2L]=2;
@@ -581,9 +623,9 @@ static int readbiaf(const prcopt_t *prcopt, const char *file, nav_t *nav)
                 nav->obias[i-1][3]=(-alpha*code_Dbias[i][8]-code_Dbias[i][3]);  /* C2L -alpha*(C1W-C2W)+C2L-C2W */
                 nav->obias[i-1][4]=(-alpha*code_Dbias[i][8]-code_Dbias[i][2]);  /* C2S -alpha*(C1W-C2W)+C2S-C2W */
                 nav->obias[i-1][5]=(-alpha*code_Dbias[i][8]-code_Dbias[i][4]);  /* C2X -alpha*(C1W-C2W)+C2X-C2W */
-                nav->obias[i-1][6]=-(alpha*(code_Dbias[i][6]-code_Dbias[i][0])+beta*(code_Dbias[i][6]-code_Dbias[i][5])); /* C5Q -(alpha*(C1W-C5Q)+beta*(C2W-C5Q)) */
-                nav->obias[i-1][7]=-(alpha*(code_Dbias[i][7]-code_Dbias[i][0])+beta*(code_Dbias[i][7]-code_Dbias[i][5])); /* C5X -(alpha*(C1W-C5X)+beta*(C2W-C5X)) */
-                nav->obias[i-1][8]=(-alpha*code_Dbias[i][8]+code_Dbias[i][1]);  /* C2C -alpha*(C1W-C2W)+C2C-C2W */
+                nav->obias[i-1][6]=(-alpha*code_Dbias[i][8]+code_Dbias[i][1]);  /* C2C -alpha*(C1W-C2W)+C2C-C2W */
+                nav->obias[i-1][7]=-(alpha*(code_Dbias[i][6]-code_Dbias[i][0])+beta*(code_Dbias[i][6]-code_Dbias[i][5])); /* C5Q -(alpha*(C1W-C5Q)+beta*(C2W-C5Q)) */
+                nav->obias[i-1][8]=-(alpha*(code_Dbias[i][7]-code_Dbias[i][0])+beta*(code_Dbias[i][7]-code_Dbias[i][5])); /* C5X -(alpha*(C1W-C5X)+beta*(C2W-C5X)) */
             }
             /*ref:C1X-C5X*/
             if (sys==SYS_GAL) {
@@ -636,14 +678,14 @@ static int readbiaf(const prcopt_t *prcopt, const char *file, nav_t *nav)
                         nav->obias[i-1][0]=beta*code_Dbias[i][1];       /* C2I beta*(C2I-C6I) */
                         nav->obias[i-1][1]=-alpha*code_Dbias[i][1];     /* C6I -alpha*(C2I-C6I)*/
                         nav->obias[i-1][2]=0;                           /* no C7I  */ 
-                        nav->obias[i-1][3]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][6])-beta*code_Dbias[i][6]); /* C1P  -(alpha*(C2I-C1P)+beta*(C6I-C1P))*/ 
-                        nav->obias[i-1][4]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5])-beta*code_Dbias[i][5]); /* C1X  -(alpha*(C2I-C1X)+beta*(C6I-C1X))*/ 
-                        nav->obias[i-1][5]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][6]+code_Dbias[i][3])+beta*(code_Dbias[i][3]-code_Dbias[i][6])); /* C5P -(alpha*(C2I-C5P)+beta*(C6I-C5P))*/ 
-                        nav->obias[i-1][6]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][2])+beta*(code_Dbias[i][2]-code_Dbias[i][5]));  /* C5X -(alpha*(C2I-C5X)+beta*(C6I-C5X))*/ 
-                        nav->obias[i-1][7]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][8])+beta*(code_Dbias[i][8]-code_Dbias[i][5])); /* C7Z -(alpha*(C2I-C7Z)+beta*(C6I-C7Z))*/ 
-                        nav->obias[i-1][8]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][9])+beta*(code_Dbias[i][9]-code_Dbias[i][5])); /* C8X -(alpha*(C2I-C8X)+beta*(C6I-C8X))*/
-                        nav->obias[i-1][9]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][7])-beta*code_Dbias[i][7]); /* C1D -(alpha*(C2I-C1D)+beta*(C6I-C1D))*/ 
-                        nav->obias[i-1][10]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][7]+code_Dbias[i][4])+beta*(code_Dbias[i][4]-code_Dbias[i][7])); /* C5D -(alpha*(C2I-C5D)+beta*(C6I-C5D))*/ 
+                        nav->obias[i-1][3]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][7])-beta*code_Dbias[i][7]); /* C1D -(alpha*(C2I-C1D)+beta*(C6I-C1D))*/ 
+                        nav->obias[i-1][4]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][6])-beta*code_Dbias[i][6]); /* C1P  -(alpha*(C2I-C1P)+beta*(C6I-C1P))*/ 
+                        nav->obias[i-1][5]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5])-beta*code_Dbias[i][5]); /* C1X  -(alpha*(C2I-C1X)+beta*(C6I-C1X))*/ 
+                        nav->obias[i-1][6]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][7]+code_Dbias[i][4])+beta*(code_Dbias[i][4]-code_Dbias[i][7])); /* C5D -(alpha*(C2I-C5D)+beta*(C6I-C5D))*/ 
+                        nav->obias[i-1][7]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][6]+code_Dbias[i][3])+beta*(code_Dbias[i][3]-code_Dbias[i][6])); /* C5P -(alpha*(C2I-C5P)+beta*(C6I-C5P))*/ 
+                        nav->obias[i-1][8]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][2])+beta*(code_Dbias[i][2]-code_Dbias[i][5]));  /* C5X -(alpha*(C2I-C5X)+beta*(C6I-C5X))*/ 
+                        nav->obias[i-1][9]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][8])+beta*(code_Dbias[i][8]-code_Dbias[i][5])); /* C7Z -(alpha*(C2I-C7Z)+beta*(C6I-C7Z))*/ 
+                        nav->obias[i-1][10]=-(alpha*(code_Dbias[i][1]-code_Dbias[i][5]+code_Dbias[i][9])+beta*(code_Dbias[i][9]-code_Dbias[i][5])); /* C8X -(alpha*(C2I-C8X)+beta*(C6I-C8X))*/
                     }                      
                 }
                 
@@ -675,6 +717,9 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
     if (nav->obias_flag>0) {
         return 0;
     }
+    
+    /* init translation table from code to table column */
+    init_bias_ix(); 
 
     /* if no DCB and OSB file, using TGD correction*/
     if (0==nav->obias_flag) {
@@ -697,7 +742,8 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
             if (sys==SYS_GAL) {
                 b1=gettgd(i,nav,0);  /*DCB beta*(C1-C5)*/
                 b2=gettgd(i,nav,1);  /*DCB beta*(C1-C7)*/
-                gamma1=SQR(FREQL1/FREQL5);
+                /* gamma1=SQR(FREQL1/FREQL5); */
+                gamma1=SQR(FREQL1/FREQE5b);
                 alpha=gamma1/(gamma1-1);beta=-1/(gamma1-1);
                 nav->obias[i-1][0]=b1;                          /* C1C beta*(C1-C5) */
                 nav->obias[i-1][1]=b1;                          /* C1X beta*(C1-C5) */
@@ -850,7 +896,8 @@ static int pephpos(gtime_t time, int sat, const nav_t *nav, double *rs,
     }
     for (j=0;j<=NMAX;j++) {
         pos=nav->peph[i+j].pos[sat-1];
-        /* correction for earth rotation ver.2.4.0 */
+        /* correction for earth rotation ver.2.4.0 
+        This is just to obtain the satellite position at the time of signal transmission */
         sinl=sin(OMGE*t[j]);
         cosl=cos(OMGE*t[j]);
         p[0][j]=cosl*pos[0]-sinl*pos[1];
@@ -957,11 +1004,11 @@ extern int pephclk(gtime_t time, int sat, const nav_t *nav, double *dts,
 * notes  : iono-free LC frequencies defined as follows:
 *            GPS/QZSS : L1-L2
 *            GLONASS  : G1-G2
-*            Galileo  : E1-E5b
+*            Galileo  : E1-E5a
 *            BDS      : B1I-B3I
 *            NavIC    : L5-S
 *-----------------------------------------------------------------------------*/
-extern void satantoff(gtime_t time, const double *rs, int sat, const nav_t *nav,
+extern void satantoff(gtime_t time, const double *rs, int fr, int sat, const nav_t *nav,
                       double *dant)
 {
     const spcv_t *spcv=nav->spcvs+sat-1;
@@ -985,47 +1032,54 @@ extern void satantoff(gtime_t time, const double *rs, int sat, const nav_t *nav,
     if (!normv3(r,ey)) return;
     cross3(ey,ez,ex);
 
-    /* iono-free LC coefficients */
-    sys=satsys(sat,NULL);
-    if (sys==SYS_GPS||sys==SYS_QZS) { /* L1-L2 */
-        j=0,k=1;
-        freq[0]=FREQL1;
-        freq[1]=FREQL2;
+    if (norm(spcv->off[fr],3)>0) {
+        for (i=0;i<3;i++) dant[i]=spcv->off[fr][0]*ex[i]+spcv->off[fr][1]*ey[i]+spcv->off[fr][2]*ez[i];
     }
-    else if (sys==SYS_GLO) { /* G1-G2 */
-        j=0;k=1;
-        freq[0]=sat2freq(sat,CODE_L1C,nav);
-        freq[1]=sat2freq(sat,CODE_L2C,nav);
-    }
-    else if (sys==SYS_GAL) { /* E1-E5b */
-        j=0;k=1;
-        freq[0]=FREQL1;
-        freq[1]=FREQE5b;
-    }
-    else if (sys==SYS_CMP) { /* B1I-B3I */
-        j=0;k=2;
-        freq[0]=FREQ1_CMP;
-        freq[1]=FREQ3_CMP;
-    }
-    else if (sys==SYS_QZS) { /* B1I-B3I */
-        j=0;k=1;
-        freq[0]=FREQL1;
-        freq[1]=FREQL2;
-    }
-    else if (sys==SYS_IRN) { /* L5-S */
-        freq[0]=FREQL5;
-        freq[1]=FREQs;
-    }
-    else return;
+    else {
+        /* if there is no satellite PCO correction information, use L1/L2 iono-free LC coefficients */
+        sys=satsys(sat,NULL);
+        if (sys==SYS_GPS||sys==SYS_QZS) { /* L1-L2 */
+            j=0,k=1;
+            freq[0]=FREQL1;
+            freq[1]=FREQL2;
+        }
+        else if (sys==SYS_GLO) { /* G1-G2 */
+            j=0;k=1;
+            freq[0]=sat2freq(sat,CODE_L1C,nav);
+            freq[1]=sat2freq(sat,CODE_L2C,nav);
+        }
+        else if (sys==SYS_GAL) { /* E1-E5a */
+            j=0;k=2;
+            freq[0]=FREQL1;
+            freq[1]=FREQL5;
+            /* freq[1]=FREQE5b; */
+        }
+        else if (sys==SYS_CMP) { /* B1I-B3I */
+            j=0;k=2;
+            freq[0]=FREQ1_CMP;
+            freq[1]=FREQ3_CMP;
+        }
+        else if (sys==SYS_QZS) { /* L1-L2 */
+            j=0;k=1;
+            freq[0]=FREQL1;
+            freq[1]=FREQL2;
+        }
+        else if (sys==SYS_IRN) { /* L1-L2 */
+            j=0;k=1;
+            freq[0]=FREQL5;
+            freq[1]=FREQs;
+        }
+        else return;
 
-    C1= SQR(freq[0])/(SQR(freq[0])-SQR(freq[1]));
-    C2=-SQR(freq[1])/(SQR(freq[0])-SQR(freq[1]));
+        C1= SQR(freq[0])/(SQR(freq[0])-SQR(freq[1]));
+        C2=-SQR(freq[1])/(SQR(freq[0])-SQR(freq[1]));
 
-    /* iono-free LC */
-    for (i=0;i<3;i++) {
-        dant1=spcv->off[j][0]*ex[i]+spcv->off[j][1]*ey[i]+spcv->off[j][2]*ez[i];
-        dant2=spcv->off[k][0]*ex[i]+spcv->off[k][1]*ey[i]+spcv->off[k][2]*ez[i];
-        dant[i]=C1*dant1+C2*dant2;
+        /* iono-free LC */
+        for (i=0;i<3;i++) {
+            dant1=spcv->off[j][0]*ex[i]+spcv->off[j][1]*ey[i]+spcv->off[j][2]*ez[i];
+            dant2=spcv->off[k][0]*ex[i]+spcv->off[k][1]*ey[i]+spcv->off[k][2]*ez[i];
+            dant[i]=C1*dant1+C2*dant2;
+        }
     }
 }
 /* satellite position/clock by precise ephemeris/clock -------------------------
@@ -1066,9 +1120,9 @@ extern int peph2pos(gtime_t time, int sat, const nav_t *nav, int opt,
         !pephclk(time_tt,sat,nav,dtst,NULL)) return 0;
 
     /* satellite antenna offset correction */
-    if (opt) {
+    /* if (opt) {
         satantoff(time,rss,sat,nav,dant);
-    }
+    } */
     for (i=0;i<3;i++) {
         rs[i  ]=rss[i]+dant[i];
         rs[i+3]=(rst[i]-rss[i])/tt;

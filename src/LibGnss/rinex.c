@@ -218,7 +218,9 @@ static double uravalue(int sva)
 static int uraindex(double value)
 {
     int i;
+    
     for (i=0;i<15;i++) if (ura_eph[i]>=value) break;
+
     return i;
 }
 /* Galileo SISA index to SISA nominal value (m) ------------------------------*/
@@ -1075,8 +1077,8 @@ static int readrnxobsb(FILE *fp, const char *opt, double ver, int *tsys,
             if ((nsat=decode_obsepoch(fp,buff,ver,&time,flag,sats))<=0 && (*flag != 5)) {
                 continue;
             }
-            if (*flag == 5) {
-                data[0].eventime = time;
+            if (*flag==5) {
+                data[0].eventime=time;
                 return 0;
             }
         }
@@ -1116,11 +1118,11 @@ static int readrnxobs(FILE *fp, gtime_t ts, gtime_t te, double tint,
     /* read RINEX observation data body */
     while ((n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta))>=0&&stat>=0) {
 
-        if (flag == 5) {
+        if (flag==5) {
             eventime = data[0].eventime;
-            n = readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
+            n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
             if (fabs(timediff(data[0].time,time1)-dtime1)>=DTTOL)
-                n = readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
+                n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
         }
 
         if (eventime.time==0 || obs->n-n1<=0 || timediff(eventime,time1)>=0) {
@@ -1274,8 +1276,7 @@ static int decode_eph(double ver, int sat, gtime_t toc, const double *data,
     return 1;
 }
 /* decode GLONASS ephemeris --------------------------------------------------*/
-static int decode_geph(double ver, int sat, gtime_t toc, double *data,
-                       geph_t *geph)
+static int decode_geph(double ver, int sat, gtime_t toc, double *data, geph_t *geph)
 {
     geph_t geph0={0};
     gtime_t tof;

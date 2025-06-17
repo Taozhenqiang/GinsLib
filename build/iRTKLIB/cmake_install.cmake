@@ -1,4 +1,4 @@
-# Install script for directory: F:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app
+# Install script for directory: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,6 +34,6 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "D:/TDM-GCC-64/bin/objdump.exe")
+  set(CMAKE_OBJDUMP "D:/mingw64/bin/objdump.exe")
 endif()
 
