@@ -466,16 +466,17 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         Debug_Glo=DebugGlo_init(Debug_Glo);     
         DebugTime(rtk,Debug_Glo.tNow,520030,2362); 
 
+        /* initialize GNSS sampling interval */
+        if (!rtk->interval) rtk->interval=timediff(obss.data[nobs].time,obss.data[0].time);
+
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
             if ((satsys(obs[i].sat,NULL)&popt->navsys)&&popt->exsats[obs[i].sat-1]!=1) {
                 obs[n++]=obs[i];
             }
         }
-        if (n<=0) continue;
-
-        /* initialize GNSS sampling interval */
-        if (!rtk->interval) rtk->interval=timediff(obss.data[nobs].time,obss.data[0].time);
+        if (GINS_OFF==popt->GI_mode&&n<=0) continue;
+        else if (GINS_OFF!=popt->GI_mode&&n<=0&&!rtk->align) continue;
 
         /* ins initial alignment */
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode){
@@ -496,7 +497,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             corr_phase_bias_ssr(obs,n,&navs);
         }
 
-        /*multipath correction for BDS2*/
+        /* multipath correction for BDS2 */
         if (popt->navsys&SYS_CMP) {
             BDmulCorr(rtk,obs,n); 
         }
@@ -507,6 +508,11 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             update_ins(&rtk->ins);            
             ins_update(rtk);           
             if (SYNC_NO==rtk->upte) continue;
+        }
+
+        /* for GNSS/INS integration navigation, when GNSS is not available, use motion constraints to assist */
+        if (GINS_OFF!=popt->GI_mode&&n<=0&&(popt->constraint[0]||popt->constraint[1])) {
+            motion_constraints(rtk,popt);
         }
 
         /* GNSS outage simulation */
@@ -524,7 +530,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             continue;
         }
         /* navigation processing */
-         if (!rtkpos(rtk,obs,n,&navs)) {
+         if (!rtkpos(rtk,obs,n,&navs)&&n>0) {
             if (rtk->sol.eventime.time!=0) {
                 if (mode==SOLMODE_SINGLE_DIR) {
                     outinvalidtm(fptm,sopt,rtk->sol.eventime);
@@ -537,7 +543,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         }
 
         /* GNSS/INS loosely coupled integration */
-        if (GINS_LC==popt->GI_mode){
+        if (GINS_LC==popt->GI_mode&&n>0){
             lc_gins(rtk);            
         }
 

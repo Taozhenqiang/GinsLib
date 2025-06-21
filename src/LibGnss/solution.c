@@ -1767,7 +1767,7 @@ extern int outsols(uint8_t *buff, sol_t *sol, const double *rb, const prcopt_t *
         p+=sprintf(p,"\r\n");
         return (int)(p-buff);
     }
-    if (sol->stat==SOLQ_INS) {
+    if (sol->stat>=SOLQ_INS) {
         sol->ns=0;
         sol->ratio=0.0;
     }

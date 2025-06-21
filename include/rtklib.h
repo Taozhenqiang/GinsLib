@@ -401,6 +401,11 @@ extern "C"
 #define GINS_OFF 0 /* only GNSS */
 #define GINS_LC  1 /* loose coupled */
 #define GINS_TC  2 /* tight coupled */
+#define GINS_STC 3 /* semi-tight coupled */
+
+#define CONS_OFF  0 /* constraint: off */
+#define CONS_NHC  1 /* NHC */
+#define CONS_ZUPT 2 /* ZUPT */
 
 #define NO   0  /* GNSS/INS time matching: No */
 #define YES  1  /* GNSS/INS time matching: Yes */
@@ -435,15 +440,14 @@ extern "C"
 #define SOLF_GSIF 5 /* solution format: GSI F1/F2 */
 
 #define SOLQ_NONE 0   /* solution status: no solution */
-#define SOLQ_FIX 1    /* solution status: fix */
+#define SOLQ_FIX  1   /* solution status: fix */
 #define SOLQ_FLOAT 2  /* solution status: float */
 #define SOLQ_SBAS 3   /* solution status: SBAS */
 #define SOLQ_DGPS 4   /* solution status: DGPS/DGNSS */
 #define SOLQ_SINGLE 5 /* solution status: single */
-#define SOLQ_PPP 6    /* solution status: PPP */
-#define SOLQ_INS 7     /* solution status: pure INS navigation */
-#define SOLQ_LC 8     /* solution status: GNSS/INS LC */
-#define SOLQ_TC 9     /* solution status: GNSS/INS TC */
+#define SOLQ_PPP  6   /* solution status: PPP */
+#define SOLQ_INS  7   /* solution status: pure INS navigation */
+#define SOLQ_CONS 8   /* solution status: motion constraints */
 #define MAXSOLQ 9     /* max number of solution status */
 
 #define SOLTYPE_FORWARD 0          /* solution type: forward */
@@ -686,11 +690,11 @@ extern "C"
         double p1vel[3];             /* ins velocity of the previous one epoch (E,N,U) */
         double p1pos[3];             /* ins position of the previous one epoch (E,N,U) */
         double p2vel[3];             /* ins velocity of the previous two epoch (E,N,U) */
-        double att[3];               /* ins attitude (pitch [-pi/2,pi/2],roll [-pi,pi],yaw [0,2*pi]) (rad) */
+        double att[3];               /* ins attitude (pitch [-pi/2,pi/2],roll [-pi,pi],yaw [-pi,pi]) (rad) */
         double Cnb[9];               /* attitude matirx */
         double bg[3];                /* gyroscope zero bias */
         double ba[3];                /* accelerometer zero bias*/
-        double xa[15];
+        double xa[15];               /* fixed solution */
         double wbib[3];              /* gyroscope angular velocity vector in b frame */
         double fb[3];                /* specific force vector in b frame */
         double fn[3];                /* specific force vector in n frame */  
@@ -698,6 +702,8 @@ extern "C"
         double *G;                   /* noise driving matrix of continuous time system */
         double *Q;                   /* process noise covariance matrix */
         double *Phi;                 /* state transition matrix of discrete time system */
+        double lever_nhc[3];         /* lever frame form imu to NHC effective point in b frame (m) */
+        double Cvb[9];               /* installation angle matrix from b frame to v frame */
         double lever[3];             /* lever frame form imu to gnss in b frame (m) */
         double corr_time;            /* correlation time of a first-order Markov process (s) */
         double discretime;           /* discretization time interval of time update (s) */
@@ -1294,6 +1300,9 @@ extern "C"
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
         int alingetype;          /* ins initial alignment type */
+        int constraint[3];       /* constraint type (CONS_???) [1]NHC,[2]ZUPT,[3]ZIHR */
+        double rotation_angle[3];/* ins rotation angle, [pitch,roll,yaw] (deg), from b frame to v' frame */
+        double lever_nhc[3];     /* lever frame from imu to nhc effective point in b frame (m) */
         double install_angle[3]; /* ins installation angle, [pitch,roll,yaw] (deg), from v frame to b frame */
         double initpos[3];       /* ins inital position [lat,lon,h] (rad,m) */
         double initvel[3];       /* ins inital velocity [E,N,U] (m/s)*/
@@ -2264,6 +2273,8 @@ extern "C"
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt);
     EXPORT int  tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
+    EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
+    EXPORT int nhc_constraints(ins_t *ins, const prcopt_t *opt, double *H, double *v, double *var, int nv, int nx);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
     EXPORT void ins_mech(ins_t *ins, imud_t *imu);
     EXPORT void phi_update(ins_t *ins);
@@ -2296,6 +2307,7 @@ extern "C"
     EXPORT void vskewmv(double f, const double *v1, const double *v2, double *vx);
     EXPORT void vmvskew(double f, const double *v1, const double *v2, double *vx);
     EXPORT void vskewmat3(double f, const double *v1, const double *mat1, double *mat2);
+    EXPORT void Mat3mvskew(double f, const double *mat1, const double *v1, double *mat2);
     EXPORT void Mat3mul3(const double *mat1, const double *mat2, const double *mat3, double *mat);
 
     /* stream server functions ---------------------------------------------------*/

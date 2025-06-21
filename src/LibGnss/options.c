@@ -41,10 +41,13 @@ static char exsats_[1024];
 static char snrmask_[NFREQ][1024];
 static char time_[2][1024];
 static char fre_[RNX_NUMSYS][1024];
+static char constraint_[1024];
+static char rotation_angle_[1024];
 static char install_angle_[1024];
 static char initpose_[3][1024];
 static char initunc_[3][1024];
 static char lever_[1024];
+static char lever_nhc_[1024];
 static char stat_[statopt];
 
 /* system options table ------------------------------------------------------*/
@@ -144,8 +147,11 @@ EXPORT opt_t sysopts[]={
     {"ins-imudatype",   0,  (void *)&prcopt_.imudatype,  ""     },
     {"ins-nnts",        0,  (void *)&prcopt_.nn,         ""     },
     {"ins-insample",    0,  (void *)&prcopt_.insample,   ""     },
+    {"ins-constraints", 2,  (void *)&constraint_,        ""     },
     {"ins-aligntype",   0,  (void *)&prcopt_.alingetype,  ""    },
     {"ins-install_angle",2, (void *)&install_angle_,      ""    },
+    {"ins-nhc_lever",   2,  (void *)&lever_nhc_,          ""    },
+    {"ins-rotaion_angle",2, (void *)&rotation_angle_,     ""    },
     {"ins-initpos",     2,  (void *)&initpose_[0],       ""     },
     {"ins-initvel",     2,  (void *)&initpose_[1],       ""     },
     {"ins-initatt",     2,  (void *)&initpose_[2],       ""     },
@@ -529,12 +535,32 @@ static void buff2sysopts(void)
             prcopt_.fre[i][j++]=atoi(p);
         }
     }
+    /* motion constraints options*/ 
+    for (j=0;j<3;j++) prcopt_.constraint[j]=0.0;
+    strcpy(buff,constraint_);
+    for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+        prcopt_.constraint[j++]=atoi(p);
+    }
 
     /* ins installation angle */
     for (j=0;j<3;j++) prcopt_.install_angle[j]=0.0;
     strcpy(buff,install_angle_);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         prcopt_.install_angle[j++]=atof(p)*D2R;
+    }
+
+    /* nhc lever */
+    for (j=0;j<3;j++) prcopt_.lever_nhc[j]=0.0;
+    strcpy(buff,lever_nhc_);
+    for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+        prcopt_.lever_nhc[j++]=atof(p);
+    }
+
+    /* rotation angle */
+    for (j=0;j<3;j++) prcopt_.rotation_angle[j]=0.0;
+    strcpy(buff,rotation_angle_);
+    for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+        prcopt_.rotation_angle[j++]=atof(p)*D2R;
     }
 
     /* init ins position (ecef [X,Y,Z] (m) )*/

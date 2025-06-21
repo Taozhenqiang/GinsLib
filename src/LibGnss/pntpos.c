@@ -880,7 +880,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     double x[NX]={0},dx[NX],Q[NX*NX],*v,*H,*var,sig;
     double *v_,*H_,*var_,*P,*R,thres=2.0;
     double *xp,*Pp,vc[4];
-    int i,j,k,it,m,info,stat=SOLQ_NONE,nv,nv1=0,ns,*sati,*vi;
+    int i,j,k,it,m,info,stat=SOLQ_NONE,nv=0,nv_dop=0,nv_cons=0,ns,*sati,*vi;
     
     trace(8,"estpos  : n=%d\n",n);
     
@@ -953,9 +953,9 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             if ((stat=valsol(azel,vsat,n,opt,v,P,nv,NX))) {
                 sol->stat=opt->sateph==EPHOPT_SBAS?SOLQ_SBAS:SOLQ_SINGLE;
             }
-            free(v); free(H); free(var); free(v_); free(H_); free(var_); free(sati); free(vi);
+            free(v); free(H); free(var); free(v_); free(H_); free(var_); free(P); free(sati); free(vi);
 
-            if (stat&&GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) break;
+            if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) break;
             else return stat;
         }
     }
@@ -966,60 +966,70 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     
     if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) {
 
-        xp=zeros(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
-        v=mat(2*n,1); H=mat(2*n,rtk->nx); R=zeros(2*n,2*n); var=mat(2*n,1); sati=imat(2*n,1);  
+        /* if GNSS solution fails, do not enable GNSS/INS integration mode */
+        if (stat) {
 
-        /* initialize clock drift */
-        estvel(rtk,obs,n,rs,dts,nav,opt,sol,azel,vsat);
+            xp=zeros(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
+            /* consider motion constraints (NHC/ZUPT) */
+            nv=2*n+3;
+            v=mat(nv,1); H=mat(nv,rtk->nx); var=mat(nv,1); R=zeros(nv,nv); sati=imat(2*n,1);  
 
-        /* time update of ekf states*/
-        udstate_spp(rtk);
-        for (i=0;i<3;i++) vc[i]=rtk->ru[i+3]; vc[3]=rtk->x[IC(6,opt)];
-        /* copy states */
-        matcpy(xp,rtk->x,rtk->nx,1);
-        matcpy(Pp,rtk->P,rtk->nx,rtk->nx);
-        /* trace(12,"P_pre=\n"); tracemat(12,Pp,rtk->nx,rtk->nx,9,4,0); */
+            /* initialize clock drift */
+            estvel(rtk,obs,n,rs,dts,nav,opt,sol,azel,vsat);
 
-        /* prefit residuals */
-        nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,rtk->ru,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati);
-        nv1=resdop_filter(rtk,obs,n,rs,dts,nav,rtk->ru,vc,azel,vsat,v+nv,H+nv*rtk->nx,var+nv,1);
+            /* time update of ekf states*/
+            udstate_spp(rtk);
+            for (i=0;i<3;i++) vc[i]=rtk->ru[i+3]; vc[3]=rtk->x[IC(6,opt)];
+            /* copy states */
+            matcpy(xp,rtk->x,rtk->nx,1);
+            matcpy(Pp,rtk->P,rtk->nx,rtk->nx);
+            /* trace(12,"P_pre=\n"); tracemat(12,Pp,rtk->nx,rtk->nx,9,4,0); */
 
-        /* trace(12,"v=\n"); tracemat(12,v,nv+nv1,1,9,4,0);
-        trace(12,"H=\n"); tracemat(12,H,nv+nv1,rtk->nx,9,4,0); */
-        
-        /* measurement noise covariance matrix */
-        for (i=0;i<nv+nv1;i++) for (j=0;j<nv+nv1;j++) if (i==j) R[j+i*(nv+nv1)]=var[i];
-        /* trace(12,"Rn=\n"); tracemat(12,R,nv+nv1,nv+nv1,9,4,0); */
+            /* prefit residuals */
+            nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,rtk->ru,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati);
+            nv_dop=resdop_filter(rtk,obs,n,rs,dts,nav,rtk->ru,vc,azel,vsat,v+nv,H+nv*rtk->nx,var+nv,1);
+            
+            /* nhc */
+            if (opt->constraint[0]) {
+                nv_cons=nhc_constraints(&rtk->ins,opt,H,v,var,nv+nv_dop,rtk->nx);
+            }
 
-        /* kalman filter measurement update */
-        if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv+nv1,KF_GINS,Robust_OFF))) {
-            trace(7,"SPP/INS filter error (info=%d)\n",info);
-            sol->stat=SOLQ_INS;
+            /* measurement noise covariance matrix */
+            for (i=0;i<(nv+nv_dop+nv_cons);i++) for (j=0;j<(nv+nv_dop+nv_cons);j++) if (i==j) R[j+i*(nv+nv_dop+nv_cons)]=var[i];
+            /* trace(12,"v=\n"); tracemat(12,v,nv+nv_dop+nv_cons,1,9,4,0);
+            trace(12,"H=\n"); tracemat(12,H,nv+nv_dop+nv_cons,rtk->nx,9,4,0);
+            trace(12,"Rn=\n"); tracemat(12,R,nv+nv_dop+nv_cons,nv+nv_dop+nv_cons,9,4,0); */
+
+            /* kalman filter measurement update */
+            if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,(nv+nv_dop+nv_cons),KF_GINS,Robust_OFF))) {
+                trace(7,"SPP/INS filter error (info=%d)\n",info);
+                free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
+                return SOLQ_NONE;
+            };
+            /* updates states */
+            matcpy(rtk->x,xp,rtk->nx,1);
+            matcpy(rtk->P,Pp,rtk->nx,rtk->nx);
+            /* trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
+
+            /* reset cross-covariance */
+            /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
+            /* trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
+
+            /* ins feedback correction */
+            ins_fedback(rtk,xp);
+
             /* update solution status */
-            update_instat(&rtk->ins,rtk->P,sol,rtk->nx);
+            update_stat(rtk,nv,SOLQ_SINGLE);    
+                            
+            free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
+            return stat;
         }
-        else stat=SOLQ_SINGLE;
-        /* updates states */
-        matcpy(rtk->x,xp,rtk->nx,1);
-        matcpy(rtk->P,Pp,rtk->nx,rtk->nx);
-        /* trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
-
-        /* reset cross-covariance */
-        /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
-        /* trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
-
-        /* ins feedback correction */
-        ins_fedback(rtk,xp);
-
-        /* update solution status */
-        update_stat(rtk,nv,stat);
-        
-        free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
-        return stat;
+        /* motion constraints (nhc/zupt) */
+        else if (opt->constraint[0]||opt->constraint[1]) {
+            motion_constraints(rtk,opt);
+            return SOLQ_CONS;
+        }
     }
-
-    free(v); free(H); free(var); free(v_); free(H_); free(var_); free(sati); free(vi);
-    return 0;
 }
 /* RAIM FDE (failure detection and exclusion) -------------------------------*/
 static int raim_fde(const obsd_t *obs, int n, const double *rs,

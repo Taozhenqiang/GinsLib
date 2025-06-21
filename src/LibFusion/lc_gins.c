@@ -334,7 +334,6 @@ extern void update_instat(ins_t *ins, double *P, sol_t *sol, int nx)
     covtosol_vel(Qv,sol);
     covtosol(Qr,sol);
     covtosol_bga(Qbg,Qba,sol);
-
 }
 
 /* update GNSS/INS LC solution state */

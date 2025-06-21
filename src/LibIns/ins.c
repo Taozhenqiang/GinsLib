@@ -263,7 +263,7 @@ extern void vskewmv(double f, const double *v1, const double *v2, double *vx)
     Mat3mulv(1.0,mat,v2,vx);
 }
 
-/* vector multiply the Skew-symmetric matrix --------------------------
+/* vector multiply the skew-symmetric matrix --------------------------
 *
 *args   : double  f       I   Skew-symmetric matrix coefficient
 *         double *v1      I   vector (1x3)
@@ -295,6 +295,22 @@ extern void vskewmat3(double f, const double *v1, const double *mat1, double *ma
 
     vskew(f,v1,mat);
     Mat3mul2(1.0,mat,mat1,mat2);
+}
+
+/* 3x3 matrix multiply the skew-symmetric matrix --------------------------
+*
+*args   : double  f       I   Skew-symmetric matrix coefficient
+*         double *mat1    I   vector (3x3)
+*         double *v1      I   vector (3x1)
+*         double *mat2    O   vector (3x3)
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void Mat3mvskew(double f, const double *mat1, const double *v1, double *mat2)
+{
+    double mat[9]={0};
+
+    vskew(f,v1,mat);
+    Mat3mul2(1.0,mat1,mat,mat2);
 }
 
 /* Multiplying three matrixs --------------------------
@@ -428,8 +444,8 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
     if (GINS_OFF==prcopt->GI_mode) return 0;
     if (ts.time!=0) ts.time-=1;
 
-    /* calculate the installation angle from v frame to b frame */
-    att2Cnb(prcopt->install_angle,Cbv);
+    /* calculate the rotation angle from r frame to b frame */
+    att2Cnb(prcopt->rotation_angle,Cbv);
 
     if (!(fp=fopen(file,"r")))
     {
@@ -639,8 +655,9 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
 }
 
 /* initialize ins related parameters -----------------------------------------------*/
-extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
+extern int ins_init(ins_t *ins, const prcopt_t *opt)
 {
+    double install_angle[3]={0.0};
     int i,nx;
 
     ins->nx=15;nx=ins->nx;
@@ -648,17 +665,17 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
     ins->G=zeros(nx,nx); ins->Q=zeros(nx,nx);
 
     ins->time.sec=0.0; ins->time.time=0.0;
-    ins->interval=1.0/prcopt->insample;
-    ins->nn=prcopt->nn;
+    ins->interval=1.0/opt->insample;
+    ins->nn=opt->nn;
     ins->dttol=ins->interval/1e3;
-    ins->discretime=(prcopt->insample%10)==0?1e-1:((prcopt->insample%25)==0?25*ins->interval:ins->interval);
+    ins->discretime=(opt->insample%10)==0?1e-1:((opt->insample%25)==0?25*ins->interval:ins->interval);
     
      
-    ins->corr_time=prcopt->corr_time; 
-    ins->psd_gyro=prcopt->psd_gyro;
-    ins->psd_acce=prcopt->psd_acce;
-    ins->psd_bg=prcopt->psd_bg;
-    ins->psd_ba=prcopt->psd_ba;
+    ins->corr_time=opt->corr_time; 
+    ins->psd_gyro=opt->psd_gyro;
+    ins->psd_acce=opt->psd_acce;
+    ins->psd_bg=opt->psd_bg;
+    ins->psd_ba=opt->psd_ba;
 
     for (i=0;i<15;i++)
     {
@@ -673,7 +690,10 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
 
     for (i=0;i<3;i++)
     {
-        ins->lever[i]=prcopt->lever[i];
+        /* initialize the lever and motion constraint information */
+        install_angle[i]=opt->install_angle[i];
+        ins->lever_nhc[i]=opt->lever_nhc[i];
+        ins->lever[i]=opt->lever[i];
 
         ins->dw[i]=0.0;
         ins->dv[i]=0.0;
@@ -693,7 +713,9 @@ extern int ins_init(ins_t *ins, const prcopt_t *prcopt)
         ins->att[i]=0.0;       
     }
 
+    /* initialize the posture matrix and installation angle matrix */
     att2Cnb(ins->att,ins->Cnb);
+    att2Cnb(install_angle,ins->Cvb);
 }
 
 /* initialize INS position, velocity and attitude */
@@ -964,6 +986,89 @@ extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     free(v);    free(H);        free(var);  free(P);        
 
     return iok;
+}
+
+/* motion constraints */
+extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt) 
+{
+    ins_t *ins=&rtk->ins;
+    sol_t *sol=&rtk->sol;
+    int i,j,nx=rtk->nx,nv,info;
+    double *xp,*Pp,*H,*v,*var,*R;
+
+    xp=zeros(nx,1); Pp=zeros(nx,nx); R=zeros(3,3);
+    H=mat(3,nx); v=mat(3,1); var=mat(3,1);
+
+    /* copy the covariance matrix */
+    matcpy(Pp,rtk->P,nx,nx); 
+
+    /* nhc */
+    if (opt->constraint[0]) {
+        nv=nhc_constraints(ins,opt,H,v,var,0,nx);        
+    }
+    
+    /* measurement noise covariance matrix */
+    for (i=0;i<nv;i++) {
+        for (j=0;j<nv;j++) {
+            if (i==j) R[j+i*nv]=var[i];
+        }
+    }
+
+    /* measurement update */
+    if ((info=filter_gins(rtk,xp,Pp,H,v,R,nx,nv,KF_GINS,Robust_OFF))) {
+        trace(7,"motion_constraints: filter_gins error info=%d\n",info);
+        sol->stat=SOLQ_INS;
+        /* update solution status */
+        update_instat(ins,rtk->P,sol,rtk->nx);
+        
+        free(xp); free(Pp); free(H); free(v); free(var);
+    }
+    /* update solution status */
+    sol->stat=SOLQ_CONS; 
+    /* update the covariance matrix */
+    matcpy(rtk->P,Pp,nx,nx); 
+    
+    /* ins feedback correction */
+    ins_fedback(rtk,xp);
+    /* update solution status */
+    update_instat(ins,rtk->P,sol,rtk->nx);
+
+    free(xp); free(Pp); free(H); free(v); free(var);
+}
+
+/* nhc constraints */
+extern int nhc_constraints(ins_t *ins, const prcopt_t *opt, double *H, double *v, double *var, int nv, int nx)
+{
+    int i,j,k;
+    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},vel[3]={0.0};
+
+    DCMT(ins->Cnb,Cbn);
+    Mat3mul2(1.0,ins->Cvb,Cbn,Cvn);
+    /* vehichle velocity of v frame */
+    Mat3mulv(1.0,Cvn,ins->vel,vel);
+    Mat3mvskew(-1.0,Cvn,ins->vel,vel_v);
+    Mat3mvskew(-1.0,ins->Cvb,ins->lever_nhc,lever_v);
+
+    trace(12,"nhc_constraints: v=\n");tracemat(12,vel,3,1,9,4,0);
+
+    for (i=0;i<2;i++) {
+        /* only constrain lateral and vertical velocities */
+        if (i==0) k=0;
+        else if (i==1) k=2;
+        else continue;
+
+        for (j=0;j<nx;j++) {
+            H[j+nv*nx]=0.0;
+            if (j<3)             H[j+nv*nx]=vel_v[j+k*3];
+            else if (j>=3&&j<6)  H[j+nv*nx]=Cvn[(j-3)+k*3];
+            else if (j>=9&&j<12) H[j+nv*nx]=lever_v[(j-9)+k*3];
+        }
+        v[nv]=vel[k];
+        var[nv]=0.01; /* variance of the constraint, can be adjusted */
+        nv++;
+    }
+
+    return 2;
 }
 
 /* ins mechanization -----------------------------------------------*/
