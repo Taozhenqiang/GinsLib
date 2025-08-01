@@ -1,5 +1,5 @@
 #Minimum requirement of CMake version : 3.5.0
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10.0)
 cmake_policy(SET CMP0074 NEW)
 
 #Project name and version number
@@ -14,7 +14,7 @@ set(include_path ${PROJECT_SOURCE_DIR}/include ${libGnssSrc} ${libInsSrc} ${libF
 include_directories(${include_path})
 set(lib_list ${libGnss} ${libIns} ${libFusion})
 
-add_executable(rnx2rtkp rnx2rtkp.c)
+add_executable(GINSLIB rnx2rtkp.c)
 #add_executable(inspure inspure.c)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -26,5 +26,5 @@ else ()
     link_directories(${ROOT}/build/Lib)
 endif ()
 
-target_link_libraries(rnx2rtkp ${lib_list})
+target_link_libraries(GINSLIB ${lib_list})
 #target_link_libraries(inspure  ${lib_list})

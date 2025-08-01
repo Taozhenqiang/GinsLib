@@ -73,22 +73,22 @@ extern void trace(int level, const char *format, ...)
 
     /* print error message to stderr */
     if (level<=1) {
-        va_start(ap,format);              // Initialize the variable argument list
-        vfprintf(stderr,format,ap);       // Print the message to stderr (error stream)
-        va_end(ap);                       // Clean up the variable argument list
+        va_start(ap,format);              /* Initialize the variable argument list */ 
+        vfprintf(stderr,format,ap);       /* Print the message to stderr (error stream) */ 
+        va_end(ap);                       /* Clean up the variable argument list */
     }
     
     if (!fp_trace||!((int)pow(2,level)&level_trace)) return;  // Skip if file pointer is null or log level is too high
 
     traceswap();                          
     
-    fprintf(fp_trace,"%d ",level);        // Print the log level to the trace file
-    fprintf(fp_trace,"%s ",Debug_Glo.chTime);        // Print the log level to the trace
-    va_start(ap,format);                  // Initialize the variable argument list again
-    vfprintf(fp_trace,format,ap);         // Print the formatted message to the trace file
-    va_end(ap);                           // Clean up the variable argument list
+    fprintf(fp_trace,"%d ",level);        /* Print the log level to the trace file */ 
+    fprintf(fp_trace,"%s ",Debug_Glo.chTime);        /* Print the log level to the trace */ 
+    va_start(ap,format);                  /* Initialize the variable argument list again */ 
+    vfprintf(fp_trace,format,ap);         /* Print the formatted message to the trace file */ 
+    va_end(ap);                           /* Clean up the variable argument list */ 
     
-    fflush(fp_trace);                     // Flush the output buffer to ensure the message is written
+    fflush(fp_trace);                     /* Flush the output buffer to ensure the message is written */ 
 }
 
 extern void tracet(int level, const char *format, ...)

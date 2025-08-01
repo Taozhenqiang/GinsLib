@@ -146,9 +146,15 @@ int main(int argc, char **argv)
             te=epoch2time(ee);
         }
         else if (!strcmp(argv[i],"-ti")&&i+1<argc) tint=atof(argv[++i]);
-        else if (!strcmp(argv[i],"-k")&&i+1<argc) {++i; continue;}
+        else if (!strcmp(argv[i],"-k")&&i+1<argc)  {++i; continue;}
         else if (!strcmp(argv[i],"-p")&&i+1<argc) prcopt.mode=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-f")&&i+1<argc) prcopt.nf=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-gins")&&i+1<argc) prcopt.GI_mode=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-ion")&&i+1<argc)  prcopt.ionoopt=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-tro")&&i+1<argc)  prcopt.tropopt=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-eph")&&i+1<argc)  prcopt.sateph=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-flt")&&i+1<argc)  prcopt.filter=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-amb")&&i+1<argc)  prcopt.modear=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-sys")&&i+1<argc) {
             prcopt.navsys=0;
             for (p=argv[++i];*p;p++) {
@@ -169,7 +175,6 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-d")&&i+1<argc) solopt.timeu=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-b")) prcopt.soltype=1;
         else if (!strcmp(argv[i],"-c")) prcopt.soltype=2;
-        else if (!strcmp(argv[i],"-i")) prcopt.modear=2;
         else if (!strcmp(argv[i],"-h")) prcopt.modear=3;
         else if (!strcmp(argv[i],"-t")) solopt.timef=1;
         else if (!strcmp(argv[i],"-u")) solopt.times=TIMES_UTC;
@@ -202,6 +207,7 @@ int main(int argc, char **argv)
     }
     if (!prcopt.navsys) {
         prcopt.navsys=SYS_GPS|SYS_GLO;
+        showerr("No navigation system specified, defaulting to GPS+GLO!\n");
     }
 
     start_time=clock(); /* start time */

@@ -7,41 +7,37 @@
         {
             "type": "cppdbg",
             "request": "launch",
-            "name": "rnx2rtkp",
-            "program": "${workspaceFolder}\\build\\Bin\\rnx2rtkp.exe", //注意为可执行文件的完整路径+文件名
+            "name": "GINSLIB",
+            "program": "${workspaceFolder}\\build\\Bin\\GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
+                "IGM-A1_Vehicle_open_20211217-nsh.conf",
                 // "KVH1750_Vehicle_open_20211217-nsh.conf",
                 // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
                 // "IGM-A1_Vehicle_open_20201210.conf",
                 // "KVH1750_Vehicle_open_20201210.conf",
-                "EG320N_Vehicle_open_20250419-CHC.conf",
+                // "EG320N_Vehicle_open_20250419-CHC.conf",
+                // "EG320N_Vehicle_open_20250418_campus1-CHC.conf",
+                // "EG320N_Vehicle_open_20250418_campus2-CHC.conf",
+                // "EG320N_Vehicle_open_20250418-CHC.conf",
+                // "KVH1750_Vehicle_complex_20210715.conf",
+                // "STIM300_Vehicle_complex_20230102.conf",
+                // "FSAS_Vehicle_open_20150722.conf",
+                // "FSAS_Vehicle_complex_20220315.conf",
+                // "HG4930_Vehicle_open_20201128.conf", 
+                // "LCI_Marine_open_20150108.conf",
 
-                //"E:\\GAMPII-GOOD\\dataset_Win\\obs\\2021\\351\\MGEX\\daily\\kir83510.21o",
-                //"E:\\GAMPII-GOOD\\dataset_Win\\obs\\2021\\351\\MGEX\\daily\\kiru3510.21o",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\IGM-A1_rover.21o",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\IGM-A1_base.21o",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\brdm3510.21p",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\wum21885.sp3",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\wum21885.clk",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\CAS0MGXRAP_20213510000_01D_01D_DCB.BSX",
-                // "${workspaceFolder}\\data\\data_IGM-A1_Vehicle_open_20211217-nsh\\CAS0MGXRAP_20213510000_01D_01D_OSB.BIA",   
-
-                // "E:\\Navigation_Learn\\user data\\20241206\\k70\\k701206.24o",
-                // "E:\\Navigation_Learn\\user data\\20241206\\p40\\p401206.24o",
-                // "E:\\Navigation_Learn\\user data\\20241206\\ublox\\ublox1206.24o",
-                // "E:\\Navigation_Learn\\user data\\20241206\\rover\\Rinex\\chc1206.24o",
-                // "E:\\Navigation_Learn\\user data\\20241206\\base\\chc1206_base.24o",
-                // "E:\\Navigation_Learn\\user data\\20241206\\brdm3410.24p",
-                // "E:\\Navigation_Learn\\user data\\20241206\\wum23435.sp3",
-                // "E:\\Navigation_Learn\\user data\\20241206\\wum23435.clk",
-                // "E:\\Navigation_Learn\\user data\\20241206\\CAS0MGXRAP_20243410000_01D_01D_DCB.BSX",
-
-                "-x",
-                "4240",
+                // "-p","8",
+                // "-gins","2",
+                // "-ion","4",
+                // "-tro","3",
+                // "-eph","1",
+                // "-flt","0",
+                // "-amb","0",
+                
+                "-x","4240",
             ],
-            "cwd": "${workspaceFolder}\\data\\EG320N_Vehicle_open_20250419" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\IGM-A1_Vehicle_open_20211217-nsh" ,//配置文件
             
         },        
         {
@@ -61,7 +57,15 @@
                 "-o",
                 "${workspaceFolder}\\result\\ins.pos",                       
             ],
-            "cwd": "${workspaceFolder}\\conf" //配置文件
+            "cwd": "${workspaceFolder}\\conf" ,//配置文件
+        },
+        {
+            "type":"debugpy",
+            "request": "launch",
+            "name":"Python Script",
+            "program": "${workspaceFolder}\\script\\excute.py",
+            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //配置文件,
+            "console": "externalTerminal",
         }
     ]
 }

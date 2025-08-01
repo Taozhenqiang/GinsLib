@@ -407,7 +407,7 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
                       double *Lc, double *Pc, double *dcb)
 {
     double freq[NFREQ]={0},C1,C2;
-    int i,ix=0,frq,frq2,bias_ix,sys=satsys(obs->sat,NULL),fr;
+    int i,ix=0,frq,frq2=1,bias_ix,sys=satsys(obs->sat,NULL),fr;
 
     for (i=0;i<opt->nf;i++) {
         fr=sys2freid(sys,i,opt);
@@ -441,13 +441,18 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
         else {   
             /* apply code bias corrections from file */
             bias_ix=code2bias_ix(sys,obs->code[fr]);                 /* look up bias index in table */
-            if (bias_ix>=0) P[i]-=nav->obias[obs->sat-1][bias_ix];   /* DCB/OSB*/
-            if (dcb) dcb[fr]=nav->obias[obs->sat-1][bias_ix];        /* save DCB/OSB */
+            /* The pseudorange bias and the ephemeris product must be in alignment!!! */
+            /* NOTE: Precise ephemeris matching DCB/OSB products or Broadcast ephemeris matches TGD products */
+            if (bias_ix>=0&&((EPHOPT_PREC==opt->sateph&&(OPT_DCB==nav->obias_flag||OPT_OSB==nav->obias_flag))
+                ||(EPHOPT_BRDC==opt->sateph&&nav->obias_flag>0))) {
+            
+               P[i]-=nav->obias[obs->sat-1][bias_ix];               /* DCB/OSB*/  
+               if (dcb) dcb[fr]=nav->obias[obs->sat-1][bias_ix];    /* save DCB/OSB */              
+            }
         }
     }
-    /* choose freqs for iono-free LC */
-    *Lc=*Pc=0.0;
-    frq2=L[1]==0?2:1;  /* if L[1]==0, try L[2] */
+    /* choose freqs for iono-free LC , default L1+L2 */
+    *Lc=*Pc=0.0;   
     if (freq[0]==0.0||freq[frq2]==0.0) return;
     C1= SQR(freq[0])/(SQR(freq[0])-SQR(freq[frq2]));
     C2=-SQR(freq[frq2])/(SQR(freq[0])-SQR(freq[frq2]));
@@ -552,22 +557,34 @@ extern void detslp_mw_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav
 static void udpos_ppp(rtk_t *rtk)
 {
     double *F,*P,*FP,*x,*xp,pos[3],Q[9]={0},Qv[9],var=0.0;
-    double p_ins[3];
+    double p_ins[3],Qe[9]={0.0};
     int i,j,*ix,nx;
 
     trace(3,"udpos_ppp:\n");
 
-    if(GINS_TC==rtk->opt.GI_mode) {
+    /* for tightly coupled and semi-tightly coupled modes, the INS position is used as a priori information */
+    if (GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
         ins2gnss(rtk,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
-        /* reset ins related state */
-        for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0;
+        if (GINS_STC==rtk->opt.GI_mode) {
+
+            /* transform local enu covariance to xyz-ecef covariance */
+            /* for (i=0;i<3;i++) Q[i+i*3]=rtk->lcgins.P[(i+6)+(i+6)*rtk->lcgins.nx];
+            covecef(p_ins,Q,Qe);
+            for (i=0;i<3;i++) initx(rtk,rtk->ru[i],Qe[i+i*3],i); */
+            for (i=0;i<3;i++) initx(rtk,rtk->ru[i],VAR_POS,i);
+        }
+        /* for tightly coupled mode, reset ins related state */
+        if (GINS_TC==rtk->opt.GI_mode) {
+            for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0; 
+        }   
+
         return;
     }
-
+    
     /* fixed mode */
     if (rtk->opt.mode==PMODE_PPP_FIXED) {
         for (i=0;i<3;i++) initx(rtk,rtk->opt.ru[i],1E-8,i);
@@ -660,31 +677,33 @@ static void udclk_ppp(rtk_t *rtk)
     int i,ic,sys=rtk->opt.navsys;
     trace(3,"udclk_ppp:\n");
 
-    /* single system clock error initialization (no GPS)*/
-    if (sys==SYS_CMP) {
-		dtr=rtk->sol.dtr[0]+rtk->sol.dtr[3];
-		if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
-		ic=IC(3,opt);
-		initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
+    /* initialize GPS clock (s) (white noise) */
+	dtr=rtk->sol.dtr[0];
+	if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
+	ic=IC(0,opt);
+	initx(rtk,CLIGHT*dtr,VAR_CLK,ic); /* m */
 
-		return;
-	}
-	else if (sys==SYS_GAL) {
-		dtr=rtk->sol.dtr[0]+rtk->sol.dtr[2];
+    /* single system clock error initialization (no GPS)*/
+    if (sys==SYS_GAL) {
+        /* GAL-GPS clock (s) */
+		dtr=rtk->sol.dtr[2];
 		if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
 		ic=IC(2,opt);
 		initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
 
 		return;
 	}
+    else if (sys==SYS_CMP) {
+        /* BDS-GPS clock (s) */
+		dtr=rtk->sol.dtr[3];
+		if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
+		ic=IC(3,opt);
+		initx(rtk,CLIGHT*dtr,VAR_CLK,ic);     
 
-	/* initialize GPS clock (white noise) */
-	dtr=rtk->sol.dtr[0];
-	if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
-	ic=IC(0,opt);
-	initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
+		return;
+	}
 
-    /* multi system clock error initialization */
+    /* multi system sat clock initialization */
     for (i=1;i<NSYS;i++) {
         if (!(sys&SYS_GLO)&&i==1) continue;
         if (!(sys&SYS_GAL)&&i==2) continue;
@@ -692,6 +711,7 @@ static void udclk_ppp(rtk_t *rtk)
         if (!(sys&SYS_IRN)&&i==4) continue;
         if (!(sys&SYS_QZS)&&i==5) continue;
 
+        /* isb */
         dtr=rtk->sol.dtr[i];
         ic=IC(i,opt);
 
@@ -724,13 +744,18 @@ static void udtrop_ppp(rtk_t *rtk)
 {
     double pos[3],azel[]={0.0,PI/2.0},ztd,var;
     int i=IT(&rtk->opt),j;
+    gtime_t time={0.0};
 
     trace(3,"udtrop_ppp:\n");
 
     if (rtk->x[i]==0.0) {
-        ecef2pos(rtk->sol.rr,pos);
+        /* ztd */
+        /* ecef2pos(rtk->sol.rr,pos);
         ztd=sbstropcorr(rtk->sol.time,pos,azel,&var);
-        initx(rtk,ztd,var,i);
+        initx(rtk,ztd,var,i); */
+        /* NOTE: the estimated parameter is the zenith tropospheric wet delay, zwd */
+        var=SQR(0.3);
+        initx(rtk,0.15,var,i);
 
         if (rtk->opt.tropopt>=TROPOPT_ESTG) {
             for (j=i+1;j<i+3;j++) initx(rtk,1E-6,VAR_GRA,j);
@@ -785,7 +810,10 @@ static void udiono_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             /* use pseudorange difference adjusted by freq for initial estimate, based on GPS L1 frequency */
             for (k=0;k<2;k++) {
                 bias_ix=code2bias_ix(sys,obs[i].code[fr2[k]]);
-                if (bias_ix>=0) {
+                /* The pseudorange bias and the ephemeris product must be in alignment!!! */
+                /* NOTE: precise ephemeris matching DCB/OSB products or Broadcast ephemeris matches TGD products */
+                if (bias_ix>=0&&((EPHOPT_PREC==opt->sateph&&(OPT_DCB==nav->obias_flag||OPT_OSB==nav->obias_flag))
+                    ||(EPHOPT_BRDC==opt->sateph&&nav->obias_flag>0))) {
                     P[k]=obs[i].P[fr2[k]]-nav->obias[sat-1][bias_ix]; /*DCB/OSB*/
                 }
                 else {
@@ -796,8 +824,7 @@ static void udiono_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             /* ion=(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])/(SQR(FREQL1/freq1)-SQR(FREQL1/freq2)); */
             ecef2pos(rtk->sol.rr,pos);
             azel=rtk->ssat[sat-1].azel;
-            /* adjust delay estimate by path length */
-            /* ion/=ionmapf(pos,azel); */
+            /* The slant delay is estimated, not the zenith delay */
             initx(rtk,ion,VAR_IONO,j);
             trace(9,"ion init: sat=%d ion=%.4f\n",sat,ion);
         }
@@ -898,10 +925,10 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
                     ion=0;                    
                 }
                 else {
-                    /* ion represents the ionospheric delay of frequency 1 rather than the current frequency */
+                    /* ion represents the ionospheric delay of frequency freq1 rather than the current frequency freq */
                     ion=(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])/(1.0-SQR(freq1/freq2));                    
                 }
-                /* Convert the ionospheric delay of frequency 1 to the current frequency */
+                /* convert the ionospheric delay of frequency freq1 to the current frequency freq */
                 bias[i]=L[f]-P[f]+2.0*ion*SQR(freq1/freq);
             }
             if (rtk->x[j]==0.0||slip[i]||bias[i]==0.0) continue;
@@ -922,6 +949,7 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             sat=obs[i].sat;
             j=IB(sat,f,&rtk->opt);
 
+            /* random walk process */
             rtk->P[j+j*rtk->nx]+=SQR(rtk->opt.prn[0])*fabs(rtk->tt);
 
             if (bias[i]==0.0||(rtk->x[j]!=0.0&&!slip[i])) continue;
@@ -1002,12 +1030,15 @@ static double trop_model_prec(gtime_t time, const double *pos,
         grad_n=m_w*cotz*cos(azel[0]);
         grad_e=m_w*cotz*sin(azel[0]);
         m_w+=grad_n*x[1]+grad_e*x[2];
-        dtdx[1]=grad_n*(x[0]-zhd);
-        dtdx[2]=grad_e*(x[0]-zhd);
+        /* dtdx[1]=grad_n*(x[0]-zhd);
+        dtdx[2]=grad_e*(x[0]-zhd); */
+        dtdx[1]=grad_n*(x[0]);
+        dtdx[2]=grad_e*(x[0]);
     }
     dtdx[0]=m_w;
     *var=SQR(0.01);
-    return m_h*zhd+m_w*(x[0]-zhd);
+    /* return m_h*zhd+m_w*(x[0]-zhd); */
+    return m_h*zhd+m_w*(x[0]);
 }
 /* tropospheric model ---------------------------------------------------------*/
 static int model_trop(gtime_t time, const double *pos, const double *azel,
@@ -1062,6 +1093,41 @@ static int model_iono(gtime_t time, const double *pos, const double *azel,
     return 0;
 }
 
+/* PPP satellite antenna PCO correction */
+static double satantoff_ppp(prcopt_t *opt, const obsd_t *obs, const nav_t *nav, int i, int sat, int fr, int frq, double *P, 
+                            const double *rs, double *rr, double *rss, double *e, double *danto)
+{
+    gtime_t time={0.0};
+    int k;
+    double r,pr,dt;
+
+    /* extract pseudorange observations */
+    if (P[frq]>0) pr=P[frq];
+    else {
+        for (k=0,pr=0.0;k<NF(opt);k++) if ((pr=P[k])!=0.0) break;                    
+    }
+    /* obtain the signal transmission time, consider satellite clock correction */
+    time=timeadd(obs[i].time,-pr/CLIGHT);
+
+    if (!pephclk(time,sat,nav,&dt,NULL)) {
+        trace(2,"no precise clock %s sat=%2d\n",time_str(time,3),sat);
+    }
+    time=timeadd(time,-dt);
+
+    /* satellite antenna offset correction */
+    satantoff(time,rs,-1,sat,nav,danto);           
+
+    for (k=0;k<3;k++) {
+        rss[k  ]=rs[k]+danto[k];
+        rss[k+3]=rs[(k+3)];
+    }             
+
+    /* update the satellite-receiver distance after correcting the satellite PCO*/
+    r=geodist(rss,rr,e);
+
+    return r;
+}
+
 /* update solution status ----------------------------------------------------
 * args   : int    code      I   observation type (0:phase,1:code)
 * return : status(1:ok,0:error)
@@ -1111,14 +1177,12 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 {
     prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
-    gtime_t time={0.0};
-    double y,r,cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc,C,fact,DCB[MAXFREQ]={0.0},rss[6]={0.0},pr=0.0,dt=0.0,danto[3]={0.0};
-    double F1[9],dx[3],temp[3],lever[3],Cne[9],Cen[9],lever_n[3],Hpp[3],Hpa[3];
-    double var[MAXOBS*2],dtrp=0.0,dion=0.0,vart=0.0,vari=0.0,dcb,freq,res=0.0;
-    double dantr[NFREQ]={0},dants[NFREQ]={0};
-    double ve[MAXOBS*2*NFREQ]={0},vmax=0;
+    double y,r,cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc,C,fact,DCB[MAXFREQ]={0.0},rss[6]={0.0},danto[3]={0.0};
+    double F1[9],dx[3],temp[3],lever[3],Cne[9],Cen[9],lever_n[3],Hpp[3],Hpa[3]; /* for TC mode */
+    double var[MAXOBS*2],dtrp=0.0,dion=0.0,var_tro=0.0,var_ion=0.0,dcb,freq,res=0.0,dantr[NFREQ]={0},dants[NFREQ]={0};
+    double ve[MAXOBS*2*NFREQ]={0},vari[MAXOBS*2*NFREQ]={0},vmax=0,varmax=0.0; /* post residual check */
     char str[32],id[4];
-    int ne=0,obsi[MAXOBS*2*NFREQ]={0},frqi[MAXOBS*2*NFREQ],maxobs,maxfrq,rej;
+    int ne=0,obsi[MAXOBS*2*NFREQ]={0},frqi[MAXOBS*2*NFREQ],codei[MAXOBS*2*NFREQ],maxobs,maxfrq,maxcode,rej; /* post residual check */
     int i,j,k,sat,sys,nv=0,nx=rtk->nx,stat=1,frq,code,fr;
 
     /* if broadcast ephemeris is used, enlarge the residual threshold */
@@ -1159,26 +1223,25 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     ecef2pos(rr,pos);
 
     for (i=0;i<n&&i<MAXOBS;i++) {
-        sat=obs[i].sat;
-        satno2id(sat,id);
-        sys=satsys(sat,NULL);
+        sat=obs[i].sat; satno2id(sat,id);
 
         /* calculate satellite-receiver geometric distance and satellite elevation angle */
         if ((r=geodist(rs+i*6,rr,e))<=0.0||satazel(pos,e,azel+i*2)<opt->elmin) {
             exc[i]=1;
             continue;
         }
+        /* exclude unhealthy satellites */
         if (!(sys=satsys(sat,NULL))||!rtk->ssat[sat-1].vs||satexclude(sat,var_rs[i],svh[i],opt)||exc[i]) {
             exc[i]=1;
             continue;
         }
         /* tropospheric and ionospheric model */
-        if (!model_trop(obs[i].time,pos,azel+i*2,opt,x,dtdx,nav,&dtrp,&vart)||
-            !model_iono(obs[i].time,pos,azel+i*2,opt,sat,x,nav,&dion,&vari)) {
+        if (!model_trop(obs[i].time,pos,azel+i*2,opt,x,dtdx,nav,&dtrp,&var_tro)||
+            !model_iono(obs[i].time,pos,azel+i*2,opt,sat,x,nav,&dion,&var_ion)) {
             continue;
         }
         /* satellite and receiver antenna model */
-        if (opt->posopt[0])              satantpcv(rs+i*6,rr,nav->spcvs+sat-1,dants);
+        if (opt->posopt[0]) satantpcv(rs+i*6,rr,nav->spcvs+sat-1,dants);
         /* for dynamic PPP, receiver antenna correction (PCO/PCV) is not performed */
         if (opt->posopt[1]) antmodel(sys,opt->pcvr,opt->antdel[0],azel+i*2,opt->posopt[1],dantr);
 
@@ -1188,7 +1251,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             continue;
         }
         /* corrected phase and code measurements */
-        corr_meas(obs+i,nav,azel+i*2,&rtk->opt,dantr,dants,rtk->ssat[sat-1].phw,L,P,&Lc,&Pc,DCB);
+        corr_meas(obs+i,nav,azel+i*2,opt,dantr,dants,rtk->ssat[sat-1].phw,L,P,&Lc,&Pc,DCB);
 
         /* stack phase and code residuals {L1,P1,L2,P2,...} */
         for (j=0;j<2*NF(opt);j++) {
@@ -1201,26 +1264,8 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 
             /* if using precise ephemeris, correct the satellite PCO */
             if (EPHOPT_PREC==opt->sateph&&norm(P,3)>0) {
-                if (P[frq]>0) pr=P[frq];
-                else {
-                    for (k=0,pr=0.0;k<NF(opt);k++) if ((pr=P[k])!=0.0) break;                    
-                }
-                /* obtain the signal transmission time */
-                time=timeadd(obs[i].time,-pr/CLIGHT);
-                if (!pephclk(time,sat,nav,&dt,NULL)) {
-                    trace(2,"no precise clock %s sat=%2d\n",time_str(time,3),sat);
-                }
-                time=timeadd(time,-dt);
-                /* satellite antenna offset correction */
-                satantoff(time,rs+i*6,fr,sat,nav,danto);           
+                r=satantoff_ppp(opt,obs,nav,i,sat,fr,frq,P,rs+i*6,rr,rss,e,danto);
             }
-            for (k=0;k<3;k++) {
-                rss[k  ]=rs[k+i*6]+danto[k];
-                rss[k+3]=rs[(k+3)+i*6];
-            }             
-
-            /* update the satellite-receiver distance after correcting the satellite PCO*/
-            r=geodist(rss,rr,e);
 
             if (opt->ionoopt==IONOOPT_IFLC) {
                 if ((y=code==0?Lc:Pc)==0.0) continue;
@@ -1231,11 +1276,13 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
                     continue; 
                 }
                 if ((freq=sat2freq(sat,obs[i].code[fr],nav))==0.0) continue;
+
                 /* The iono paths have already applied a slant factor, based on GPS L1 frequency*/
                 C=SQR(FREQL1/freq)*(code==0?-1.0:1.0);
             }
-            /* Initialize the measurement matrix H by row */
-            for (k=0;k<nx;k++) { H[k+nx*nv]=0.0; }              
+
+            /* initialize the measurement matrix H by row */
+            for (k=0;k<nx;k++) H[k+nx*nv]=0.0;             
 
             /* H of pos/vel/att */
             if (GINS_TC==opt->GI_mode) {
@@ -1253,20 +1300,20 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
                 for (k=0;k<3;k++) H[k+nx*nv]=-e[k];  /* translation of innovation to position states */                        
             }
 
-            /* receiver clock, if only use a system (no GPS), x[IC(0,opt)]=0*/
+            /* H of receiver clock, if only use a system (no GPS) */
             if (sys==SYS_GPS) {
 				cdtr=x[IC(0,opt)];
 				H[IC(0,opt)+nx*nv]=1.0;
-			}
-            if (sys==SYS_CMP) {
-				cdtr=x[IC(0,opt)]+x[IC(3,opt)];
-				H[IC(0,opt)+nx*nv]=1.0;
-				H[IC(3,opt)+nx*nv]=1.0;
 			}
 			if (sys==SYS_GAL) {
 				cdtr=x[IC(0,opt)]+x[IC(2,opt)];
 				H[IC(0,opt)+nx*nv]=1.0;
 				H[IC(2,opt)+nx*nv]=1.0;
+			}            
+            if (sys==SYS_CMP) {
+				cdtr=x[IC(0,opt)]+x[IC(3,opt)];
+				H[IC(0,opt)+nx*nv]=1.0;
+				H[IC(3,opt)+nx*nv]=1.0;
 			}
 			if (sys==SYS_IRN) {
 				cdtr=x[IC(0,opt)]+x[IC(4,opt)];
@@ -1279,22 +1326,26 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 				H[IC(5,opt)+nx*nv]=1.0;
 			}
 
+            /* H of troposphere */
             if (opt->tropopt==TROPOPT_EST||opt->tropopt==TROPOPT_ESTG) {
                 for (k=0;k<(opt->tropopt>=TROPOPT_ESTG?3:1);k++) {
                     H[IT(opt)+k+nx*nv]=dtdx[k];
                 }
             }
+            /* H of ionosphere */
             if (opt->ionoopt==IONOOPT_EST) {
                 if (rtk->x[II(sat,opt)]==0.0) continue;
                 /* The vertical iono delay is estimated, but the residual is in the direction of the slant, so apply the slat factor mapping function. */
                 /* H[II(sat,opt)+nx*nv]=C*ionmapf(pos,azel+i*2); */
                 H[II(sat,opt)+nx*nv]=C;
             }
-            if (frq==2&&code==1) { /* L5-receiver-dcb */
+            /* H of L5-receiver-dcb */
+            if (frq==2&&code==1) { 
                 dcb+=rtk->x[ID(opt)];
                 H[ID(opt)+nx*nv]=1.0;
             }
-            if (code==0) { /* phase bias */
+            /* H of ambiguity */
+            if (code==0) { 
                 if ((bias=x[IB(sat,frq,opt)])==0.0) continue;
                 H[IB(sat,frq,opt)+nx*nv]=1.0;
             }
@@ -1304,11 +1355,11 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 
             /* variance */
             var[nv]=varerr(sat,sys,azel[1+i*2],SNR_UNIT*rtk->ssat[sat-1].snr_rover[fr],j,opt,obs+i);
-            var[nv]+=vart+SQR(C)*vari+var_rs[i];
+            var[nv]+=var_tro+SQR(C)*var_ion+var_rs[i];
             if (sys==SYS_GLO&&code==1) var[nv]+=VAR_GLO_IFB;
 
-            trace(8,"%4s sat=%s %s%d res=%9.4f sig=%9.4f el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
-                fr+1,res,sqrt(var[nv]),azel[1+i*2]*R2D);
+            trace(8,"%4s sat=%s %s%d res=%9.4f thres=%9.4f el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
+                fr+1,res,post?(sqrt(var[nv])*THRES_REJECT):(opt->maxinno[code]*fact),azel[1+i*2]*R2D);
 
             /* reject satellite by pre-fit residuals */
             if (!post&&opt->maxinno[code]>0.0&&fabs(res)>(opt->maxinno[code]*fact)) {
@@ -1319,7 +1370,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             }
             /* record large post-fit residuals */
             if (post&&fabs(res)>sqrt(var[nv])*THRES_REJECT) {
-                obsi[ne]=i; frqi[ne]=fr; ve[ne]=res; ne++;
+                obsi[ne]=i; frqi[ne]=fr; ve[ne]=res; vari[ne]=var[nv]; codei[ne]=code; ne++;
             }
             /* update solution status */
             update_ssat(&rtk->ssat[sat-1],opt,code,sat,fr,rss,rr,azel+i*2,res,cdtr,dts[i*2],dtrp,C*dion,bias,danto,dants,DCB[fr]);
@@ -1328,21 +1379,19 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     }
     /* reject satellite with large and max post-fit residual */
     if (post&&ne>0) {
-        vmax=ve[0]; maxobs=obsi[0]; maxfrq=frqi[0]; rej=0;
+        vmax=ve[0]; varmax=vari[0]; maxobs=obsi[0]; maxfrq=frqi[0]; maxcode=codei[0]; rej=0;
         for (j=1;j<ne;j++) {
             if (fabs(vmax)>=fabs(ve[j])) continue;
-            vmax=ve[j]; maxobs=obsi[j]; maxfrq=frqi[j]; rej=j;
+            vmax=ve[j]; varmax=vari[j]; maxobs=obsi[j]; maxfrq=frqi[j]; maxcode=codei[j]; rej=j;
         }
-        sat=obs[maxobs].sat;
-        trace(2,"outlier (%d) rejected %s sat=%2d %s%d res=%9.4f el=%4.1f\n",
-            post,str,sat,maxfrq%2?"P":"L",maxfrq/2+1,vmax,azel[1+maxobs*2]*R2D);
+        sat=obs[maxobs].sat; satno2id(sat,id);
+        trace(7,"(%4s) outlier rejected (iter=%d) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",
+            post?"post":"prio",post,id,maxcode?"P":"L",maxfrq+1,vmax,sqrt(varmax)*THRES_REJECT,azel[1+maxobs*2]*R2D);
         /* if the post-fit test fails, the solution flag is set to 0 */    
         exc[maxobs]=1; rtk->ssat[sat-1].rejc[maxfrq]++; stat=0;
-        ve[rej]=0;
     }
     if (R) {
-        for (j=0;j<nv;j++) for (i=0;i<nv;i++) R[i+j*nv]=0.0;
-        for (i=0;i<nv;i++) R[i+i*nv]=var[i];
+        for (j=0;j<nv;j++) for (i=0;i<nv;i++) R[i+j*nv]=(i==j)?var[i]:0.0;
     }
     return post?stat:nv;
 }
@@ -1452,10 +1501,12 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
             rtk->sol.qv[5]=(float)rtk->P[5+3*rtk->nx];
         }
     }
-        rtk->sol.dtr[0]=rtk->x[IC(0,opt)]; /* GPS */
-        rtk->sol.dtr[1]=rtk->x[IC(1,opt)]-rtk->x[IC(0,opt)]; /* GLO-GPS */
-        rtk->sol.dtr[2]=rtk->x[IC(2,opt)]-rtk->x[IC(0,opt)]; /* GAL-GPS */
-        rtk->sol.dtr[3]=rtk->x[IC(3,opt)]-rtk->x[IC(0,opt)]; /* BDS-GPS */
+
+    /* update GPS receiver clock and ISB */
+    rtk->sol.dtr[0]=rtk->x[IC(0,opt)]/CLIGHT; /* GPS */
+    rtk->sol.dtr[1]=rtk->x[IC(1,opt)]/CLIGHT; /* GLO-GPS */
+    rtk->sol.dtr[2]=rtk->x[IC(2,opt)]/CLIGHT; /* GAL-GPS */
+    rtk->sol.dtr[3]=rtk->x[IC(3,opt)]/CLIGHT; /* BDS-GPS */
 
     for (i=0;i<n&&i<MAXOBS;i++) {
         sys=satsys(obs[i].sat,NULL);
@@ -1535,13 +1586,14 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     double *rs,*dts,*var,*v,*H,*R,*azel,*xp,*Pp,dr[3]={0},std[3];
     double *F,*Q,dv=0.0,alpha=0.0,k0=1.0,k1=2.0;
     char str[32];
-    int i,j,nv,info,svh[MAXOBS],exc[MAXOBS]={0},stat=SOLQ_NONE,sys,fr;
+    int i,j,nv,info,svh[MAXOBS],exc[MAXOBS]={0},stat=SOLQ_NONE,sys,fr,mode=rtk->opt.filter;
 
     time2str(obs[0].time,str,2);
     trace(3,"pppos   : time=%s nx=%d n=%d\n",str,rtk->nx,n);
 
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel=zeros(2,n);
 
+    /* reset ambiguity fix flag */
     for (i=0;i<MAXSAT;i++) {
         sys=satsys(i+1,NULL);
         for (j=0;j<opt->nf;j++) {
@@ -1568,16 +1620,19 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     if (rtk->opt.posopt[3]) {
         testeclipse(obs,n,nav,rs);
     }
+
     /* earth tides correction */
     if (opt->tidecorr) {
-        tidedisp(gpst2utc(obs[0].time),rtk->x,opt->tidecorr==1?1:7,&nav->erp,
-                 opt->odisp[0],dr);
+        tidedisp(gpst2utc(obs[0].time),rtk->x,opt->tidecorr==1?1:7,&nav->erp,opt->odisp[0],dr);
     }
-    /* consider motion constraints (NHC/ZUPT) */
+
+    /* initialize heap memory, consider motion constraints (NHC/ZUPT) */
     nv=n*rtk->opt.nf*2+MAXSAT+3;
     xp=mat(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
     v=mat(nv,1); H=mat(nv,rtk->nx); R=mat(nv,nv);
     F=mat(rtk->nx,nv); Q=mat(nv,nv);
+
+    /* iterative solution */
     for (i=0;i<MAX_ITER;i++) {
         /* initial states */
         matcpy(xp,rtk->x,rtk->nx,1);
@@ -1591,13 +1646,15 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 
         /* trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0);
         trace(12,"H=\n"); tracemat(12,H,nv,rtk->nx,9,4,0);
-        trace(12,"R=\n"); tracemat(12,R,nv,nv,9,4,0); */
+        trace(12,"R=\n"); tracemat(12,R,nv,nv,9,4,0);
+        trace(12,"P=\n"); tracemat(12,Pp,rtk->nx,rtk->nx,9,4,0); */
 
         /* measurement update of ekf states */
-        if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==opt->GI_mode)?KF_GINS:KF_GNSS,Robust_OFF))) {
+        if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==opt->GI_mode)?KF_GINS:KF_GNSS,mode))) {
             trace(7,"%s ppp (%d) filter error info=%d\n",str,i+1,info);
             break;
         }
+
         /* postfit residuals */
         if (ppp_res(i+1,obs,n,rs,dts,var,svh,dr,exc,nav,xp,rtk,v,H,R,azel)) {           
             /* copy states */
@@ -1607,12 +1664,18 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             break;
         }
     }
-    if (i>=MAX_ITER) {
-        trace(7,"%s ppp (%d) iteration overflows\n",str,i);
-    }
-    /* ins feedback correction */
-    if (GINS_TC==opt->GI_mode) ins_fedback(rtk,xp);
 
+    /* if the number of iterations exceeds the limit, the solution fails */
+    if (i>=MAX_ITER) {
+        trace(7,"%s ppp (%d) iteration exceeds the limit, solution failed!\n",str,i);
+    }
+
+    /* ins feedback correction */
+    if (GINS_TC==opt->GI_mode) {
+        ins_fedback(rtk,xp); 
+    }
+
+    /* TODO: PPP-AR */
     if (stat==SOLQ_PPP) {
 
         if (ppp_ar(rtk,obs,n,exc,nav,azel,xp,Pp)&&
@@ -1640,6 +1703,6 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     update_stat(rtk,obs,n,stat);
 
     free(rs); free(dts); free(var); free(azel);
-    free(xp); free(Pp); free(v); free(H); free(R);
+    free(xp); free(Pp);  free(v); free(H); free(R);
     free(F); free(Q); 
 }

@@ -1,0 +1,7 @@
+pos1-GINS		   =TC				# (0:off,1:LC,2:TC,3:STC)
+pos1-posmode       =kinematic		# (0:single,1:dgps,2:kinematic,3:static,4:tight,5:static-start,6:movingbase,7:fixed,8:ppp-kine,9:ppp-static,10:ppp-fixed)
+pos1-ionoopt       =brdc        	# (0:off,1:brdc,2:sbas,3:dual-freq,4:est-stec,5:ionex-tec,6:qzs-brdc)
+pos1-tropopt       =saas        	# (0:off,1:saas,2:sbas,3:est-ztd,4:est-ztdgrad)
+pos1-sateph        =brdc        	# (0:brdc,1:precise,2:brdc+sbas,3:brdc+ssrapc,4:brdc+ssrcom)
+pos1-filter		   =Robust_INO  	# (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST)
+pos2-armode        =instantaneous 	# (0:off,1:continuous,2:instantaneous,3:fix-and-hold)

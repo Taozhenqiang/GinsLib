@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c" "libIns/CMakeFiles/libIns.dir/ins.c.obj" "gcc" "libIns/CMakeFiles/libIns.dir/ins.c.obj.d"
+  "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c" "libIns/CMakeFiles/libIns.dir/ins.c.obj" "gcc" "libIns/CMakeFiles/libIns.dir/ins.c.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

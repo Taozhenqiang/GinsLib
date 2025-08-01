@@ -1220,7 +1220,7 @@ static int outecef(uint8_t *buff, const char *s, const sol_t *sol,
                sqvar(sol->qr[5]),sep,sol->age,sep,sol->ratio);
     
     if (opt->outvel) { /* output velocity */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
             p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
                     "%8.5f%s%8.5f",
                     sep,sol->vel[0],sep,sol->vel[1],sep,sol->vel[2],sep,
@@ -1237,7 +1237,7 @@ static int outecef(uint8_t *buff, const char *s, const sol_t *sol,
                     sqvar(sol->qv[5]));              
         }
     }
-    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         if (opt->outatt) { /* output attitude */
             p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
                     "%8.5f%s%8.5f",
@@ -1252,6 +1252,13 @@ static int outecef(uint8_t *buff, const char *s, const sol_t *sol,
                     sol->ba[0],sep,sol->ba[1],sep,sol->ba[2],sep,sqvar(sol->qb[0]),
                     sep,sqvar(sol->qb[1]),sep,sqvar(sol->qb[2]),sep,sqvar(sol->qb[3]),
                     sep,sqvar(sol->qb[4]),sep,sqvar(sol->qb[5]));
+        }
+        if (opt->outiflag) { /* output solution flag (GNSS/ZUPT) */
+            if (sol->iFlag) {
+                p+=sprintf(p,"%s%8s",sep,"ZUPT");
+            } else {
+                p+=sprintf(p,"%s%8s",sep,"GNSS");
+            }
         }           
     }
      
@@ -1298,7 +1305,7 @@ static int outpos(uint8_t *buff, const char *s, const sol_t *sol,
                    SQRT(Q[0]),sep,SQRT(Q[8]),sep,sqvar(Q[1]),sep,sqvar(Q[2]),
                    sep,sqvar(Q[5]));
     }
-    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         if (opt->outatt) { /* output attitude */
             p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
                     "%8.5f%s%8.5f",
@@ -1347,7 +1354,7 @@ static int outenu(uint8_t *buff, const char *s, const sol_t *sol,
                    SQRT(Q[0]),sep,SQRT(Q[8]),sep,sqvar(Q[1]),sep,sqvar(Q[2]),
                    sep,sqvar(Q[5]));
     }
-    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         if (opt->outatt) { /* output attitude */
             p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
                     "%8.5f%s%8.5f",
@@ -1567,18 +1574,25 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         "GPS","GLONASS","Galileo","QZSS","BDS","NavIC","SBAS","","",""
     };
     const char *s8[]={
-        "OFF","Continuous","Instantaneous","Fix and Hold","","",""
+        "KF","Robust_INO","Robust_RES","Robust_Chi","Robust_ST","Robust_MST"
     };
     const char *s9[]={
-        "OFF","ON","AutoCal","Fix and Hold",""
+        "IGG3","Huber","MCKF"
+    };      
+    const char *s10[]={
+        "OFF","Continuous","Instantaneous","Fix and Hold","","",""
     };
+    const char *s11[]={
+        "OFF","ON","AutoCal","Fix and Hold",""
+    };  
     int i,j,k=0;
     char *p=(char *)buff;
     
     trace(3,"outprcopts:\n");
 
-    if (GINS_LC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS LC\r\n",COMMENTH,s1[opt->mode],'/');
-    else if (GINS_TC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS TC\r\n",COMMENTH,s1[opt->mode],'/');
+    if (GINS_LC==opt->GI_mode)       p+=sprintf(p,"%s pos mode  : %s%cINS LC\r\n",COMMENTH,s1[opt->mode],'/');
+    else if (GINS_TC==opt->GI_mode)  p+=sprintf(p,"%s pos mode  : %s%cINS TC\r\n",COMMENTH,s1[opt->mode],'/');
+    else if (GINS_STC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS STC\r\n",COMMENTH,s1[opt->mode],'/');
     else p+=sprintf(p,"%s pos mode  : %s\r\n",COMMENTH,s1[opt->mode]);
     
     if (PMODE_DGPS<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
@@ -1613,10 +1627,14 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
             if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
         }
     p+=sprintf(p,"\r\n");
+    p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
+    if (Robust_INO==opt->filter||Robust_RES==opt->filter) {
+        p+=sprintf(p,"%s M_robust  : %s\r\n",COMMENTH,s9[opt->M_robust]);
+    }
     if (PMODE_KINEMA<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
-        p+=sprintf(p,"%s amb res   : %s\r\n",COMMENTH,s8[opt->modear]);
+        p+=sprintf(p,"%s amb res   : %s\r\n",COMMENTH,s10[opt->modear]);
         if (opt->navsys&SYS_GLO) {
-            p+=sprintf(p,"%s amb glo   : %s\r\n",COMMENTH,s9[opt->glomodear]);
+            p+=sprintf(p,"%s amb glo   : %s\r\n",COMMENTH,s11[opt->glomodear]);
         }
         if (opt->thresar[0]>0.0) {
             p+=sprintf(p,"%s amb thres : %.1f\r\n",COMMENTH,opt->thresar[0]);
@@ -1644,7 +1662,7 @@ extern int outsolheads(uint8_t *buff, const prcopt_t *popt, const solopt_t *opt)
 {
     const char *s1[]={"WGS84","Tokyo"},*s2[]={"ellipsoidal","geodetic"};
     const char *s3[]={"GPST","UTC ","JST "},*sep=opt2sep(opt);
-    const char *leg1="Q=1:fix,2:float,3:sbas,4:dgps,5:single,6:ppp,7:INS,8:LC,9:TC";
+    const char *leg1="Q=1:fix,2:float,3:sbas,4:dgps,5:single,6:ppp,7:INS,8:NHC/ZUPT";
     const char *leg2="ns=# of satellites";
     char *p=(char *)buff;
     int timeu=opt->timeu<0?0:(opt->timeu>20?20:opt->timeu);
@@ -1692,10 +1710,10 @@ extern int outsolheads(uint8_t *buff, const prcopt_t *popt, const solopt_t *opt)
                    "%s%6s%s%6s",
                    "x-ecef(m)",sep,"y-ecef(m)",sep,"z-ecef(m)",sep,"Q",sep,"ns",
                    sep,"sdx(m)",sep,"sdy(m)",sep,"sdz(m)",sep,"sdxy(m)",sep,
-                   "sdyz(m)",sep,"sdzx(m)",sep,"age(s)",sep,"ratio");
+                   "sdyz(m)",sep,"sdzx(m)",sep," age(s)",sep,"ratio");
         
         if (opt->outvel) {
-            p+=sprintf(p,"%s%10s%s%10s%s%10s%s%9s%s%8s%s%8s%s%8s%s%8s%s%8s",
+            p+=sprintf(p,"%s%10s%s%10s%s%10s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s",
                        sep,"vx(m/s)",sep,"vy(m/s)",sep,"vz(m/s)",sep,"sdvx",sep,
                        "sdvy",sep,"sdvz",sep,"sdvxy",sep,"sdvyz",sep,"sdvzx");
         }               
@@ -1713,18 +1731,21 @@ extern int outsolheads(uint8_t *buff, const prcopt_t *popt, const solopt_t *opt)
                        "sdvn",sep,"sdvu",sep,"sdven",sep,"sdvnu",sep,"sdvue");
         }
         }
-    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         if (opt->outatt) {
-            p+=sprintf(p,"%s%10s%s%10s%s%10s%s%9s%s%8s%s%8s%s%8s%s%8s%s%8s",
-                       sep,"pitch(deg)",sep,"roll(deg)",sep,"yaw(deg)",sep,"sdp",sep,
+            p+=sprintf(p,"%s%10s%s%10s%s%10s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s",
+                       sep," pitch(deg)",sep,"roll(deg)",sep,"yaw(deg)",sep,"sdp",sep,
                        "sdr",sep,"sdy",sep,"sdpr",sep,"sdry",sep,"sdpy");
         }
         if (opt->outbga) {
-            p+=sprintf(p,"%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s%s%10s",
+            p+=sprintf(p,"%s%13s%s%13s%s%13s%s%11s%s%11s%s%11s%s%11s%s%11s%s%12s%s%12s%s%12s%s%12s",
                        sep,"bgx(deg/h)",sep,"bgy(deg/h)",sep,"bgz(deg/h)",sep,"bax(ug)",sep,
                        "bay(ug)",sep,"baz(ug)",sep,"sdbgx",sep,"sdbgy",sep,"sdbgz",sep,"sdbax",
                        sep,"sdbay",sep,"sdbaz");
-        }         
+        }     
+        if (opt->outiflag) {
+            p+=sprintf(p,"%s%10s",sep,"iFlag");
+        }
     }
 
     p+=sprintf(p,"\r\n");

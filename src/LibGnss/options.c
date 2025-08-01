@@ -40,7 +40,7 @@ static double antpos_[2][3];
 static char exsats_[1024];
 static char snrmask_[NFREQ][1024];
 static char time_[2][1024];
-static char fre_[RNX_NUMSYS][1024];
+static char fre_[MAXSYS][1024];
 static char constraint_[1024];
 static char rotation_angle_[1024];
 static char install_angle_[1024];
@@ -52,8 +52,10 @@ static char stat_[statopt];
 
 /* system options table ------------------------------------------------------*/
 #define SWTOPT  "0:off,1:on"
-#define GIOPT   "0:off,1:LC,2:TC"
+#define GIOPT   "0:off,1:LC,2:TC,3:STC"
 #define MODOPT  "0:single,1:dgps,2:kinematic,3:static,4:tight,5:static-start,6:movingbase,7:fixed,8:ppp-kine,9:ppp-static,10:ppp-fixed"
+#define FILOPT  "0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST"
+#define MESOPT  "0:IGG3,1:Huber,2:MCKF"
 #define TYPOPT  "0:forward,1:backward,2:combined,3:combined-nophasereset"
 #define IONOPT  "0:off,1:brdc,2:sbas,3:dual-freq,4:est-stec,5:ionex-tec,6:qzs-brdc"
 #define TRPOPT  "0:off,1:saas,2:sbas,3:est-ztd,4:est-ztdgrad"
@@ -109,6 +111,8 @@ EXPORT opt_t sysopts[]={
     {"pos1-bds2",       3,  (void *)&prcopt_.bdsflag[0], SWTOPT },
     {"pos1-bds3",       3,  (void *)&prcopt_.bdsflag[1], SWTOPT },
     {"pos1-navsys",     0,  (void *)&prcopt_.navsys,     NAVOPT },
+    {"pos1-filter",     3,  (void *)&prcopt_.filter,     FILOPT },
+    {"pos1-M_robust",   3,  (void *)&prcopt_.M_robust,   MESOPT },
 
     {"pos2-artype",     0,  (void *)&prcopt_.artype,     ""     },    
     {"pos2-armode",     3,  (void *)&prcopt_.modear,     ARMOPT },
@@ -147,10 +151,12 @@ EXPORT opt_t sysopts[]={
     {"ins-imudatype",   0,  (void *)&prcopt_.imudatype,  ""     },
     {"ins-nnts",        0,  (void *)&prcopt_.nn,         ""     },
     {"ins-insample",    0,  (void *)&prcopt_.insample,   ""     },
-    {"ins-constraints", 2,  (void *)&constraint_,        ""     },
     {"ins-aligntype",   0,  (void *)&prcopt_.alingetype,  ""    },
+    {"ins-attupdtype",  0,  (void *)&prcopt_.att_type,    ""    },    
+    {"ins-constraints", 2,  (void *)&constraint_,        ""     },
     {"ins-install_angle",2, (void *)&install_angle_,      ""    },
     {"ins-nhc_lever",   2,  (void *)&lever_nhc_,          ""    },
+    {"ins-zupt_gthres", 1,  (void *)&prcopt_.zupt_gthres, ""    },
     {"ins-rotaion_angle",2, (void *)&rotation_angle_,     ""    },
     {"ins-initpos",     2,  (void *)&initpose_[0],       ""     },
     {"ins-initvel",     2,  (void *)&initpose_[1],       ""     },
@@ -173,6 +179,7 @@ EXPORT opt_t sysopts[]={
     {"out-outvel",      3,  (void *)&solopt_.outvel,     SWTOPT },
     {"out-outatt",      3,  (void *)&solopt_.outatt,     SWTOPT },
     {"out-outbga",      3,  (void *)&solopt_.outbga,     SWTOPT },
+    {"out-outiFlag",    3,  (void *)&solopt_.outiflag,   SWTOPT },
     {"out-timesys",     3,  (void *)&solopt_.times,      TSYOPT },
     {"out-timeform",    3,  (void *)&solopt_.timef,      TFTOPT },
     {"out-timendec",    0,  (void *)&solopt_.timeu,      ""     },
@@ -528,7 +535,7 @@ static void buff2sysopts(void)
         }
     }
     /* frequency id */
-    for (i=0;i<RNX_NUMSYS;i++) {
+    for (i=0;i<MAXSYS;i++) {
         for (j=0;j<MAXFREQ;j++) prcopt_.fre[i][j]=0;
         strcpy(buff,fre_[i]);
         for (p=strtok_r(buff,",",&q),j=0;p&&j<MAXFREQ;p=strtok_r(NULL,",",&q)) {
@@ -585,6 +592,7 @@ static void buff2sysopts(void)
         prcopt_.initatt[j++]=atof(p)*D2R;
     }
     if (prcopt_.initatt[2]>PI) prcopt_.initatt[2]-=2*PI; /* yaw is in range [-pi,pi] */
+    /* counterclockwise is positive */
     prcopt_.initatt[2]=-prcopt_.initatt[2];
 
     /* init ins position std */

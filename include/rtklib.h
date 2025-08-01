@@ -67,19 +67,68 @@ extern "C"
 #define COPYRIGHT_RTKLIB \
     "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
 
-/*modified*/
-#define MAXITR  10      /* max number of iteration for point pos */
+/*modified by tzq*/
+#define MAXITR  10      /* max number of iteration for spp */
 #define MAXSYS  6       /* max system */
 #define MAXFREQ 7       /* max NFREQ */
-#define statopt 10
+#define statopt 10      /* maximum number of solution statistics output flags */
 #define BDS2 "C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C16"
 #define BDS3 "C19 C20 C21 C22 C23 C24 C25 C26 C27 C28 C29 C30 C32 C33 C34 C35 C36 C37 C38 C39 C40 C41 C42 C43 C44 C45 C46 C56 C57 C58 C59 C60 C61"
 
-#define GNSISB_CT     1       /* GNSS ISB: time constant */
-#define GNSISB_RW     2       /* GNSS ISB: random walk process */
-#define GNSISB_WN     3       /* GNSS ISB: white noise process */
+#define ATT_DCM  0      /* attitude update method: direction cosine matrix */
+#define ATT_QUAT 1      /* attitude update method: quaternion */
 
-#define MAXOUT        50      /* number of output interval */
+#define GINS_OFF 0      /* only GNSS */
+#define GINS_LC  1      /* loose coupled */
+#define GINS_TC  2      /* tight coupled */
+#define GINS_STC 3      /* semi-tight coupled */
+
+#define GNSISB_CT  1    /* GNSS ISB: time constant */
+#define GNSISB_RW  2    /* GNSS ISB: random walk process */
+#define GNSISB_WN  3    /* GNSS ISB: white noise process */
+
+#define MAXOUT  50      /* number of output interval */
+
+#define OPT_DCB 1       /* option: dcb correction */
+#define OPT_OSB 2       /* option: osb correction */
+#define OPT_TGD 3       /* option: tgd correction */
+
+#define KF_GNSS 0       /* GNSS filter */
+#define KF_GINS 1       /* GNSS/INS filter */
+
+#define Robust_OFF 0    /* robust filter: off */
+#define Robust_INO 1    /* robust filter based on the innovation vector */
+#define Robust_RES 2    /* robust filter based on the posteriori residuals */
+#define Robust_Chi 3    /* robust filter based on Mahalanobis distance */
+#define Robust_ST  4    /* robust filter based on the Student's t-distribution */
+#define Robust_MST 5    /* robust filter based on the multidimensional Student's t-distribution */
+
+#define IGG3  0         /* IGG3 robust weight function */
+#define Huber 1         /* Huber robust weight function */
+#define MCKF  2         /* MCKF robust weight function */
+
+#define MAXITR_ROBUST 6 /* max number of iteration for robust filter */
+#define ITR_TOL    1E-5 /* iteration termination tolerance for robust filter */
+
+#define CONS_OFF  0     /* constraint: off */
+#define CONS_NHC  1     /* NHC */
+#define CONS_ZUPT 2     /* ZUPT */
+
+#define NO   0          /* GNSS/INS time matching: No */
+#define YES  1          /* GNSS/INS time matching: Yes */
+
+#define SYNC_NO   0     /* GNSS/INS time synchronization: No */
+#define SYNC_YES  1     /* GNSS/INS time synchronization: Yes */
+
+#define IMUT_INCRENT 0  /* imu data type: increment */
+#define IMUT_RATE    1  /* imu data type: rate */
+
+#define INSALI_MANUAL 0       /* manual alignment */
+#define INSALI_VELTOR 1       /* velocity vector alignment */
+
+#define SOLF_GNSS 0     /* solution falg: GNSS */
+#define SOLF_ZUPT 1     /* solution falg: ZUPT */
+
 /* ins constants/macros ----------------------------------------------------------*/
 #define NINCIMU     100000              /* incremental number of imu data */
 #define MAXINS      2                   /* maximum number of samples */
@@ -252,8 +301,11 @@ extern "C"
 #define MAXPRNSBS 158                       /* max satellite PRN number of SBAS */
 #define NSATSBS (MAXPRNSBS - MINPRNSBS + 1) /* number of SBAS satellites */
 
+/* GPS+GLO+GAL+QZS+BDS+IRN+SBS+LEO=32+27+36+10+63+14+39+10=231 */
+/* GPS+GLO+GAL+QZS+BDS+IRN+SBS    =32+27+36+10+63+14+39   =221 */
 #define MAXSAT (NSATGPS + NSATGLO + NSATGAL + NSATQZS + NSATCMP + NSATIRN + NSATSBS + NSATLEO)
-    /* max satellite number (1 to MAXSAT) */
+
+/* max satellite number */
 #define MAXSTA 255
 
 #ifndef MAXOBS
@@ -391,28 +443,6 @@ extern "C"
 #define CODE_L4X 68 /* obs code: G1al1OCd+p (GLO) */
 #define MAXCODE 68  /* max number of obs code */
 
-#define KF_GNSS 0  /* GNSS filter */
-#define KF_GINS 1  /* GNSS/INS filter */
-
-#define Robust_OFF 0  /* robust filter: off */
-#define Robust_INO 1  /* robust filter: on */
-#define Robust_RES 2
-
-#define GINS_OFF 0 /* only GNSS */
-#define GINS_LC  1 /* loose coupled */
-#define GINS_TC  2 /* tight coupled */
-#define GINS_STC 3 /* semi-tight coupled */
-
-#define CONS_OFF  0 /* constraint: off */
-#define CONS_NHC  1 /* NHC */
-#define CONS_ZUPT 2 /* ZUPT */
-
-#define NO   0  /* GNSS/INS time matching: No */
-#define YES  1  /* GNSS/INS time matching: Yes */
-
-#define SYNC_NO   0  /* GNSS/INS time synchronization: No */
-#define SYNC_YES  1  /* GNSS/INS time synchronization: Yes */
-
 #define PMODE_SINGLE 0       /* positioning mode: single */
 #define PMODE_DGPS 1         /* positioning mode: DGPS/DGNSS */
 #define PMODE_KINEMA 2       /* positioning mode: kinematic */
@@ -425,12 +455,6 @@ extern "C"
 #define PMODE_PPP_STATIC 9   /* positioning mode: PPP-static */
 #define PMODE_PPP_FIXED 10   /* positioning mode: PPP-fixed */
 #define PMODE_INSPURE 11     /* positioning mode: pure ins */  
-
-#define IMUT_INCRENT 0     /* imu data type: increment */
-#define IMUT_RATE    1     /* imu data type: rate */
-
-#define INSALI_MANUAL 0       /* manual alignment */
-#define INSALI_VELTOR 1       /* velocity vector alignment */
 
 #define SOLF_LLH 0  /* solution format: lat/lon/height */
 #define SOLF_XYZ 1  /* solution format: x/y/z-ecef */
@@ -628,7 +652,7 @@ extern "C"
     typedef struct
     {                                 /* observation data record */
         gtime_t time;                 /* receiver sampling time (GPST) */
-        uint8_t sat, rcv;             /* satellite/receiver number */
+        uint8_t sat, rcv;             /* satellite/receiver number (rcv=1,rover; rcv=2,base)*/
         uint16_t SNR[NFREQ + NEXOBS]; /* signal strength (0.001 dBHz) */
         uint8_t LLI[NFREQ + NEXOBS];  /* loss of lock indicator */
         uint8_t code[NFREQ + NEXOBS]; /* code indicator (CODE_???) */
@@ -673,6 +697,18 @@ extern "C"
     } eth_t;
 
     typedef struct
+    {
+        double old_Gm;          /* constructed gyroscope output mean value at the previous sampling moment (rad) */
+        double Gm;              /* constructed gyroscope output mean value at the current sampling moment (rad) */
+        double old_Gd;          /* constructed gyroscope standard deviation at the previous sampling moment (rad) */
+        double Gd;              /* constructed gyroscope standard deviation at the current sampling moment (rad) */
+        double gthres;          /* zero speed detection threshold of gyroscope (rad) */
+        double window;             /* sliding window length for zero speed detection */
+        int count;              /* the count of stationary epochs in the current phase */
+        int iimu;               /* imu data index relative to GNSS/INS matching epoch */
+    } zupt_t;
+
+    typedef struct
     {                                /* ins data record */
         int nx;
         gtime_t time;                /* ins sampling time (GPST) */
@@ -687,11 +723,13 @@ extern "C"
         double p1dv[3];              /* accelerometer speed increment of the previous epoch */            
         double pos[3];               /* ins position (B,L,H) (rad,rad,m) */
         double vel[3];               /* ins velocity (E,N,U) */
+        double nhc_vel[3];           /* vehicle speed in v frame (m/s) */
         double p1vel[3];             /* ins velocity of the previous one epoch (E,N,U) */
         double p1pos[3];             /* ins position of the previous one epoch (E,N,U) */
         double p2vel[3];             /* ins velocity of the previous two epoch (E,N,U) */
         double att[3];               /* ins attitude (pitch [-pi/2,pi/2],roll [-pi,pi],yaw [-pi,pi]) (rad) */
         double Cnb[9];               /* attitude matirx */
+        double qnb[4];               /* attitude quaternion */
         double bg[3];                /* gyroscope zero bias */
         double ba[3];                /* accelerometer zero bias*/
         double xa[15];               /* fixed solution */
@@ -712,6 +750,7 @@ extern "C"
         double psd_bg;               /* zero bias psd of gyroscope (rad^3/s^3) */
         double psd_ba;               /* zero bias psd of accelerometer (m^2/s^5) */        
         eth_t eth;                   /* earth related record  */
+        zupt_t zupt;                 /* zero speed detection structure */
 
     } ins_t;
 
@@ -1027,7 +1066,7 @@ extern "C"
         int na, namax;                                              /* number of almanac data */
         int nt, ntmax;                                              /* number of tec grid data */
         int leaps;                                                  /*  */
-        int obias_flag;                                             /* flag of bias product [0:DCB;1;OSB]*/
+        int obias_flag;                                             /* flag of bias product [1:DCB;2:OSB;3:TDG]*/
         eph_t *eph;                                                 /* GPS/QZS/GAL/BDS/IRN ephemeris */
         geph_t *geph;                                               /* GLONASS ephemeris */
         seph_t *seph;                                               /* SBAS ephemeris */
@@ -1085,9 +1124,9 @@ extern "C"
         double rr[6];      /* position/velocity (m|m/s) */
                            /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
         double vel[3];
-        double att[3];
-        double bg[3];
-        double ba[3];
+        double att[3];     /* attitude [pitch,roll,yaw] (deg) */
+        double bg[3];      /* gyroscope bias (deg/h) */
+        double ba[3];      /* accelerometer bias (ug) */ 
         double qr[9];      /* position variance/covariance (m^2) */
                             /* {c_xx,c_yy,c_zz,c_xy,c_yz,c_zx} or */
                             /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
@@ -1096,9 +1135,10 @@ extern "C"
         double qb[6];      /* bg/ba variance/covariance (deg^2/h^2,ug^2)*/
                            /* {bgx,bgy,bgz,bax,bay,baz} */
         double tdcp_vel[3];/* tdcp velocity (m/s) */
-        double dtr[7];     /* receiver clock bias to time systems (s) */ /* clock (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
+        double dtr[7];     /* receiver clock bias to time systems (s) */ /* clock for GPS and isb for others (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
         uint8_t type;      /* type (0:xyz-ecef,1:enu-baseline) */
         uint8_t stat;      /* solution status (SOLQ_???) */
+        int iFlag;         /* solution flag (0:GNSS,1:ZUPT) */
         uint8_t ns;        /* number of valid satellites */
         float age;         /* age of differential (s) */
         float ratio;       /* AR ratio factor for validation */
@@ -1106,9 +1146,9 @@ extern "C"
         float prev_ratio2; /* previous final AR ratio factor for validation */
         float thres;       /* AR ratio threshold for validation */
         int refstationid;  /* ref station ID */
-        int stato[10];    /* output flag  [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat,...*/
+        int stato[10];     /* output flag  [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel, [8]nhc vel, [9]zupt */
         int cns;           /* number of public satellites*/
-        int csat[MAXOBS];   /* public satellites*/
+        int csat[MAXOBS];  /* public satellites*/
     } sol_t;
 
     typedef struct
@@ -1222,7 +1262,7 @@ extern "C"
         int mode;                /* GNSS positioning mode (PMODE_???) */
         int soltype;             /* solution type (0:forward,1:backward,2:combined) */
         int nf;                  /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
-        int fre[RNX_NUMSYS][MAXFREQ];    
+        int fre[MAXSYS][MAXFREQ];    
                                  /* idx of frequencies
                                  GPS: 0-L1;1-L2;2-L5
                                  GLONASS: 0-G1/G1a;1-G2/G2a;2-G3
@@ -1230,7 +1270,9 @@ extern "C"
                                  BeiDou: 0-B1I;1-B2I;2-B3I;3-B1C;4-B2a,5-B2b,6-B2ab;
                                  QZSS: 0-L1;1-L2;2-L5;3-LEX;*/ 
         int bdsflag[2];          /* exclude flag of BSD2 and BDS3 [0] BDS2 flag,[1] BSD3 flag*/      
-        int navsys;              /* navigation system */
+        int navsys;              /* navigation system */       
+        int filter;              /* filter method (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST) */
+        int M_robust;            /* M-estimation robust weight function (0:IGG3,1:Huber,2:MCKF) */
         double elmin;            /* elevation mask angle (rad) */
         snrmask_t snrmask;       /* SNR mask */
         int sateph;              /* satellite ephemeris/clock (EPHOPT_???) */
@@ -1300,10 +1342,12 @@ extern "C"
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
         int alingetype;          /* ins initial alignment type */
+        int att_type;            /* attitude update method (0:DCM, 1:quat))*/
         int constraint[3];       /* constraint type (CONS_???) [1]NHC,[2]ZUPT,[3]ZIHR */
-        double rotation_angle[3];/* ins rotation angle, [pitch,roll,yaw] (deg), from b frame to v' frame */
+        double rotation_angle[3];/* ins rotation angle, [pitch,roll,yaw] (deg), from v frame to b' frame */
         double lever_nhc[3];     /* lever frame from imu to nhc effective point in b frame (m) */
         double install_angle[3]; /* ins installation angle, [pitch,roll,yaw] (deg), from v frame to b frame */
+        double zupt_gthres;      /* zero speed detection threshold of gyroscope (rad) */
         double initpos[3];       /* ins inital position [lat,lon,h] (rad,m) */
         double initvel[3];       /* ins inital velocity [E,N,U] (m/s)*/
         double initatt[3];       /* ins inital attitude [pitch,roll,heading] (rad) */
@@ -1341,6 +1385,7 @@ extern "C"
         int outvel;         /* output velocity options (0:no,1:yes) */
         int outatt;         /* output attitude options [pitch,roll,yaw] (0:no,1:yes)*/
         int outbga;         /* output imu bg and ba options (0:no,1:yes)*/
+        int outiflag;       /* output imu status (GNSS/ZUPT) */
         int datum;          /* datum (0:WGS84,1:Tokyo) */
         int height;         /* height (0:ellipsoidal,1:geodetic) */
         int geoid;          /* geoid model (0:EGM96,1:JGD2000) */
@@ -1513,6 +1558,8 @@ extern "C"
         int epoch;              /* epoch number */
         int match;              /* GNSS/INS observation matching (for initialization only) */
         int upte;               /* GNSS/INS time synchronization */
+        gtime_t upte_time;      /* time of last GNSS/INS measureemnt update */
+        int nominal_update;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
         int align;
         ins_t ins;
         tightc_t tightc;        /* tightly coupled integration */
@@ -1685,6 +1732,7 @@ extern "C"
 
     /* global variables ----------------------------------------------------------*/
     EXPORT extern const double chisqr[];             /* chi-sqr(n) table (alpha=0.001) */
+    EXPORT extern const double chisqr_[];            /* chi-sqr(n) table (alpha=0.01) */
     EXPORT extern const prcopt_t prcopt_default;     /* default positioning options */
     EXPORT extern const solopt_t solopt_default;     /* default solution output options */
     EXPORT extern Debug_Glo_t Debug_Glo;             /* default debug time options */
@@ -1734,15 +1782,21 @@ extern "C"
     EXPORT int matinv(double *A, int n);
     EXPORT int solve(const char *tr, const double *A, const double *Y, int n,
                      int m, double *X);
+    EXPORT int outrej_spp(int nv, int nx, double thres, double *v, double *H, double *var,
+                      const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it);                 
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
-    EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode);               
-    EXPORT int filter_gins(rtk_t *rtk, double *x,double *P,const double *H,const double *v,
-                    const double *R, int n, int m, int flag, int mode);
+    EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
+    EXPORT int chol(const double *R, double *sR, int n);
+    EXPORT int iter_judge(const double *xp, const double *xp_pre, int n, double tol);
+    EXPORT int robust_M_function(const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
+                                    double *Q, const double *H, const double *F, int n, int m, int mode);  
     EXPORT int filter(double *x, double *P, const double *H, const double *v,
                       const double *R, int n, int m);
-    EXPORT int filter_(const double *x,const double *P,const double *H,
+    EXPORT int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
                       const double *v,const double *R,int n,int m,
-                      double *xp,double *Pp,int mode);
+                      double *xp,double *Pp,int mode);            
+    EXPORT int filter_gins(rtk_t *rtk, double *x,double *P,const double *H,const double *v,
+                    const double *R, int n, int m, int flag, int mode);
     EXPORT int smoother(const double *xf, const double *Qf, const double *xb,
                         const double *Qb, int n, double *xs, double *Qs);
     EXPORT void matprint(const double *A, int n, int m, int p, int q);
@@ -2262,7 +2316,6 @@ extern "C"
     EXPORT int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                        const solopt_t *sopt, filopt_t *fopt);              
     /* ins positioning ------------------------------------------------------------*/ 
-
     EXPORT void repspace(char *str);
     EXPORT void imucpy(imud_t *imu, imu_t imus, int iimu, const int nn);
     EXPORT void freeimu(imu_t *imu);
@@ -2273,14 +2326,15 @@ extern "C"
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt);
     EXPORT int  tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
+    EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
-    EXPORT int nhc_constraints(ins_t *ins, const prcopt_t *opt, double *H, double *v, double *var, int nv, int nx);
+    EXPORT int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv, int nx, int mode);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
-    EXPORT void ins_mech(ins_t *ins, imud_t *imu);
+    EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt);
     EXPORT void phi_update(ins_t *ins);
     EXPORT int  ins_update(rtk_t *rtk);
     EXPORT void ins2gnss(rtk_t *rtk, double *pv_g, int n);
-    EXPORT void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int n);
+    EXPORT void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int mode);
     EXPORT void earth_update(const double *pos, const double *vel, eth_t *eth);
     EXPORT void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, double *dv_rot, double *dv_pad);
     EXPORT void imu_fedback(ins_t *ins, imud_t *imu);
@@ -2294,11 +2348,18 @@ extern "C"
     EXPORT void update_crosscov(rtk_t *rtk);
 
     EXPORT void att2Cnb(const double *att, double *Cnb);
+    EXPORT void att2qnb(const double *att, double *qnb);
     EXPORT void Cnb2att(const double *Cnb, double *att);
+    EXPORT void qnb2Cnb(const double *qnb, double *Cnb);
+    EXPORT void qnbnorm(double *qnb_);
+    EXPORT void quatmul(const double *q1, const double *q2, double *q);
+    EXPORT void quatmul3(const double *q1, const double *q2, const double *q3, double *q);
+    EXPORT void quatmulv(const double f, const double *q, const double *vi, double *vo);
     EXPORT void DCMT(const double *Cxy, double *Cyx);
     EXPORT void vskew(double f, const double *v, double *vx);
     EXPORT void Mat3mul2(double f, const double *mat1, const double *mat2, double *mat);
     EXPORT void rv2DCM(double f, const double *rv, double *dcm);
+    EXPORT void rv2quat(double f, const double *rv, double *q);
     EXPORT void vnmul(const int n, const double *v1, double f1, double *vo);
     EXPORT void vnadd(const int n, const double *v1, double f1, const double *v2, double f2, double *vo);
     EXPORT void Mat3add2(const double *mat1, double f1, const double *mat2, double f2, double *mat3);

@@ -141,7 +141,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
     if (P1==0.0||(opt->ionoopt==IONOOPT_IFLC&&P2==0.0)) return 0.0;
     bias_ix[0]=code2bias_ix(sys,obs->code[fr2[0]]);  /* L1 code bias */
     bias_ix[1]=code2bias_ix(sys,obs->code[fr2[1]]);
-    if (2==nav->obias_flag&&opt->sateph==EPHOPT_BRDC&&sys==SYS_CMP) { /* obias_flag 1:DCB product, 2:OSB product */
+    if (OPT_OSB==nav->obias_flag&&opt->sateph==EPHOPT_BRDC&&sys==SYS_CMP) { /* obias_flag 1:DCB product, 2:OSB product */
         flag=0;
     }
     else if (nav->obias_flag>0) {
@@ -556,43 +556,51 @@ static int rescode_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs
     return nv;
 }
 /* outlier rejection for spp ---------------------------------------------------------*/
-static int outrej_spp(int nv, double thres, double *v, double *H, double *var, double *v_, double *H_, double *var_,
+extern int outrej_spp(int nv, int nx, double thres, double *v, double *H, double *var,
                       const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it) 
 {
     double mean,std,dv;
     int j,k,m;
+    double *v_,*H_,*var_;
+
+    v_=mat(nv,1); H_=mat(nv,nx); var_=mat(nv,1);
 
     mean=calexp(v,nv);
     std=calstd(v,nv);
     m=0;
-    for (j=0;j<nv;j++) {   
-        /* standardized residuals */
+    for (j=0;j<nv;j++) {  
+
+        /* remove auxiliary quantities that prevent least squares rank deficiency */
         if (fabs(v[j])<1E-4) dv=0.0;
-        else dv=fabs(v[j]-mean)/std;       
+        /* standardized residuals */
+        else dv=fabs(v[j]-mean)/std;     
+
         /* threshold for outlier detection */     
         if (dv<thres) {
-
             v_[m]=v[j];
-            for (k=0;k<NX;k++) {
-                H_[k+m*NX]=H[k+j*NX];
+            for (k=0;k<nx;k++) {
+                H_[k+m*nx]=H[k+j*nx];
             }  
             var_[m++]=var[j];
         }
         else {
-            vsat[vi[j]]=0;
-            if (ssat) trace(7,"iteration(%2d), outlier rejected(spp) sat=%s, res=%13.4f, dv=%10.4f, thres=%5.2f, el=%4.1f\n",it+1,ssat[sati[j]-1].id,
+            if (vsat&&vi) vsat[vi[j]]=0;
+            if (ssat) trace(6,"iteration(%2d), outlier rejected(spp) sat=%s, res=%13.4f, dv=%10.4f, thres=%5.2f, el=%4.1f\n",it+1,ssat[sati[j]-1].id,
             fabs(v[j]),fabs(v[j]-mean)/std,thres,ssat[sati[j]-1].azel[1]*R2D);
             continue;
         }               
     }
+    /* update the number of valid observations */
     nv=m;
     for (j=0;j<nv;j++) {
         v[j]=v_[j];
-        for (k=0;k<NX;k++) {
-            H[k+j*NX]=H_[k+j*NX];
+        for (k=0;k<nx;k++) {
+            H[k+j*nx]=H_[k+j*nx];
         }  
         var[j]=var_[j];           
     }
+
+    free(v_); free(H_); free(var_);
 
     return nv;
 }
@@ -817,7 +825,8 @@ static int resdop_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs,
             for (j=0;j<nx;j++)  H[j+nv*nx]=((j<3)?-e[j]:1.0);
         }
 
-        var[nv++]=varerr_spp(&rtk->opt,NULL,&obs[i],azel[1+i*2],sys);
+        /* TODO: stochastic model of Doppler observations */
+        var[nv++]=3*varerr_spp(&rtk->opt,NULL,&obs[i],azel[1+i*2],sys);
     }
     return nv;
 }
@@ -878,14 +887,14 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
                   int *vsat, double *resp)
 {
     double x[NX]={0},dx[NX],Q[NX*NX],*v,*H,*var,sig;
-    double *v_,*H_,*var_,*P,*R,thres=2.0;
+    double *P,*R,thres=2.0,time;
     double *xp,*Pp,vc[4];
-    int i,j,k,it,m,info,stat=SOLQ_NONE,nv=0,nv_dop=0,nv_cons=0,ns,*sati,*vi;
+    int i,j,k,it,m,info,stat=SOLQ_NONE,mode,nv=0,nv_dop=0,nv_cons=0,ns,*sati,*vi;
+    int tc_flag=0; /* spp/ins tc flag */
     
     trace(8,"estpos  : n=%d\n",n);
     
     v=mat(n+5,1); H=mat(n+5,NX); var=mat(n+5,1);
-    v_=mat(n+5,1); H_=mat(n+5,NX); var_=mat(n+5,1);
     P=mat(n+5,n+5);
     sati=imat(n+5,1); vi=imat(n+5,1);
     
@@ -897,11 +906,10 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati,vi); 
         
         /* trace(12,"H=\n"); tracemat(12,H,n+5,NX,9,4,0); */   
-        matcpy(v_,v,nv,1); matcpy(H_,H,nv,NX); matcpy(var_,var,nv,1);
 
         /* outlier recject based on standard normal distribution */
         if (i>=2&&nv>=NX) {
-            nv=outrej_spp(nv,thres,v,H,var,v_,H_,var_,ssat,sati,vi,vsat,i);
+            nv=outrej_spp(nv,NX,thres,v,H,var,ssat,sati,vi,vsat,i);
         }
 
         if (nv<NX) {
@@ -909,10 +917,10 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             break;
         }
 
-        /* trace(12,"H=\n"); tracemat(12,H,NX,nv,9,4,0); */
-        /* trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0); */
+        /* trace(12,"H=\n"); tracemat(12,H,nv,NX,9,4,0);
+        trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0); */
 
-        /* weight by variance (lsq uses sqrt of weight) */
+        /* weight by variance */
         for (j=0;j<nv;j++) {  
             for (k=0;k<nv;k++) {
                 P[k+j*nv]=0.0;  
@@ -952,19 +960,36 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             /* validate solution */
             if ((stat=valsol(azel,vsat,n,opt,v,P,nv,NX))) {
                 sol->stat=opt->sateph==EPHOPT_SBAS?SOLQ_SBAS:SOLQ_SINGLE;
+                /* save receiver clock (m) */
+                for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr=x[3];
             }
-            free(v); free(H); free(var); free(v_); free(H_); free(var_); free(P); free(sati); free(vi);
 
-            if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) break;
+            /* free memory */
+            free(v);  free(H);    free(var); 
+            free(P);  free(sati); free(vi);
+
+            if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) { tc_flag=1; break; }
             else return stat;
         }
     }
-    if (i>=MAXITR) {
-        trace(7,"spp: iteration over limit i=%d!\n",i);
+
+    /* if the iteration exceeds the limit or the solution fails, the solution fails flag is returned */
+    if (i>=MAXITR||(SOLQ_NONE==stat&&!tc_flag)) {
+        if (i>=MAXITR) trace(7,"spp: iteration over limit i=%d!\n",i);       
+        
+        /* free memory */
+        free(v);  free(H);    free(var); 
+        free(P);  free(sati); free(vi);  
+
         return SOLQ_NONE;
     }
     
-    if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) {
+    /* spp/ins TC mode */
+    if (tc_flag) {
+
+        mode=rtk->opt.filter;
+        /* detected vehicle stationary time (s)*/
+        time=rtk->ins.zupt.count*rtk->ins.interval*rtk->ins.nn;
 
         /* if GNSS solution fails, do not enable GNSS/INS integration mode */
         if (stat) {
@@ -989,19 +1014,29 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,rtk->ru,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati);
             nv_dop=resdop_filter(rtk,obs,n,rs,dts,nav,rtk->ru,vc,azel,vsat,v+nv,H+nv*rtk->nx,var+nv,1);
             
-            /* nhc */
-            if (opt->constraint[0]) {
-                nv_cons=nhc_constraints(&rtk->ins,opt,H,v,var,nv+nv_dop,rtk->nx);
+            /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
+            the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s*/
+            if (opt->constraint[1]&&time>1.0&&norm(rtk->ins.vel,3)<0.1) { /* zupt*/
+                nv_cons=nhc_zupt_update(&rtk->ins,H,v,var,nv+nv_dop,rtk->nx,CONS_ZUPT);
+                sol->iFlag=SOLF_ZUPT; /* zupt flag */
             }
+            else if (opt->constraint[0]) { /* nhc */
+                nv_cons=nhc_zupt_update(&rtk->ins,H,v,var,nv+nv_dop,rtk->nx,CONS_NHC);        
+            }            
 
             /* measurement noise covariance matrix */
-            for (i=0;i<(nv+nv_dop+nv_cons);i++) for (j=0;j<(nv+nv_dop+nv_cons);j++) if (i==j) R[j+i*(nv+nv_dop+nv_cons)]=var[i];
+            for (i=0;i<(nv+nv_dop+nv_cons);i++) {
+                for (j=0;j<(nv+nv_dop+nv_cons);j++) { 
+                    if (i==j) R[j+i*(nv+nv_dop+nv_cons)]=var[i]; 
+                }                
+            }
+
             /* trace(12,"v=\n"); tracemat(12,v,nv+nv_dop+nv_cons,1,9,4,0);
             trace(12,"H=\n"); tracemat(12,H,nv+nv_dop+nv_cons,rtk->nx,9,4,0);
             trace(12,"Rn=\n"); tracemat(12,R,nv+nv_dop+nv_cons,nv+nv_dop+nv_cons,9,4,0); */
 
             /* kalman filter measurement update */
-            if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,(nv+nv_dop+nv_cons),KF_GINS,Robust_OFF))) {
+            if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,(nv+nv_dop+nv_cons),KF_GINS,mode))) {
                 trace(7,"SPP/INS filter error (info=%d)\n",info);
                 free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
                 return SOLQ_NONE;
@@ -1028,6 +1063,9 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         else if (opt->constraint[0]||opt->constraint[1]) {
             motion_constraints(rtk,opt);
             return SOLQ_CONS;
+        }
+        else {
+            return SOLQ_NONE;  
         }
     }
 }
@@ -1128,9 +1166,20 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     
     trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
     
-    sol->stat=SOLQ_NONE;
+    /* NOTE: for GNSS/INS integration, the INS solution is set to the initial state. */
+    if (GINS_OFF==opt_.GI_mode) sol->stat=SOLQ_NONE;
+    else sol->stat=SOLQ_INS; 
     
     if (n<=0) {
+        /* if the number of available satellites is 0, output INS solution */
+        if (SOLQ_INS==sol->stat) {
+            if (GINS_LC==opt_.GI_mode||GINS_STC==opt_.GI_mode) {
+                update_instat(&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
+            }
+            else if (GINS_TC==opt_.GI_mode) {
+                update_instat(&rtk->ins,rtk->P,sol,rtk->nx);                  
+            }
+        }
         trace(7,"no observation data");
         return 0;
     }

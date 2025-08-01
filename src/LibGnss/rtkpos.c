@@ -212,7 +212,7 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
-    int n,nf=NF(opt);
+    int n,nf=(PMODE_SINGLE==opt->mode)?1:NF(opt);
 
     trace(3,"rtkopenipos: file=%s\n",file);
 
@@ -232,8 +232,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
     if (1==nf) {
         p+=sprintf(p,"Dcb_L1(m),    "
                     "SatPco_L1(m),   "
-                    "SatPcv_L1(m),    "
-                    "Tion_L1(m),     "
+                    "SatPcv_L1(m),     "
+                    "Ion_L1(m),     "
                     "Amb_L1(m),      "
                     "Resp_L1(m),     "
                     "Resc_L1(m),   ");        
@@ -242,8 +242,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
         /* frequency dependent term - DF*/    
         p+=sprintf(p,"Dcb_L1(m),     Dcb_L2(m),    "
                     "SatPco_L1(m),     SatPco_L2(m),   "
-                    "SatPcv_L1(m),   SatPcv_L2(m),  "
-                    "Tion_L1(m),     Tion_L2(m),      "
+                    "SatPcv_L1(m),   SatPcv_L2(m),   "
+                    "Ion_L1(m),     Ion_L2(m),      "
                     "Amb_L1(m),      Amb_L2(m),      "
                     "Resp_L1(m),     Resp_L2(m),     "
                     "Resc_L1(m),     Resc_L2(m),   ");        
@@ -252,8 +252,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
         /* frequency dependent term - TF*/    
         p+=sprintf(p,"Dcb_L1(m),      Dcb_L2(m),      Dcb_L3(m),    "
                     "SatPco_L1(m),    SatPco_L2(m),   SatPco_L3(m),  "
-                    "SatPcv_L1(m),   SatPcv_L2(m),   SatPcv_L3(m),   "
-                    "Tion_L1(m),     Tion_L2(m),     Tion_L3(m),      "
+                    "SatPcv_L1(m),   SatPcv_L2(m),   SatPcv_L3(m),    "
+                    "Ion_L1(m),      Ion_L2(m),      Ion_L3(m),      "
                     "Amb_L1(m),      Amb_L2(m),      Amb_L3(m),      "
                     "Resp_L1(m),     Resp_L2(m),     Resp_L3(m),     "
                     "Resc_L1(m),     Resc_L2(m),     Resc_L3(m)   ");        
@@ -300,8 +300,9 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
 {
     if (level<=0) return 0;
     prcopt_t *opt=&rtk->opt;
+    ins_t *ins=&rtk->ins;
     ssat_t *ssat;
-    double pos[3],vel[3],acc[3],vela[3]={0},acca[3]={0},xa[3],cdisb=0.0,pdisb=0.0;
+    double Cbn[9],pos[3],vel[3],acc[3],vela[3]={0},acca[3]={0},xa[3],cdisb=0.0,pdisb=0.0;
     int week,nf=NF(&rtk->opt),fr,i,j;
     char id[8],*p=buff;
 
@@ -332,7 +333,14 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
 
         /* receiver velocity and acceleration */
         if (rtk->sol.stato[1]) {
-            if (est&&rtk->opt.dynamics) {
+            /* velocity in b frame */
+            if (GINS_LC==rtk->opt.GI_mode||GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
+                DCMT(ins->Cnb,Cbn);
+                Mat3mulv(1.0,Cbn,ins->vel,vel);
+                p+=sprintf(p,"$VELACC,%d,%.3f,%d,%.4f,%.4f,%.4f\n",
+                        week,itow,rtk->sol.stat,vel[0],vel[1],vel[2]);                   
+            }
+            else if (est&&rtk->opt.dynamics) {
                 ecef2pos(rtk->sol.rr,pos);
                 ecef2enu(pos,rtk->x+3,vel);
                 ecef2enu(pos,rtk->x+6,acc);
@@ -436,7 +444,22 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
                 p+=sprintf(p,",%12.6f",rtk->sol.tdcp_vel[i]);
             }
             p+=sprintf(p,"\n");
-        }         
+        }  
+        
+        /* nhc velocity */
+        if (rtk->sol.stato[8]) {
+            p+=sprintf(p,"$NHC,%d,%d",week,itow);
+            for (i=0;i<3;i++) {
+                p+=sprintf(p,",%12.6f",rtk->ins.nhc_vel[i]);
+            }
+            p+=sprintf(p,"\n");
+        }
+
+        /* zero speed detection statistics of zupt */
+        if (rtk->sol.stato[9]) {
+            p+=sprintf(p,"$ZUPT,%d,%d,%16.9f\n",week,itow,rtk->ins.zupt.Gd);
+        }
+        
     }
 
     if (level<=1) return (int)(p-buff);
@@ -744,14 +767,22 @@ static void udpos(rtk_t *rtk, double tt)
 
     trace(3,"udpos   : tt=%.3f\n",tt);
 
-    if(GINS_TC==rtk->opt.GI_mode) {
+    /* for tightly coupled and semi-tightly coupled modes, the INS position is used as a priori information */
+    if(GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
         ins2gnss(rtk,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
-        /* reset ins related state */
-        for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0;
+        if (GINS_STC==rtk->opt.GI_mode) {
+            for (i=0;i<3;i++) initx(rtk,rtk->ru[i],VAR_POS,i);
+        }
+
+        /* for tightly coupled mode, reset ins related state */
+        if (GINS_TC==rtk->opt.GI_mode) {
+            for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0; 
+        }
+
         return;
     }
 
@@ -1207,7 +1238,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
 
             j=IB(sat[i],k,&rtk->opt);
             
-            /* random walk process*/
+            /* NOTE: stepwise relaxation of the random walk process */
             if (rtk->ssat[i-1].lock[fr]<=0) alpha=20;
             else if (abs(rtk->ssat[i-1].lock[fr])<120) alpha=20-abs(rtk->ssat[i-1].lock[fr])/120.0*20.0;
             else alpha=1;
@@ -2516,8 +2547,10 @@ static void holdamb(rtk_t *rtk, const double *xa)
         trace(7,"hold integer ambiguity: filter error (info=%d)\n",info);
     }
 
-    /* for fix and hold ambiguity resolution mode, feedback floating solution and constraint update solution */
-    if (GINS_TC==opt->GI_mode) ins_fedback(rtk,rtk->x);
+    /* NOTE: for "fix and hold" ambiguity resolution mode, feedback float solution and constraint update solution */
+    if (GINS_TC==opt->GI_mode) {
+        ins_fedback(rtk,rtk->x);
+    }
 
     free(R); free(v); free(H);
 
@@ -2679,7 +2712,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                     /* update state except ins (trp,ion) */
                     for (j=rtk->ins.nx;j<na;j++) rtk->xa[j]+=tcx[j];
 
-                    /* for single-epoch ambiguity resolution, the fixed solution is fed back, otherwise the floating solution is fed back */
+                    /* NOTE: for instantaneous ambiguity resolution mode, the fixed solution is fed back, otherwise the float solution is fed back */
                     if (ARMODE_INST==opt->modear) ins_fedback(rtk,tcx); 
                 }
                 else {
@@ -2988,6 +3021,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
             rtk->ssat[obs[i].sat-1].ph[obs[i].rcv-1][fr]=obs[i].L[fr];
         }
     }
+    /* save satellite status auxiliary information */
     for (i=0;i<MAXSAT;i++) {
         sys=satsys(i+1,NULL);
         for (j=0;j<nf;j++) {
@@ -2995,12 +3029,6 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
             /* don't lose track of which sats were used to try and resolve the ambiguities */
             if (rtk->ssat[i].fix[j]==2&&stat!=SOLQ_FIX) rtk->ssat[i].fix[j]=1;
             if (rtk->ssat[i].slip[fr]&1) rtk->ssat[i].slipc[fr]++;
-            /* if the satellite flag is valid, reset the outage count and increment the lock count */
-            if (!rtk->ssat[i].vsat[fr]) continue;
-            rtk->ssat[sat[i]-1].outc[fr]=0;
-            if (rtk->ssat[i].lock[fr]<0||(rtk->nfix>0&&rtk->ssat[i].fix[fr]>=2)) {
-                rtk->ssat[i].lock[fr]++;                
-            }
         }
     }
 
@@ -3031,7 +3059,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     int i,j,f,n=nu+nr,ns,ny,nv,sat[MAXSAT],iu[MAXSAT],ir[MAXSAT];
     int info,vflg[MAXOBS*NFREQ*2+1],svh[MAXOBS*2];
     int stat=rtk->opt.mode<=PMODE_DGPS?SOLQ_DGPS:SOLQ_FLOAT;
-    int nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf,sys,fr;
+    int nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf,sys,fr,mode=rtk->opt.filter;
 
     trace(3,"relpos  : nu=%d nr=%d\n",nu,nr);
 
@@ -3123,7 +3151,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
         trace(12,"R=\n");tracemat(12,R,nv,nv,13,6,0); */
 
         /* kalman filter measurement update, updates x,y,z,sat phase biases, etc */
-        if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==opt->GI_mode)?KF_GINS:KF_GNSS,Robust_OFF))) {
+        if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==opt->GI_mode)?KF_GINS:KF_GNSS,mode))) {
             trace(7,"PPK mode: filter error (info=%d)\n",info);
             stat=SOLQ_NONE;
             break;
@@ -3160,7 +3188,12 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
                 sys=satsys(sat[i],NULL);
                 for (f=0;f<nf;f++) {
                     fr=sys2freid(sys,f,opt);
-                    if (!rtk->ssat[sat[i]-1].vsat[fr]) continue;                  
+                    /* NOTE : if the satellite flag is valid, reset the outage count and increment the lock count! */
+                    if (!rtk->ssat[sat[i]-1].vsat[fr]) continue;      
+                    rtk->ssat[sat[i]-1].outc[fr]=0;
+                    if (rtk->ssat[sat[i]-1].lock[fr]<0||(rtk->nfix>0&&rtk->ssat[sat[i]-1].fix[fr]>=2)) {
+                        rtk->ssat[sat[i]-1].lock[fr]++;                
+                    }            
                     if (f==0) rtk->sol.ns++; /* valid satellite count by L1 */
                 }
             }
@@ -3172,7 +3205,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
                     ins_fedback(rtk,dx);
                     stat=SOLQ_INS;
                 }
-                else stat=SOLQ_FLOAT; 
+                /* else stat=SOLQ_FLOAT; */ 
             } 
             else if (rtk->sol.ns<4) stat=SOLQ_NONE;
         }
@@ -3233,6 +3266,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
 *-----------------------------------------------------------------------------*/
 extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
 {
+    gtime_t time0={0};
     sol_t sol0={0};
     ambc_t ambc0={0};
     ssat_t ssat0={0};
@@ -3278,9 +3312,11 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     /* GNSS/INS time synchronization and alignment */
     rtk->match=NO;
     rtk->upte=SYNC_NO;
+    rtk->upte_time=time0;
     rtk->align=NO;
+    rtk->nominal_update=NO;
 
-    if (GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode)
+    if (GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode)
     {
         gins_init(rtk,opt);
     }

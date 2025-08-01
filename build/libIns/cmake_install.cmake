@@ -1,4 +1,4 @@
-# Install script for directory: E:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns
+# Install script for directory: G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,6 +34,12 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "D:/mingw64/bin/objdump.exe")
+  set(CMAKE_OBJDUMP "D:/mingw/mingw_x86_64-8.1.0-release-win32/mingw64/bin/objdump.exe")
 endif()
 
+string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
+       "${CMAKE_INSTALL_MANIFEST_FILES}")
+if(CMAKE_INSTALL_LOCAL_ONLY)
+  file(WRITE "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns/install_local_manifest.txt"
+     "${CMAKE_INSTALL_MANIFEST_CONTENT}")
+endif()

@@ -548,12 +548,12 @@ static int readbiaf(const prcopt_t *prcopt, const char *file, nav_t *nav)
         if (!(code1=obs2code(&obs1[1]))) continue; /* skip if code not valid */
         bias_ix1=code2bias_ix(sys,code1);
         if (strcmp(bias,"OSB")==0) {
-            nav->obias_flag=2;
+            nav->obias_flag=OPT_OSB;
             nav->obias[sat-1][bias_ix1]=cbias*1E-9*CLIGHT; /* ns -> m */
         }
         else if (strcmp(bias,"DSB")==0) {
             /* differential signal bias */
-            nav->obias_flag=1;
+            nav->obias_flag=OPT_DCB;
             if (!(code2=obs2code(&obs2[1]))) continue; /* skip if code not valid */
             bias_ix2=code2bias_ix(sys,code2);
             /* observed signal bias */
@@ -610,7 +610,7 @@ static int readbiaf(const prcopt_t *prcopt, const char *file, nav_t *nav)
         }
     }
     /*convert DCB to OSB*/
-    if (1==nav->obias_flag) {
+    if (OPT_DCB==nav->obias_flag) {
         for (i=1;i<=MAXSTA;i++) {
             sys=satsys(i,&id);
             /*ref:C1W-C2W*/
@@ -723,7 +723,7 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
 
     /* if no DCB and OSB file, using TGD correction*/
     if (0==nav->obias_flag) {
-        nav->obias_flag=3;
+        nav->obias_flag=OPT_TGD;
         for (i=1;i<=MAXSTA;i++) {
             sys=satsys(i,&id);
             /*ref:C1W-C2W*/
@@ -1032,7 +1032,7 @@ extern void satantoff(gtime_t time, const double *rs, int fr, int sat, const nav
     if (!normv3(r,ey)) return;
     cross3(ey,ez,ex);
 
-    if (norm(spcv->off[fr],3)>0) {
+    if (fr>=0&&norm(spcv->off[fr],3)>0) {
         for (i=0;i<3;i++) dant[i]=spcv->off[fr][0]*ex[i]+spcv->off[fr][1]*ey[i]+spcv->off[fr][2]*ez[i];
     }
     else {
@@ -1121,7 +1121,7 @@ extern int peph2pos(gtime_t time, int sat, const nav_t *nav, int opt,
 
     /* satellite antenna offset correction */
     /* if (opt) {
-        satantoff(time,rss,sat,nav,dant);
+        satantoff(time,rss,-1,sat,nav,dant);
     } */
     for (i=0;i<3;i++) {
         rs[i  ]=rss[i]+dant[i];

@@ -188,6 +188,19 @@ static double leaps[MAXLEAPS+1][7]={/* leap seconds (y,m,d,h,m,s,utc-gpst) */
                                        {1982,7,1,0,0,0,-2},
                                        {1981,7,1,0,0,0,-1},
                                        {0}};
+
+const double chisqr_[100]={/* chi-sqr(n) (alpha=0.01) */
+                            6.63,9.21,11.34,13.27,15.08,16.81,18.47,20.09,21.66,23.2,
+                            24.72,26.21,27.68,29.14,30.57,31.99,33.4,34.8,36.19,37.56,
+                            38.93,40.28,41.63,42.97,44.31,45.64,46.96,48.27,49.58,50.89,
+                            52.19,53.48,54.77,56.06,57.34,58.61,59.89,61.16,62.42,63.69,
+                            64.95,66.2,67.45,68.7,69.95,71.2,72.44,73.68,74.91,76.15,
+                            77.38,78.61,79.84,81.06,82.29,83.51,84.73,85.95,87.16,88.37,
+                            89.59,90.8,92.01,93.21,94.42,95.62,96.82,98.02,99.22,100.42,
+                            101.62,102.81,104,105.2,106.39,107.58,108.77,109.95,111.14,112.32,
+                            113.51,114.69,115.87,117.05,118.23,119.41,120.59,121.76,122.94,124.11,
+                            125.28,126.46,127.63,128.8,129.97,131.14,132.3,133.47,134.64,135.8};
+                                  
 const double chisqr[100]={/* chi-sqr(n) (alpha=0.001) */
                            10.8,13.8,16.3,18.5,20.5,22.5,24.3,26.1,27.9,29.6,
                            31.3,32.9,34.5,36.1,37.7,39.3,40.8,42.3,43.8,45.3,
@@ -199,6 +212,7 @@ const double chisqr[100]={/* chi-sqr(n) (alpha=0.001) */
                            113,114,115,116,118,119,120,122,123,125,
                            126,127,128,129,131,132,133,134,135,137,
                            138,139,140,142,143,144,145,147,148,149};
+                           
 /* initialize debug time options */
 Debug_Glo_t Debug_Glo={
     {0},
@@ -241,6 +255,8 @@ const prcopt_t prcopt_default={
                        QZSS: 0-L1;1-L2;2-L5;3-LEX;*/
     {1,0},
     SYS_GPS|SYS_GLO|SYS_GAL,/* navsys */
+    Robust_OFF,  /* filter */
+    IGG3,   /* M-estimation robust weight function */
     15.0*D2R,
     {{0,0}},/* elmin,snrmask */
     0,
@@ -309,7 +325,8 @@ const solopt_t solopt_default={
     0,
     0,
     0,
-    0,/* degf,outhead,outopt,outvel,datum,height,geoid */
+    0,
+    0,/* degf,outhead,outopt,outvel,outatt,outbga,outiFlag,datum,height,geoid */
     0,
     0,
     0,
@@ -1856,9 +1873,9 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
 }
 extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode) 
 {
-    double *AP,*Ay,*AQ,*D,*vx;
+    double *AP,*Ay,*AQ,*D,*vx,*xp_pre;
     double dv,alpha,k0=1.0,k1=2.0;
-    int info,i,j,k,iter=(mode==Robust_OFF)?1:2;
+    int info,i,j,k,iter=(mode==Robust_OFF)?1:MAXITR_ROBUST;
 
     if (m<n) {
         trace(7,"spp lsq error! The number of observations is less than the number of parameters to be estimated.\n");
@@ -1866,8 +1883,12 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
     }
 
     AP=mat(n,m); Ay=mat(n,1); AQ=mat(m,n); D=mat(m,m); vx=mat(m,1);
+    xp_pre=mat(n,1);
 
     for (i=0;i<iter;i++) {
+
+        /* save the previous state vector for iteration termination judgment */
+        if (i>0) matcpy(xp_pre,x,n,1); 
 
         /* initialization */
         matcpy(vx,y,m,1);
@@ -1888,15 +1909,27 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
             matmul("NN",n,n,1,Q,Ay,x,1.0,0.0);  /* x=Q^-1*Ay */
 
             if (mode==Robust_RES&&i<iter-1) {
+
+                /* iteration termination judgment */
+                if (i>0&&iter_judge(x,xp_pre,n,ITR_TOL)) {
+                    break; 
+                }   
+                
+                /* compute the posterior residuals and the corresponding error covariance matrix */
                 matmul("NN",m,n,1,A,x,vx,-1.0,1.0); /* vx=z-A*x */          
                 matmul("NN",m,n,n,A,Q,AQ,1.0,0.0);  /* AQ=A*Q */
                 matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); /* D=R-A*Q*A' */
 
                 for (k=0;k<m;k++) for (j=0;j<m;j++) {
                     if (k==j) {
-                        /* remove auxiliary quantities that prevent least squares rank deficiency*/
+                        /* remove auxiliary quantities that prevent least squares rank deficiency */
                         if (fabs(y[k])<1e-4) break;
-                        if (D[k+j*m]<=0.0) continue;
+                        /* check whether the posterior residual covariance matrix is positive definite */
+                        if (D[k+j*m]<=0.0) {
+                            showmsg("Waring: spp, the posterior residual covariance matrix is not positive definite!\n");
+                            continue; 
+                        }
+
                         /* standardized residuals */
                         dv=fabs(vx[k])/sqrt(D[k+j*m]);
 
@@ -1905,6 +1938,7 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
                         else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
                         else alpha=1E-4;
 
+                        /* modified weight matrix */
                         P[k+j*m]*=alpha; 
                     }
                 }       
@@ -1916,9 +1950,232 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
     }
 
         
-    free(AP); free(Ay); free(AQ); free(D); free(vx);
+    free(AP); free(Ay); free(AQ); free(D); free(vx); free(xp_pre);
     return info;
 }
+
+/* cholesky decomposition */
+extern int chol(const double *R, double *sR, int n)
+{
+    int i,j,k,info=0;
+    double sum=0.0;
+
+    for (i=0;i<n;i++) {
+        /* calculate off-diagonal elements */
+        for (j=0;j<i;j++) {
+            sum=0.0;
+            for (k=0;k<j;k++) {
+                sum+=sR[k+i*n]*sR[k+j*n];
+            }
+            sR[j+i*n]=(R[j+i*n]-sum)/sR[j+j*n];
+        }
+        /* calculate the diagonal elements */
+        sR[i+i*n]=R[i+i*n];
+        for (k=0;k<i;k++) {
+            sR[i+i*n]-=sR[k+i*n]*sR[k+i*n];
+        }
+
+        /* check if the matrix is positive definite */
+        if (sR[i+i*n]<=0.0) {
+            info=-1;
+            break;
+        }
+
+        sR[i+i*n]=sqrt(sR[i+i*n]);
+    }
+
+    trace(12,"R=\n");tracemat(12,R,n,n,16,9,0);
+    trace(12,"sR=\n");tracemat(12,sR,n,n,16,9,0);
+
+    if (info) showmsg("Cholesky decomposition error\n");
+
+    return info;
+}
+
+/* iteration termination judgment */
+extern int iter_judge(const double *xp, const double *xp_pre, int n, double tol)
+{
+    int i;
+    double diff,*dxp;
+
+    dxp=mat(n,1);
+
+    /* relative difference */
+    vnadd(n,xp,1.0,xp_pre,-1.0,dxp); /* dxp=xp-xp_pre */
+    diff=norm(dxp,n)/norm(xp,n); 
+    
+    /* if the iteration statistic is lower than the threshold, the iteration terminates */
+    if (diff<tol) {
+        free(dxp);
+        return 1; /* iteration terminated */
+    }
+
+    free(dxp);
+    return 0; /* continue iteration */
+}
+
+/* the unified framework for robust filters */
+extern int robust_M_function(const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
+                            double *Q, const double *H, const double *F, int n, int m, int mode)
+{
+    int i,j,info=0;
+    double dv=0.0,low_weight=1E-4,*W,*sR,*sRW; /* M estimation */
+    double *Q_,*vP,ak=1.0;; /* chi */
+    double *HP,*Ek,*Rc,*EkR,gamma2=0.0,E_lambda=1.0,dof_ST=5.0; /*ST/MST*/
+    double k0=1.0,k1=2.0; /* IGG3 */
+    double gamma=1.345;   /* huber */
+    double dof=1.0;       /* MCKF */
+
+    W=zeros(m,m); sR=zeros(m,m); sRW=zeros(m,m);
+    Q_=mat(m,m);  vP=zeros(1,m);
+    HP=mat(m,n);  Ek=mat(m,m);   Rc=mat(m,m);    EkR=mat(m,m);
+
+    /* cholesky decomposition, R=sR*sR'*/
+    /* if ((info=chol(R,sR,m))) {
+        free(W); free(sR); free(sRW);
+        return info;
+    } */
+
+    /* avoid sqrt negative value */
+    for (i=0;i<m;i++) {
+        if (Pv[i+i*m]<=0.0) {
+            showerr("Time=%s ,the innovation vector covariance matrix or the error covariance matrix is not positive definite!",Debug_Glo.chTime);
+            free(W); free(sR); free(sRW);
+            free(Q_);free(vP);
+            free(HP);free(Ek); free(Rc);  free(EkR);
+            return -1;
+        }        
+    }
+
+    /* robust filter based on Mahalanobis distance */
+    if (Robust_Chi==mode) {
+        matcpy(Q_,Pv,m,m); 
+
+        /* mahalanobis distance test statistic */
+        matinv(Q_,m); /* Q_=Q_^-1 */
+        matmul("TN",1,m,m,v,Q_,vP,1.0,0.0); /* vP=v'/Q_ */
+        matmul("NN",1,m,1,vP,v,&dv,1.0,0.0); /* dv=v'/Q_*v */
+
+        if (dv<=chisqr_[m-1]) {
+            ak=1.0; /* no robust weight */
+        }
+        else {
+            ak=dv/chisqr_[m-1]; /* robust weight */
+        }
+
+        /* Pv=ak*Pv */
+        for (i=0;i<m;i++) for (j=0;j<m;j++) Pv[j+i*m]*=ak;
+    }
+    /* robust filter based on M-estimation */
+    else if (IGG3==mode||Huber==mode||MCKF==mode)
+    {
+        for (j=0;j<m;j++) {
+
+            /* standardized innovation/residual */
+            dv=fabs(v[j])/sqrt(Pv[j+j*m]);
+
+            /* trace(12,"dv(%d)=%.4f/%.4f %.4f\n",j,fabs(v[j]),sqrt(Pv[j+j*m]),dv); */
+
+            /* IGG3 robust algorithm */
+            if (IGG3==mode) {
+                if (dv<=k0) W[j+j*m]=1.0;
+                else if (dv>k0&&dv<=k1) W[j+j*m]=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
+                else W[j+j*m]=low_weight;            
+            }
+            /* Huber robust algorithm */
+            else if (Huber==mode) {
+                if (dv<=gamma) W[j+j*m]=1.0;
+                else W[j+j*m]=gamma/dv;
+
+                /* variance lower bound constraint*/
+                if (W[j+j*m]<low_weight) W[j+j*m]=low_weight;
+            }
+            /* MCKF robust algorithm */
+            else if (MCKF==mode) {
+                W[j+j*m]=exp(-(dv*dv)/(2*dof*dof));
+
+                /* variance lower bound constraint*/
+                if (W[j+j*m]<low_weight) W[j+j*m]=low_weight;
+            }
+            else {
+                W[j+j*m]=1.0;
+                trace(12,"No matching robust weight function!\n");
+            }            
+        }
+        /* modified measurement noise covariance matrix based on double factor equivalent weights */
+        for (i=0;i<m;i++) {
+            for (j=0;j<m;j++) {
+                if (i==j) R_[j+j*m]=R[j+j*m]/W[j+j*m]; 
+                else R_[j+j*m]=R[j+j*m]/(sqrt(W[i+i*m]*W[j+j*m])); 
+            }
+        }
+    }
+    /* robust filter based on Student's T distribution */
+    else if (Robust_ST==mode||Robust_MST==mode) {
+        matcpy(Rc,R,m,m); /* Rc=R */
+
+        matmul("NT",m,1,m,v,v,Ek,1.0,0.0);  /* vkv=v*v' */
+        matmul("NN",m,n,n,H,Pp,HP,1.0,0.0); /* HP=H*Pp */
+        matmul("NT",m,n,m,HP,H,Ek,1.0,1.0); /* Ek=v*v'+H*Pp*H' */
+
+        matinv(Rc,m); /* Rc=Rc^-1 */
+        matmul("NN",m,m,m,Ek,Rc,EkR,1.0,0.0); /* EkR=Ek/R */
+
+        if (Robust_ST==mode) {
+            for (i=0;i<m;i++) for (j=0;j<m;j++) if (i==j) gamma2+=EkR[i+j*m]; /* gamma2=trace(EkR) */
+
+            E_lambda=(dof_ST+m)/(dof_ST+gamma2); /* E_lambda=E[lambda] */
+
+            /* variance lower bound constraint*/
+            if (E_lambda<low_weight) E_lambda=low_weight;
+
+            for (i=0;i<m;i++) for (j=0;j<m;j++) R_[j+i*m]=R[j+i*m]/E_lambda; /* R_=R*E_lambda */            
+        }
+        else if (Robust_MST==mode) {
+            for (i=0;i<m;i++) {
+                W[i+i*m]=(dof_ST+1.0)/(dof_ST+EkR[i+i*m]);
+
+                /* variance lower bound constraint*/
+                if (W[i+i*m]<low_weight) W[i+i*m]=low_weight;
+            }
+            /* trace(12,"W=\n");tracemat(12,W,m,m,14,9,0); */
+
+            /* modified measurement noise covariance matrix based on double factor equivalent weights */
+            for (i=0;i<m;i++) {
+                for (j=0;j<m;j++) {
+                    if (i==j) R_[j+j*m]=R[j+j*m]/W[j+j*m]; 
+                    else R_[j+j*m]=R[j+j*m]/(sqrt(W[i+i*m]*W[j+j*m])); 
+                }
+            }             
+        }
+    }
+
+    /* modified measurement noise covariance matrix,R_=sR/W*sR' */
+    /* matinv(W,m); 
+    matmul("NN",m,m,m,sR,W,sRW,1.0,0.0);  
+    matmul("NT",m,m,m,sRW,sR,R_,1.0,0.0); */ 
+
+    /* robust filter based on innovation vector */
+    if (Q==NULL&&(IGG3==mode||Huber==mode||MCKF==mode)) {
+        /* update the innovation vector covariance matrix */
+        matcpy(Pv,R_,m,m);
+        matmul("NN",m,n,m,H,F,Pv,1.0,1.0); /* Q=H*F+R */  
+    }
+    /* robust filter based on a posteriori residuals/ST/MST */
+    else if (Q) {
+        /* update the innovation vector covariance matrix */
+        matcpy(Q,R_,m,m);
+        matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */ 
+    }
+    /* trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4,0); */
+
+    free(W); free(sR); free(sRW);
+    free(Q_);free(vP);
+    free(HP);free(Ek); free(Rc);  free(EkR);
+
+    return info;
+}
+
 /* kalman filter ---------------------------------------------------------------
 *kalman filter state update as follows:
  *
@@ -1934,107 +2191,112 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
 *         double *Pp       O   covariance matrix of states after update (n x n)
 *return:status (0:ok,<0:error)
 *notes :matrix stored by column-major order (fortran convention)
-*         if state x[i]==0.0,not updates state x[i]/P[i+i*n]
+*       if state x[i]==0.0,not updates state x[i]/P[i+i*n]
  *-----------------------------------------------------------------------------*/
-extern int filter_(const double *x,const double *P,const double *H,
+extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
                    const double *v,const double *R,int n,int m,
                    double *xp, double *Pp, int mode) {
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=mat(n,n),*I_=eye(n);
     double *IP=mat(n,n),*KR=mat(n,m);
-    double *vk=mat(m,1),*Hk=mat(m,m),*R_=mat(m,m),*D=mat(n,n),*Pv=mat(m,m);
+    double *vk=mat(m,1),*Hk=mat(m,m),*R_=mat(m,m),*D=mat(m,m),*Pv=mat(m,m);
+    double *xp_pre=mat(n,1); /* iteration termination judgment */
     int info;
-    int i,j,iter=(Robust_RES==mode)?2:1;
-    double dv,alpha,k0=1.0,k1=2.0;
-                    
+    int i,j,nx=(GINS_OFF!=rtk->opt.GI_mode)?rtk->ins.nx:3,iter=(Robust_RES==mode||Robust_ST==mode||Robust_MST==mode)?MAXITR_ROBUST:1;
+    int M_function;
+    
+    /* determine the robust weight function to be used */
+    if (Robust_Chi==mode||Robust_ST==mode||Robust_MST==mode) M_function=mode;
+    else M_function=rtk->opt.M_robust;
+
+    /* calculate the innovation vector covariance matrix, Q=H*P*H+R */
+    matcpy(R_,R,m,m);
     matcpy(Q,R,m,m);
     matmul("NT",n,n,m,P,H,F,1.0,0.0); /* F=PH' */
     matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */
 
     for (i=0;i<iter;i++) {
 
+        /* save the previous state vector for iteration termination judgment */
+        if (i>0) matcpy(xp_pre,xp,n,1); 
+
+        /* reset the robust filter auxiliary matrix */
         matcpy(xp,x,n,1);
         matcpy(I,I_,n,n);
         matcpy(vk,v,m,1);
-        matcpy(R_,R,m,m);
+        /* matcpy(R_,R,m,m); */
 
-        if (Robust_INO==mode) {
-        
-            for (j=0;j<m;j++) {
-                /* standardized innovation */
-                dv=fabs(v[j])/sqrt(Q[j+j*m]);
-
-                /* trace(12,"dv(%d)=%.4f/%.4f %.4f\n",j,fabs(v[j]),sqrt(Q[j+j*m]),dv); */
-
-                /* IGG3 robust algorithm */
-                if (dv<=k0) alpha=1.0;
-                else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
-                else alpha=1E-4;
-
-                R_[j+j*m]=R[j+j*m]/alpha; 
-
-                matcpy(Q,R_,m,m);
-                matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */                
+        /* NOTE: robust filter based on innovation vector */
+        if (Robust_INO==mode||Robust_Chi==mode) {
+            
+            /* robust weight function */
+            if ((info=robust_M_function(v,Q,NULL,R,R_,NULL,H,F,n,m,M_function))) {
+                info=-1;
+                showerr("M estimates the robust filter error!\n");break;
             }
         }
 
+        /* measurement update based on modified MNCM */
         if (!(info=matinv(Q,m))) {
             matmul("NN",n,m,m,F,Q,K,1.0,0.0);    /* K=P*H'*Q^-1 */
             matmul("NN",n,m,1,K,v,xp,1.0,1.0);   /* xp=x+K*v */
             matmul("NN",n,m,n,K,H,I,-1.0,1.0);
-            matmul("NN",n,n,n,I,P,Pp,1.0,0.0);  /* Pp=(I-K*H)*P_pre */
+            matmul("NN",n,n,n,I,P,Pp,1.0,0.0);   /* Pp=(I-K*H)*P_pre */
 
             /* matmul("NN",n,n,n,I,P,IP,1.0,0.0); */   /* IP=(I-K*H)*P_pre */
             /* matmul("NT",n,n,n,IP,I,Pp,1.0,0.0); */  /* Pp=(I-K*H)*P_pre*(I-K*H)' */
             /* matmul("NN",n,m,m,K,R,KR,1.0,0.0); */   /* KR=K*R */
             /* matmul("NT",n,m,n,KR,K,Pp,1.0,1.0); */  /* Pp=(I-K*H)*P_pre*(I-K*H)'+K*R*K' */
 
-            /* trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0);
-            trace(12,"Kk=\n"); tracemat(12,K,n,m,15,9,0);
-            trace(12,"Pp=\n"); tracemat(12,Pp,n,n,15,9,0); */            
+            /* trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0); */
+            /* trace(12,"Kk=\n"); tracemat(12,K,n,m,15,9,0); */
+            /* trace(12,"Pp=\n"); tracemat(12,Pp,n,n,15,9,0); */            
         }
         
-        if (iter>1) {
+        /* NOTE: robust filter based on a posteriori residuals */
+        if ((Robust_RES==mode||Robust_ST==mode||Robust_MST==mode)&&i<iter-1) {
+
+            /* iteration termination judgment */
+            if (i>0&&iter_judge(xp,xp_pre,nx,ITR_TOL)) {
+                break; 
+            }
+
             /* compute the residual vector and its covariance matrix */
             matmul("NN",m,n,m,H,K,Hk,1.0,0.0);   /* Hk=H*K */
             matmul("NN",m,m,1,Hk,v,vk,-1.0,1.0); /* vk=(I-H*K)*v */
             matmul("NN",m,m,m,R_,Q,D,1.0,0.0);   /* D=R_*Q^-1 */
-            matmul("NT",m,m,m,D,R_,Pv,1.0,0.0);  /* Pv=R_*Q^-1*R' */
-            /* for (j=0;j<m;j++) trace(12,"Pv(%d)=%.4f\n",j,Pv[j+j*m]); */
+            matmul("NT",m,m,m,D,R_,Pv,1.0,0.0);  /* Pv=R_*Q^-1*R_' */
 
-            for (j=0;j<m;j++) {
-                /* standardized residuals */
-                if (Pv[j+j*m]<0) continue; /* avoid sqrt negative value */
-                dv=fabs(vk[j])/sqrt(Pv[j+j*m]);
+            /* trace(12,"R_=\n"); tracemat(12,R_,m,m,15,9,0);
+            trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0);
+            trace(12,"D=\n"); tracemat(12,D,m,m,15,9,0);
+            trace(12,"Pv=\n"); tracemat(12,Pv,m,m,15,9,0); */
+            /* for (j=0;j<m;j++) trace(12,"Iter=%d, Pv(%d)=%.10f\n",i,j,Pv[j+j*m]); */
 
-                trace(12,"dvk(%d)=%.4f/%.4f %.4f\n",j,fabs(vk[j]),sqrt(Pv[j+j*m]),dv);
-
-                /* IGG3 robust algorithm */
-                if (dv<=k0) alpha=1.0;
-                else if (dv>k0&&dv<=k1) alpha=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
-                else alpha=1E-4;
-
-                R_[j+j*m]=R[j+j*m]/alpha;                 
+            /* robust weight function */
+            if ((info=robust_M_function(vk,Pv,Pp,R,R_,Q,H,F,n,m,M_function))) {
+                info=-1;
+                showerr("M estimates the robust filter error!");break;
             }
-            /* update the innovation vector covariance matrix */
-            matcpy(Q,R_,m,m);
-            matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */ 
-            trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4,0);
-        }
-        
+
+        }    
     }
 
-    for (i=0;i<n;i++) {
-        for(j=0;j<n;j++) {
-            if ((i==j)&&Pp[i+j*n]<0.0) {
-                trace(7,"The updated error covariance is not positive definite!\n");
-                return -1;
+    /* check if the error covariance matrix is positive definite */
+    if (!info) {
+        for (i=0;i<n;i++) {
+            for(j=0;j<n;j++) {
+                if ((i==j)&&Pp[i+j*n]<0.0) {
+                    info=-1;
+                    showerr("%s: The error covariance matrix is not positive definite!",Debug_Glo.chTime);
+                }
             }
-        }
+        }        
     }
 
     free(F); free(Q); free(K); free(I); free(I_);
     free(IP); free(KR);
     free(vk); free(Hk); free(R_); free(D); free(Pv);
+    free(xp_pre);
     return info;
 }
 extern int filter(double *x,double *P,const double *H,const double *v,
@@ -2059,7 +2321,7 @@ extern int filter(double *x,double *P,const double *H,const double *v,
             H_[i+j*k]=H[ix[i]+j*n];
     }
     /* do kalman filter state update on compressed arrays */
-    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_,Robust_OFF);
+    info=filter_(NULL,x_,P_,H_,v,R,k,m,xp_,Pp_,Robust_OFF);
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) {
         x[ix[i]]=xp_[i];
@@ -2101,7 +2363,7 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
     trace(12,"R=\n"); tracemat(12,R,m,m,9,4,0); */
 
     /* do kalman filter state update on compressed arrays */
-    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_,mode);
+    info=filter_(rtk,x_,P_,H_,v,R,k,m,xp_,Pp_,mode);
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) {
         x[ix[i]]=xp_[i];
@@ -3101,16 +3363,18 @@ extern void eci2ecef(gtime_t tutc,const double *erpv,double *U,double *gmst) {
     Rz(-z,R1);
     Ry(th,R2);
     Rz(-ze,R3);
-    matmul("NN",3,3,3,R1,R2,R,1.0,0.0);
-    matmul("NN",3,3,3,R,R3,P,1.0,0.0);/* P=Rz(-z)*Ry(th)*Rz(-ze) */
+
+    matmul("TT",3,3,3,R1,R2,R,1.0,0.0);
+    matmul("NT",3,3,3,R,R3,P,1.0,0.0);/* P=Rz(-z)*Ry(th)*Rz(-ze) */
 
     /* iau 1980 nutation */
     nut_iau1980(t,f,&dpsi,&deps);
     Rx(-eps-deps,R1);
     Rz(-dpsi,R2);
     Rx(eps,R3);
-    matmul("NN",3,3,3,R1,R2,R,1.0,0.0);
-    matmul("NN",3,3,3,R,R3,N,1.0,0.0);/* N=Rx(-eps)*Rz(-dspi)*Rx(eps) */
+
+    matmul("TT",3,3,3,R1,R2,R,1.0,0.0);
+    matmul("NT",3,3,3,R,R3,N,1.0,0.0);/* N=Rx(-eps)*Rz(-dspi)*Rx(eps) */
 
     /* greenwich aparent sidereal time (rad) */
     gmst_=utc2gmst(tutc_,erpv[2]);
@@ -3121,8 +3385,9 @@ extern void eci2ecef(gtime_t tutc,const double *erpv,double *U,double *gmst) {
     Ry(-erpv[0],R1);
     Rx(-erpv[1],R2);
     Rz(gast,R3);
-    matmul("NN",3,3,3,R1,R2,W,1.0,0.0);
-    matmul("NN",3,3,3,W,R3,R,1.0,0.0);/* W=Ry(-xp)*Rx(-yp) */
+
+    matmul("TT",3,3,3,R1,R2,W,1.0,0.0);
+    matmul("NT",3,3,3,W,R3,R,1.0,0.0);/* W=Ry(-xp)*Rx(-yp) */
     matmul("NN",3,3,3,N,P,NP,1.0,0.0);
     matmul("NN",3,3,3,R,NP,U_,1.0,0.0);/* U=W*Rz(gast)*N*P */
 

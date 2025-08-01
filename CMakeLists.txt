@@ -1,5 +1,5 @@
 #Minimum requirement of CMake version : 3.5.0
-cmake_minimum_required(VERSION 3.5.0) #项目执行所需最低版本cmake
+cmake_minimum_required(VERSION 3.10.0) #项目执行所需最低版本cmake
 cmake_policy(SET CMP0074 NEW) #表示启用CMake策略CMP0075的新行为
 
 #Project name and version number
@@ -20,15 +20,15 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif()
 
 if(WIN32)
-    MATH(EXPR stack_size "600*1024*1024")   #使用数学表达式计算变量stack_size的值，将其设置为600MB
-    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,${stack_size}") #将程序的栈大小设置为之前计算得到的stack_size值
+    MATH(EXPR stack_size "600*1024*1024")   # 使用数学表达式计算变量stack_size的值，将其设置为600MB
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,${stack_size}") # 将程序的栈大小设置为之前计算得到的stack_size值
 endif()
 
 include(CheckCXXCompilerFlag)#检查指定的C++编译器标志是否可用，并将结果存储在变量中供后续使用
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
-#检查编译器是否支持C++11和C++0x标准，并将结果存储在变量COMPILER_SUPPORTS_CXX11和COMPILER_SUPPORTS_CXX0X中
+# 检查编译器是否支持C++11和C++0x标准，并将结果存储在变量COMPILER_SUPPORTS_CXX11和COMPILER_SUPPORTS_CXX0X中
 if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,7 +81,6 @@ set(libFusionSrc  ${PROJECT_SOURCE_DIR}/src/LibFusion)
 add_subdirectory(${libGnssSrc}   ${ROOT}/build/${libGnss}) 
 add_subdirectory(${libInsSrc}    ${ROOT}/build/${libIns}) 
 add_subdirectory(${libFusionSrc} ${ROOT}/build/${libFusion}) 
-
 
 #CUI APP
 set(App iRTKLIB)
