@@ -90,7 +90,7 @@ extern int ins_update(rtk_t *rtk)
     if (dt>(interval+ins->dttol)/2.0) return 0;
 
     /* update the state transition matrix Phi */
-    phi_update(&rtk->ins);
+    phi_update(&rtk->ins,&rtk->opt);
 
     if (GINS_TC==rtk->opt.GI_mode)  pmatcpy(P,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx);
     else matcpy(P,rtk->lcgins.P,nx,nx);
@@ -267,14 +267,45 @@ extern void imu_fedback(ins_t *ins, imud_t *imu)
     }
 }
 
+/* convert psi error state to phi error state ------------------------------
+*args   : ins_t *ins           I   ins structure
+*         const double *dr     I   dblh pos error  (3x1)
+*         double *dx           IO  ins error state (15x1)
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void psi2phi_corr(ins_t *ins, const double *dr, double *dx)
+{
+    double d_ceta[3],dv[3];
+    int i;
+
+    /* equivalent rotation vector phi_nc */
+    d_ceta[0]=-dr[0]; d_ceta[1]=dr[1]*cos(ins->pos[0]); d_ceta[2]=dr[1]*sin(ins->pos[0]);
+
+    /* convert Psi attitude misalignment angle (psi_cn') to Phi attitude misalignment angle (phi_nn') , phi_nn'=phi_nc+psi_cn' */     
+    for (i=0;i<3;i++) dx[i]=dx[i]+d_ceta[i];
+
+    /* convert Psi velocity error state to Phi velocity error state */
+    vskewmv(1.0,d_ceta,ins->vel,dv);
+    for (i=0;i<3;i++) dx[i+3]=dx[i+3]-dv[i];
+
+}
+
 /* INS error feedback correction */
 extern void ins_fedback(rtk_t *rtk, double *dx)
 {
+    prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     int i;
     double dr[3],phi[9],Cnn_[9];
     double *I3=eye(3),Cnb[9]={0.0};
     double qnn_[4],qn_b[4],phi_nn_[3];
+
+    /* convert dxyz to dblh */
+    earth_update(ins->pos,ins->vel,&ins->eth);
+    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
+
+    /* NOTE: convert psi error state to phi error state */
+    if (ERR_PSI==opt->err_model) psi2phi_corr(ins,dr,dx);
 
     /*qnb=qnn_°qn_b*/
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
@@ -295,15 +326,12 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     Cnb2att(ins->Cnb,ins->att);
     att2qnb(ins->att,ins->qnb); */
 
-    earth_update(ins->pos,ins->vel,&ins->eth);
-    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
-
     for (i=0;i<ins->nx;i++){
         if (i>=3&&i<6)      ins->vel[i-3]-=dx[i];
         if (i>=6&&i<9)      ins->pos[i-6]-=dr[i-6];
         if (i>=9&&i<12)     ins->bg[i-9] +=dx[i];
         if (i>=12&&i<15)    ins->ba[i-12]+=dx[i];
-    }
+    }        
 
     for (i=0;i<3;i++){
         /* update previous epoch pos/vel by kf updated state */
@@ -317,13 +345,21 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
 /* INS error feedback correction*/
 extern void ins_fedback_fix(rtk_t *rtk, double *dx)
 {
+    prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     int i;
     double dr[3],phi[9],Cnn_[9];
     double *I3=eye(3),Cnb[9],Cnb_[9];
     double qnn_[4],qn_b[4],qnb[4],phi_nn_[3];
 
-    /*qnb=qnn_°qn_b*/
+    /* convert dxyz to dblh */
+    earth_update(ins->pos,ins->vel,&ins->eth);
+    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
+
+    /* NOTE: convert psi error state to phi error state */
+    if (ERR_PSI==opt->err_model) psi2phi_corr(ins,dr,dx);
+
+    /* qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
     for (i=0;i<3;i++) phi_nn_[i]=dx[i];
     
@@ -333,16 +369,13 @@ extern void ins_fedback_fix(rtk_t *rtk, double *dx)
     qnb2Cnb(qnb,Cnb);
     Cnb2att(Cnb,ins->xa);
 
-    /*Cnb=(I+[phi x])Cn'b*/
+    /* Cnb=(I+[phi x])Cn'b */
     /* for (i=0;i<9;i++) Cnb=ins->Cnb[i];
 
     vskew(1.0,dx,phi);
     Mat3add2(I3,1.0,phi,1.0,Cnn_);
     Mat3mul2(1.0,Cnn_,Cnb,Cnb_); 
     Cnb2att(Cnb_,ins->xa); */
-
-    earth_update(ins->pos,ins->vel,&ins->eth);
-    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
 
     for (i=0;i<ins->nx;i++){
         if (i>=3&&i<6)      ins->xa[i]=ins->vel[i-3]-dx[i];

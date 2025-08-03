@@ -715,6 +715,7 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
         eth->F1 [i]=0.0; 
         eth->F2 [i]=0.0;
         eth->F3 [i]=0.0;
+        eth->F4 [i]=0.0;
         eth->Fav[i]=0.0;
         eth->Frr[i]=0.0;        
         eth->Frp[i]=0.0;
@@ -758,6 +759,7 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
         eth->F1 [i]=0.0; 
         eth->F2 [i]=0.0;
         eth->F3 [i]=0.0;
+        eth->F4 [i]=0.0;
         eth->Fav[i]=0.0;
         eth->Frr[i]=0.0;        
         eth->Frp[i]=0.0;
@@ -780,6 +782,7 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
     eth->F3 [3]=-2.0*eth->beta[3]*pos[2]*cos2B;                          
     eth->F3 [5]=-eth->beta[3]*sin2B; 
     eth->F3 [6]=-eth->g0*sin2B*(eth->beta[0]-4.0*eth->beta[1]*cos2B);    eth->F3 [8]=eth->beta[2];
+    eth->F4 [0]=-eth->g0/Rnh;        eth->F4 [4]=-eth->g0/Rmh;           eth->F4 [8]=-2.0*eth->g0/(sqrt(Rmh*Rnh)+pos[2]);
     eth->Fav[1]=-1.0/Rmh;            eth->Fav[3]=1.0/Rnh;                eth->Fav[6]=tanB/Rnh;    
     eth->Frr[0]=vel[2]/Rnh-vel[1]*tanB/Rmh;                              eth->Frr[1]=vel[0]*tanB/Rmh;
     eth->Frr[2]=-vel[0]/Rnh;         eth->Frr[4]=vel[2]/Rmh;             eth->Frr[5]=-vel[1]/Rmh;
@@ -1366,11 +1369,12 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt)
 }
 
 /* update INS state transition matrix F and noise driving matrix G */
-extern void phi_update(ins_t *ins)
+extern void phi_update(ins_t *ins, const prcopt_t *opt)
 {
     int i,j,nx,k;
     double Faa[9],Fap[9],Far[9],Fva[9],Fvv[9],Fvp[9],Fvr[9];
     double Fvv1[9],Fvv2[9],F12[9],Fvp1[9],*Fg,*I,*I3;
+    double Frr[9];
 
     nx=ins->nx;
     Fg=zeros(3,3);I=eye(nx);I3=eye(3);
@@ -1385,94 +1389,177 @@ extern void phi_update(ins_t *ins)
 
     earth_update(ins->pos,ins->vel,&ins->eth);
 
-    vskew(-1.0,ins->eth.wnin,Faa);
-    Mat3add2(ins->eth.F1,1.0,ins->eth.F2,1.0,Fap);
-    Mat3mul2(1.0,Fap,ins->eth.Frp,Far);
+    /* NOTE: Phi angle error model */
+    if (ERR_PHI==opt->err_model) {
 
-    vskew(1.0,ins->fn,Fva);
-    vskewmat3(1.0,ins->vel,ins->eth.Fav,Fvv1);
-    vskew(-1.0,ins->eth.wnien,Fvv2);
-    Mat3add2(Fvv1,1.0,Fvv2,1.0,Fvv);
-    Mat3add2(ins->eth.F1,2.0,ins->eth.F2,1.0,F12);
-    vskewmat3(1.0,ins->vel,F12,Fvp1);
-    Mat3add2(Fvp1,1.0,ins->eth.F3,1.0,Fvp);
-    Mat3mul2(1.0,Fvp,ins->eth.Frp,Fvr);
+        vskew(-1.0,ins->eth.wnin,Faa);
+        Mat3add2(ins->eth.F1,1.0,ins->eth.F2,1.0,Fap);
+        Mat3mul2(1.0,Fap,ins->eth.Frp,Far);
 
-    if (ins->corr_time>0)
-    {
-       Fg[0]=-1.0/ins->corr_time;Fg[4]=-1.0/ins->corr_time;Fg[8]=-1.0/ins->corr_time; 
+        vskew(1.0,ins->fn,Fva);
+        vskewmat3(1.0,ins->vel,ins->eth.Fav,Fvv1);
+        vskew(-1.0,ins->eth.wnien,Fvv2);
+        Mat3add2(Fvv1,1.0,Fvv2,1.0,Fvv);
+        Mat3add2(ins->eth.F1,2.0,ins->eth.F2,1.0,F12);
+        vskewmat3(1.0,ins->vel,F12,Fvp1);
+        Mat3add2(Fvp1,1.0,ins->eth.F3,1.0,Fvp);
+        Mat3mul2(1.0,Fvp,ins->eth.Frp,Fvr);
+
+        if (ins->corr_time>0)
+        {
+            Fg[0]=-1.0/ins->corr_time;Fg[4]=-1.0/ins->corr_time;Fg[8]=-1.0/ins->corr_time; 
+        }
+        
+        for (i=0;i<15;i++)
+        {
+            if (i<3) {
+                k=i;
+                for (j=0;j<3;j++)
+                {
+                    ins->F[j+i*nx]=Faa[j+k*3];
+                    ins->G[j+i*nx]=-ins->Cnb[j+k*3];
+                }
+                for (j=3;j<6;j++)
+                {
+                    ins->F[j+i*nx]=ins->eth.Fav[j-3+k*3];
+                }
+                for (j=6;j<9;j++)
+                {
+                    ins->F[j+i*nx]=Far[j-6+k*3];
+                }
+                for (j=9;j<12;j++)
+                {
+                    ins->F[j+i*nx]=-ins->Cnb[j-9+k*3];
+                } 
+            }     
+            if (i>=3&&i<6) {
+                k=i-3;
+                for (j=0;j<3;j++)
+                {
+                    ins->F[j+i*nx]=Fva[j+k*3];
+                }
+                for (j=3;j<6;j++)
+                {
+                    ins->F[j+i*nx]=Fvv[j-3+k*3];
+                    ins->G[j+i*nx]=ins->Cnb[j-3+k*3];
+                }
+                for (j=6;j<9;j++)
+                {
+                    ins->F[j+i*nx]=Fvr[j-6+k*3];
+                }
+                for (j=12;j<15;j++)
+                {
+                    ins->F[j+i*nx]=ins->Cnb[j-12+k*3];
+                } 
+            } 
+            if (i>=6&&i<9) {
+                k=i-6;
+                for (j=3;j<6;j++)
+                {
+                    ins->F[j+i*nx]=I3[j-3+k*3];
+                }
+                for (j=6;j<9;j++)
+                {
+                    ins->F[j+i*nx]=ins->eth.Frr[j-6+k*3];
+                }
+            } 
+            if (i>=9&&i<12) {
+                k=i-9;
+                for (j=9;j<12;j++)
+                {
+                    ins->F[j+i*nx]=Fg[j-9+k*3];
+                    if (i==j) ins->G[j+i*nx]=1.0;
+                } 
+            } 
+            if (i>=12&&i<15) {
+                k=i-12;
+                for (j=12;j<15;j++)
+                {
+                    ins->F[j+i*nx]=Fg[j-12+k*3];
+                    if (i==j) ins->G[j+i*nx]=1.0;
+                } 
+            }                                                   
+        }        
     }
-    
-    for (i=0;i<15;i++)
-    {
-        if (i<3) {
-            k=i;
-            for (j=0;j<3;j++)
-            {
-                ins->F[j+i*nx]=Faa[j+k*3];
-                ins->G[j+i*nx]=-ins->Cnb[j+k*3];
-            }
-            for (j=3;j<6;j++)
-            {
-                ins->F[j+i*nx]=ins->eth.Fav[j-3+k*3];
-            }
-            for (j=6;j<9;j++)
-            {
-                ins->F[j+i*nx]=Far[j-6+k*3];
-            }
-            for (j=9;j<12;j++)
-            {
-                ins->F[j+i*nx]=-ins->Cnb[j-9+k*3];
+    /* NOTE: Psi angle error model */
+    else if (ERR_PSI==opt->err_model) {
+
+        vskew(-1.0,ins->eth.wnin,Faa); /* att */
+
+        vskew(1.0,ins->fn,Fva);
+        vskew(-1.0,ins->eth.wnien,Fvv2); /* vel */
+       
+        vskew(-1.0,ins->eth.wnen,Frr);   /* pos */
+
+        if (ins->corr_time>0)
+        {
+            Fg[0]=-1.0/ins->corr_time;Fg[4]=-1.0/ins->corr_time;Fg[8]=-1.0/ins->corr_time; 
+        }
+        
+        for (i=0;i<15;i++)
+        {
+            if (i<3) {
+                k=i;
+                for (j=0;j<3;j++)
+                {
+                    ins->F[j+i*nx]=Faa[j+k*3];
+                    ins->G[j+i*nx]=-ins->Cnb[j+k*3];
+                }
+                for (j=9;j<12;j++)
+                {
+                    ins->F[j+i*nx]=-ins->Cnb[j-9+k*3];
+                } 
+            }     
+            if (i>=3&&i<6) {
+                k=i-3;
+                for (j=0;j<3;j++)
+                {
+                    ins->F[j+i*nx]=Fva[j+k*3];
+                }
+                for (j=3;j<6;j++)
+                {
+                    ins->F[j+i*nx]=Fvv2[j-3+k*3];
+                    ins->G[j+i*nx]=ins->Cnb[j-3+k*3];
+                }
+                for (j=6;j<9;j++)
+                {
+                    ins->F[j+i*nx]=ins->eth.F4[j-6+k*3];
+                }
+                for (j=12;j<15;j++)
+                {
+                    ins->F[j+i*nx]=ins->Cnb[j-12+k*3];
+                } 
             } 
-        }     
-        if (i>=3&&i<6) {
-            k=i-3;
-            for (j=0;j<3;j++)
-            {
-                ins->F[j+i*nx]=Fva[j+k*3];
-            }
-            for (j=3;j<6;j++)
-            {
-                ins->F[j+i*nx]=Fvv[j-3+k*3];
-                ins->G[j+i*nx]=ins->Cnb[j-3+k*3];
-            }
-            for (j=6;j<9;j++)
-            {
-                ins->F[j+i*nx]=Fvr[j-6+k*3];
-            }
-            for (j=12;j<15;j++)
-            {
-                ins->F[j+i*nx]=ins->Cnb[j-12+k*3];
+            if (i>=6&&i<9) {
+                k=i-6;
+                for (j=3;j<6;j++)
+                {
+                    ins->F[j+i*nx]=I3[j-3+k*3];
+                }
+                for (j=6;j<9;j++)
+                {
+                    ins->F[j+i*nx]=Frr[j-6+k*3];
+                }
             } 
-        } 
-        if (i>=6&&i<9) {
-            k=i-6;
-            for (j=3;j<6;j++)
-            {
-                ins->F[j+i*nx]=I3[j-3+k*3];
-            }
-            for (j=6;j<9;j++)
-            {
-                ins->F[j+i*nx]=ins->eth.Frr[j-6+k*3];
-            }
-        } 
-        if (i>=9&&i<12) {
-            k=i-9;
-            for (j=9;j<12;j++)
-            {
-                ins->F[j+i*nx]=Fg[j-9+k*3];
-                if (i==j) ins->G[j+i*nx]=1.0;
+            if (i>=9&&i<12) {
+                k=i-9;
+                for (j=9;j<12;j++)
+                {
+                    ins->F[j+i*nx]=Fg[j-9+k*3];
+                    if (i==j) ins->G[j+i*nx]=1.0;
+                } 
             } 
-        } 
-        if (i>=12&&i<15) {
-            k=i-12;
-            for (j=12;j<15;j++)
-            {
-                ins->F[j+i*nx]=Fg[j-12+k*3];
-                if (i==j) ins->G[j+i*nx]=1.0;
-            } 
-        }                                                   
+            if (i>=12&&i<15) {
+                k=i-12;
+                for (j=12;j<15;j++)
+                {
+                    ins->F[j+i*nx]=Fg[j-12+k*3];
+                    if (i==j) ins->G[j+i*nx]=1.0;
+                } 
+            }                                                   
+        }                
     }
+
     matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
     /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16,0);
     trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16,0); */

@@ -78,6 +78,9 @@ extern "C"
 #define ATT_DCM  0      /* attitude update method: direction cosine matrix */
 #define ATT_QUAT 1      /* attitude update method: quaternion */
 
+#define ERR_PHI 0       /* ins error model: phi angle error */
+#define ERR_PSI 1       /* ins error model: psi angle error */
+
 #define GINS_OFF 0      /* only GNSS */
 #define GINS_LC  1      /* loose coupled */
 #define GINS_TC  2      /* tight coupled */
@@ -692,6 +695,7 @@ extern "C"
         double Fav[9];              /* auxiliary matrix for attitude update */
         double F2[9];
         double F3[9];
+        double F4[9];               /* psi angle error model gravity coefficient */
         double Frr[9];              /* auxiliary matrix for position update */
         double Frp[9];              /* error transformation matrix from BLH frame to ENU frame */
     } eth_t;
@@ -1342,7 +1346,8 @@ extern "C"
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
         int alingetype;          /* ins initial alignment type */
-        int att_type;            /* attitude update method (0:DCM, 1:quat))*/
+        int att_type;            /* attitude update method (0:DCM, 1:quat) */
+        int err_model;           /* ins error model (0:phi,1:psi) */
         int constraint[3];       /* constraint type (CONS_???) [1]NHC,[2]ZUPT,[3]ZIHR */
         double rotation_angle[3];/* ins rotation angle, [pitch,roll,yaw] (deg), from v frame to b' frame */
         double lever_nhc[3];     /* lever frame from imu to nhc effective point in b frame (m) */
@@ -2330,14 +2335,15 @@ extern "C"
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
     EXPORT int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv, int nx, int mode);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
-    EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt);
-    EXPORT void phi_update(ins_t *ins);
+    EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);
+    EXPORT void phi_update(ins_t *ins, const prcopt_t *popt);
     EXPORT int  ins_update(rtk_t *rtk);
     EXPORT void ins2gnss(rtk_t *rtk, double *pv_g, int n);
     EXPORT void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int mode);
     EXPORT void earth_update(const double *pos, const double *vel, eth_t *eth);
     EXPORT void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, double *dv_rot, double *dv_pad);
     EXPORT void imu_fedback(ins_t *ins, imud_t *imu);
+    EXPORT void psi2phi_corr(ins_t *ins, const double *dr, double *dx);
     EXPORT void ins_fedback(rtk_t *rtk, double *dx);
     EXPORT void ins_fedback_fix(rtk_t *rtk, double *dx);
     EXPORT int lc_gins(rtk_t *rtk);

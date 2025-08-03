@@ -64,7 +64,7 @@
             "request": "launch",
             "name":"Python Script",
             "program": "${workspaceFolder}\\script\\excute.py",
-            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //配置文件,
+            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作目录
             "console": "externalTerminal",
         }
     ]
