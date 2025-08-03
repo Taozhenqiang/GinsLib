@@ -1,10 +1,7 @@
 file(REMOVE_RECURSE
-  "../Bin/GINSLIB.exe"
-  "../Bin/GINSLIB.exe.manifest"
+  "CMakeFiles/GINSLIB.dir/rnx2rtkp.c.o"
   "../Bin/GINSLIB.pdb"
-  "../Lib/libGINSLIB.dll.a"
-  "CMakeFiles/GINSLIB.dir/rnx2rtkp.c.obj"
-  "CMakeFiles/GINSLIB.dir/rnx2rtkp.c.obj.d"
+  "../Bin/GINSLIB"
 )
 
 # Per-language clean rules from dependency scanning.

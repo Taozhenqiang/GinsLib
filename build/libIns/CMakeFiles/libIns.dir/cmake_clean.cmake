@@ -1,8 +1,7 @@
 file(REMOVE_RECURSE
-  "../Lib/liblibInsd.a"
+  "CMakeFiles/libIns.dir/ins.c.o"
   "../Lib/liblibInsd.pdb"
-  "CMakeFiles/libIns.dir/ins.c.obj"
-  "CMakeFiles/libIns.dir/ins.c.obj.d"
+  "../Lib/liblibInsd.a"
 )
 
 # Per-language clean rules from dependency scanning.

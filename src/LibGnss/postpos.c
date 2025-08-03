@@ -1172,8 +1172,8 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
     };
 
     p=strrchr(fopt->sol_path,'/');
+    sep=(p++?"/":"\\");
     if (!p) p=strrchr(fopt->sol_path,'\\');
-    sep=(p++?"\\":"/");
 
     q=strchr(p,'_');
 

@@ -36,3 +36,8 @@ Pre-complied linux packages are available at https://build.opensuse.org/package/
 
 The last step will copy the compiled executables into a new directory RTKLIB_bin next to the rtklib source directory.
 
+support dcm/quat attitude update
+support phi/psi angle ins error model 
+support zero velocity detection/ZUPT/NHC
+support Linux/Windows
+

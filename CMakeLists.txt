@@ -1,6 +1,5 @@
 #Minimum requirement of CMake version : 3.5.0
 cmake_minimum_required(VERSION 3.10.0) #项目执行所需最低版本cmake
-cmake_policy(SET CMP0074 NEW) #表示启用CMake策略CMP0075的新行为
 
 #Project name and version number
 project(RTKNav VERSION 0.1.0) #设置项目名称
@@ -10,8 +9,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_options(-pthread)   #启用多线程
     add_compile_options(-w) 		#禁止所有警告信息
     add_compile_options(-m64) 		#指定生成64位可执行文件
-    add_compile_options(-lz) 		#链接zlib库
-    add_compile_options(-lstdc++) 	#链接标准C++库
+    # add_compile_options(-lz) 		#链接zlib库
+    # add_compile_options(-lstdc++) 	#链接标准C++库
+    # add_compile_options(-lm)        # 添加数学库链接（新增此行）
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_compile_options(-g) 		#生成调试信息
     add_compile_options(-O0)
@@ -64,7 +64,12 @@ else()
 endif()
 
 include_directories(include) #添加包含路径
-add_compile_definitions(WIN32 ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
+# 仅在Windows平台添加WIN32宏定义，其他宏保持不变
+if(WIN32)
+    add_definitions(-DWIN32)
+endif()
+add_definitions(-DENAGLO -DENAGAL -DENACMP -DENAQZS -DENAIRN -DNEXOBS=3 -DNFREQ=7 -DTRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
+# add_compile_definitions(WIN32 ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
 
 # global value
 # set lib name

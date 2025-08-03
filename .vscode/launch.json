@@ -7,7 +7,7 @@
         {
             "type": "cppdbg",
             "request": "launch",
-            "name": "GINSLIB",
+            "name": "GINSLIB_Window",
             "program": "${workspaceFolder}\\build\\Bin\\GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
@@ -43,6 +43,42 @@
         {
             "type": "cppdbg",
             "request": "launch",
+            "name": "GINSLIB_LINUX",
+            "program": "${workspaceFolder}/build/Bin/GINSLIB", //注意为可执行文件的完整路径+文件名
+            "args": [
+                "-k",
+                "IGM-A1_Vehicle_open_20211217-nsh.conf",
+                // "KVH1750_Vehicle_open_20211217-nsh.conf",
+                // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
+                // "IGM-A1_Vehicle_open_20201210.conf",
+                // "KVH1750_Vehicle_open_20201210.conf",
+                // "EG320N_Vehicle_open_20250419-CHC.conf",
+                // "EG320N_Vehicle_open_20250418_campus1-CHC.conf",
+                // "EG320N_Vehicle_open_20250418_campus2-CHC.conf",
+                // "EG320N_Vehicle_open_20250418-CHC.conf",
+                // "KVH1750_Vehicle_complex_20210715.conf",
+                // "STIM300_Vehicle_complex_20230102.conf",
+                // "FSAS_Vehicle_open_20150722.conf",
+                // "FSAS_Vehicle_complex_20220315.conf",
+                // "HG4930_Vehicle_open_20201128.conf", 
+                // "LCI_Marine_open_20150108.conf",
+
+                // "-p","8",
+                // "-gins","2",
+                // "-ion","4",
+                // "-tro","3",
+                // "-eph","1",
+                // "-flt","0",
+                // "-amb","0",
+                
+                "-x","4240",
+            ],
+            "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,//工作路径
+            
+        },        
+        {
+            "type": "cppdbg",
+            "request": "launch",
             "name": "inspure",
             "program": "${workspaceFolder}\\build\\Bin\\inspure.exe", //注意为可执行文件的完整路径+文件名
             "args": [
@@ -57,14 +93,16 @@
                 "-o",
                 "${workspaceFolder}\\result\\ins.pos",                       
             ],
-            "cwd": "${workspaceFolder}\\conf" ,//配置文件
+            "cwd": "${workspaceFolder}\\conf" ,
         },
         {
             "type":"debugpy",
             "request": "launch",
             "name":"Python Script",
-            "program": "${workspaceFolder}\\script\\excute.py",
-            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //配置文件,
+            // "program": "${workspaceFolder}\\script\\excute.py",
+            // "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
+            "program": "${workspaceFolder}/script/excute.py",
+            "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
             "console": "externalTerminal",
         }
     ]
