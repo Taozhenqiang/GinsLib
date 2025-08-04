@@ -60,5 +60,12 @@ app/qtapp/packaging/packages/com.rtklib/meta/license.txt
 app/qtapp/packaging/packages/RtkLibInstaller.exe
 
 # sample date
+/app
 /data
+/lib
 /test
+/util
+
+# other
+/build
+/conf

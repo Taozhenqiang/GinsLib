@@ -1,1 +1,0 @@
-/usr/bin/gcc -g   CMakeFiles/GINSLIB.dir/rnx2rtkp.c.o  -o ../Bin/GINSLIB ../Lib/liblibGnssd.a ../Lib/liblibInsd.a ../Lib/liblibFusiond.a -lm -lz -lstdc++ ../Lib/liblibGnssd.a ../Lib/liblibInsd.a ../Lib/liblibFusiond.a 

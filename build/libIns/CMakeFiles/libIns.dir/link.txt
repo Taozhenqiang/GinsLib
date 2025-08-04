@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../Lib/liblibInsd.a  CMakeFiles/libIns.dir/ins.c.o
-/usr/bin/ranlib ../Lib/liblibInsd.a

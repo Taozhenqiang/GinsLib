@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../Lib/liblibFusiond.a  CMakeFiles/libFusion.dir/lc_gins.c.o
-/usr/bin/ranlib ../Lib/liblibFusiond.a

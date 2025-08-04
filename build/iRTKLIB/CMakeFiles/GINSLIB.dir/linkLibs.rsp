@@ -1,1 +1,0 @@
- ../Lib/liblibGnssd.a ../Lib/liblibInsd.a ../Lib/liblibFusiond.a ../Lib/liblibGnssd.a ../Lib/liblibInsd.a ../Lib/liblibFusiond.a -lWs2_32 -lwinmm -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

@@ -1,3 +1,0 @@
-D:\cmake-3.30.3-windows-x86_64\bin\cmake.exe -E rm -f CMakeFiles\inspure.dir/objects.a
-D:\mingw64\bin\ar.exe qc CMakeFiles\inspure.dir/objects.a @CMakeFiles\inspure.dir\objects1.rsp
-D:\mingw64\bin\gcc.exe -g -Wl,--stack,629145600 -Wl,--whole-archive CMakeFiles\inspure.dir/objects.a -Wl,--no-whole-archive -o ..\Bin\inspure.exe -Wl,--out-implib,..\Lib\libinspure.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\inspure.dir\linkLibs.rsp

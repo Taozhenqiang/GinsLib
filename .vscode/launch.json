@@ -99,10 +99,10 @@
             "type":"debugpy",
             "request": "launch",
             "name":"Python Script",
-            // "program": "${workspaceFolder}\\script\\excute.py",
-            // "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
-            "program": "${workspaceFolder}/script/excute.py",
-            "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
+            "program": "${workspaceFolder}\\script\\excute.py",
+            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
+            // "program": "${workspaceFolder}/script/excute.py",
+            // "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
             "console": "externalTerminal",
         }
     ]

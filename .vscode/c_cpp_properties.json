@@ -1,31 +1,31 @@
 {
     "configurations": [
-        // {
-        //     "name": "Win32",  // 保留原Windows配置
-        //     "includePath": [
-        //         "${workspaceFolder}\\include"  // Windows路径分隔符(\)
-        //     ],
-        //     "defines": [
-        //         "_DEBUG",
-        //         "UNICODE",
-        //         "_UNICODE"  // Windows特有宏
-        //     ],
-        //     "intelliSenseMode": "windows-gcc-x86",
-        //     "compilerPath": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe"
-        // },
         {
-            "name": "Linux",  // 新增Linux配置
+            "name": "Win32",  // 保留原Windows配置
             "includePath": [
-                "${workspaceFolder}/include",  // Linux路径分隔符(/)
-                "/usr/include",  // 系统标准头文件路径(Linux)
-                "/usr/local/include"
+                "${workspaceFolder}\\include"  // Windows路径分隔符(\)
             ],
             "defines": [
-                "_DEBUG"  // 移除Windows特有宏(UNICODE等)
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"  // Windows特有宏
             ],
-            "intelliSenseMode": "linux-gcc-x64",  // Linux GCC 64位模式
-            "compilerPath": "/usr/bin/gcc"  // Linux默认GCC路径
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerPath": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe"
         }
+        // {
+        //     "name": "Linux",  // 新增Linux配置
+        //     "includePath": [
+        //         "${workspaceFolder}/include",  // Linux路径分隔符(/)
+        //         "/usr/include",  // 系统标准头文件路径(Linux)
+        //         "/usr/local/include"
+        //     ],
+        //     "defines": [
+        //         "_DEBUG"  // 移除Windows特有宏(UNICODE等)
+        //     ],
+        //     "intelliSenseMode": "linux-gcc-x64",  // Linux GCC 64位模式
+        //     "compilerPath": "/usr/bin/gcc"  // Linux默认GCC路径
+        // }
     ],
     "version": 4
 }
