@@ -1,8 +1,7 @@
 file(REMOVE_RECURSE
-  "../Lib/liblibFusiond.a"
+  "CMakeFiles/libFusion.dir/lc_gins.c.o"
   "../Lib/liblibFusiond.pdb"
-  "CMakeFiles/libFusion.dir/lc_gins.c.obj"
-  "CMakeFiles/libFusion.dir/lc_gins.c.obj.d"
+  "../Lib/liblibFusiond.a"
 )
 
 # Per-language clean rules from dependency scanning.

@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/rtklib.h
+stdio.h
+-
+stdlib.h
+-
+stdarg.h
+-
+string.h
+-
+math.h
+-
+time.h
+-
+ctype.h
+-
+stdint.h
+-
+winsock2.h
+-
+windows.h
+-
+pthread.h
+-
+sys/select.h
+-
+
+/home/tzq/open_code/GinsLib/src/LibFusion/lc_gins.c
+rtklib.h
+/home/tzq/open_code/GinsLib/src/LibFusion/rtklib.h
+

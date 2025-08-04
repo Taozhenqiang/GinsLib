@@ -1,22 +1,36 @@
-
-# Consider dependencies only in project.
-set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
-
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
+  "C"
+  )
+# The set of files for implicit dependencies of each language:
+set(CMAKE_DEPENDS_CHECK_C
+  "/home/tzq/open_code/GinsLib/src/LibFusion/lc_gins.c" "/home/tzq/open_code/GinsLib/build/libFusion/CMakeFiles/libFusion.dir/lc_gins.c.o"
+  )
+set(CMAKE_C_COMPILER_ID "GNU")
+
+# Preprocessor definitions for this target.
+set(CMAKE_TARGET_DEFINITIONS_C
+  "ENACMP"
+  "ENAGAL"
+  "ENAGLO"
+  "ENAIRN"
+  "ENAQZS"
+  "NEXOBS=3"
+  "NFREQ=7"
+  "TRACE"
   )
 
-# The set of dependency files which are needed:
-set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion/lc_gins.c" "libFusion/CMakeFiles/libFusion.dir/lc_gins.c.obj" "gcc" "libFusion/CMakeFiles/libFusion.dir/lc_gins.c.obj.d"
+# The include file search paths:
+set(CMAKE_C_TARGET_INCLUDE_PATH
+  "../include"
+  "../src/LibGnss"
+  "../src/LibIns"
   )
 
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
-  )
-
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+# Targets to which this target links.
+set(CMAKE_TARGET_LINKED_INFO_FILES
+  "/home/tzq/open_code/GinsLib/build/libGnss/CMakeFiles/libGnss.dir/DependInfo.cmake"
+  "/home/tzq/open_code/GinsLib/build/libIns/CMakeFiles/libIns.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

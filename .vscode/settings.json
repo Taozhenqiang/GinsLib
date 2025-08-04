@@ -1,6 +1,8 @@
 {
-    "cmake.cmakePath": "D:\\cmake\\cmake-4.0.3-windows-x86_64\\bin\\cmake.exe", //设置cmake路径
-    "cmake.generator": "MinGW Makefiles",
+
+    // "cmake.cmakePath": "D:\\cmake\\cmake-4.0.3-windows-x86_64\\bin\\cmake.exe",
+    // "cmake.generator": "MinGW Makefiles",
+    "cmake.cmakePath": "/usr/bin/cmake", //设置cmake路径
     "files.associations": {
         "cstdlib": "c",
         "rtklib.h": "c",
@@ -14,5 +16,6 @@
         "cstdint": "c",
         "cstdio": "c"
     },
-    "python-envs.pythonProjects": [], //设置CMake生成器
+    "python.defaultInterpreterPath": "/usr/local/bin/python3.13"
+
 }

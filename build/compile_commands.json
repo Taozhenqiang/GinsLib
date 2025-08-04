@@ -1,212 +1,177 @@
 [
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convgpx.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convgpx.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convgpx.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/convgpx.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/convgpx.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/convgpx.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/convgpx.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convkml.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convkml.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convkml.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/convkml.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/convkml.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/convkml.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/convkml.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\convrnx.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\convrnx.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/convrnx.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/convrnx.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/convrnx.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/convrnx.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/convrnx.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\datum.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\datum.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/datum.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/datum.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/datum.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/datum.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/datum.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\download.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\download.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/download.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/download.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/download.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/download.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/download.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ephemeris.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ephemeris.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ephemeris.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/ephemeris.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/ephemeris.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/ephemeris.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/ephemeris.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\geoid.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\geoid.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/geoid.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/geoid.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/geoid.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/geoid.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/geoid.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\gis.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\gis.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/gis.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/gis.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/gis.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/gis.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/gis.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ionex.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ionex.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ionex.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/ionex.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/ionex.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/ionex.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/ionex.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\lambda.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\lambda.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/lambda.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/lambda.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/lambda.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/lambda.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/lambda.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\options.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\options.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/options.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/options.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/options.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/options.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/options.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\pntpos.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\pntpos.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/pntpos.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/pntpos.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/pntpos.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/pntpos.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/pntpos.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\postpos.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\postpos.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/postpos.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/postpos.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/postpos.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/postpos.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/postpos.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/ppp.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/ppp.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/ppp.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/ppp.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\ppp_ar.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\ppp_ar.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/ppp_ar.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/ppp_ar.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/ppp_ar.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/ppp_ar.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/ppp_ar.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\preceph.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\preceph.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/preceph.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/preceph.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/preceph.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/preceph.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/preceph.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rcvraw.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rcvraw.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rcvraw.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rcvraw.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rcvraw.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rcvraw.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rcvraw.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rinex.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rinex.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rinex.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rinex.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rinex.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rinex.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rinex.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtcm.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtcm.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtcm.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtcm.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm2.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm2.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm2.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtcm2.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtcm2.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtcm2.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtcm2.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtcm3.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtcm3.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtcm3.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtcm3.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtcm3e.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtcm3e.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtcm3e.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtcm3e.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtcm3e.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtcm3e.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtcm3e.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkcmn.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkcmn.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkcmn.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtkcmn.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtkcmn.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtkcmn.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtkcmn.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtkpos.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtkpos.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtkpos.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtkpos.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtkpos.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtkpos.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtkpos.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\rtksvr.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\rtksvr.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/rtksvr.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/rtksvr.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/rtksvr.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/rtksvr.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/rtksvr.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\sbas.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\sbas.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/sbas.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/sbas.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/sbas.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/sbas.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/sbas.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\solution.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\solution.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/solution.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/solution.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/solution.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/solution.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/solution.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\stream.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\stream.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/stream.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/stream.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/stream.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/stream.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/stream.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\streamsvr.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\streamsvr.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/streamsvr.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/streamsvr.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/streamsvr.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/streamsvr.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/streamsvr.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tides.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tides.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tides.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/tides.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/tides.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/tides.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/tides.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\tle.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\tle.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/tle.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/tle.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/tle.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/tle.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/tle.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libGnss",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libGnss.dir/includes_C.rsp -g -o CMakeFiles\\libGnss.dir\\trace.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibGnss\\trace.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibGnss/trace.c",
-  "output": "libGnss/CMakeFiles/libGnss.dir/trace.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libGnss",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/libGnss.dir/trace.c.o   -c /home/tzq/open_code/GinsLib/src/LibGnss/trace.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibGnss/trace.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libIns",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libIns.dir/includes_C.rsp -g -o CMakeFiles\\libIns.dir\\ins.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibIns\\ins.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibIns/ins.c",
-  "output": "libIns/CMakeFiles/libIns.dir/ins.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libIns",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibGnss  -g   -O0 -pthread -w -m64 -o CMakeFiles/libIns.dir/ins.c.o   -c /home/tzq/open_code/GinsLib/src/LibIns/ins.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibIns/ins.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/libFusion",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/libFusion.dir/includes_C.rsp -g -o CMakeFiles\\libFusion.dir\\lc_gins.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\LibFusion\\lc_gins.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/LibFusion/lc_gins.c",
-  "output": "libFusion/CMakeFiles/libFusion.dir/lc_gins.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/libFusion",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/LibGnss -I/home/tzq/open_code/GinsLib/src/LibIns  -g   -O0 -pthread -w -m64 -o CMakeFiles/libFusion.dir/lc_gins.c.o   -c /home/tzq/open_code/GinsLib/src/LibFusion/lc_gins.c",
+  "file": "/home/tzq/open_code/GinsLib/src/LibFusion/lc_gins.c"
 },
 {
-  "directory": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/build/iRTKLIB",
-  "command": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -DWIN32 @CMakeFiles/GINSLIB.dir/includes_C.rsp -g -o CMakeFiles\\GINSLIB.dir\\rnx2rtkp.c.obj -c G:\\Navigation_Learn\\GNSS\\RTKLIB-b34k\\src\\app\\rnx2rtkp.c",
-  "file": "G:/Navigation_Learn/GNSS/RTKLIB-b34k/src/app/rnx2rtkp.c",
-  "output": "iRTKLIB/CMakeFiles/GINSLIB.dir/rnx2rtkp.c.obj"
+  "directory": "/home/tzq/open_code/GinsLib/build/iRTKLIB",
+  "command": "/usr/bin/gcc -DENACMP -DENAGAL -DENAGLO -DENAIRN -DENAQZS -DNEXOBS=3 -DNFREQ=7 -DTRACE -I/home/tzq/open_code/GinsLib/include -I/home/tzq/open_code/GinsLib/src/app/include -I/home/tzq/open_code/GinsLib/src/LibGnss -I/home/tzq/open_code/GinsLib/src/LibIns -I/home/tzq/open_code/GinsLib/src/LibFusion  -g   -O0 -pthread -w -m64 -o CMakeFiles/GINSLIB.dir/rnx2rtkp.c.o   -c /home/tzq/open_code/GinsLib/src/app/rnx2rtkp.c",
+  "file": "/home/tzq/open_code/GinsLib/src/app/rnx2rtkp.c"
 }
 ]
