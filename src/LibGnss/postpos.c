@@ -483,7 +483,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,181301,2201); 
+        DebugTime(rtk,Debug_Glo.tNow,448032,2188); 
 
         /* vehicle zero speed detection */
         if (popt->constraint[1]) zerovel_detect(rtk,imu);
@@ -1172,7 +1172,7 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
     };
 
     p=strrchr(fopt->sol_path,'/');
-    sep=(p++?"/":"\\");
+    sep=(p?"/":"\\");
     if (!p) p=strrchr(fopt->sol_path,'\\');
 
     q=strchr(p,'_');

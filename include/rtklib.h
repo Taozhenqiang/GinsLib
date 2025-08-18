@@ -71,7 +71,7 @@ extern "C"
 #define MAXITR  10      /* max number of iteration for spp */
 #define MAXSYS  6       /* max system */
 #define MAXFREQ 7       /* max NFREQ */
-#define statopt 10      /* maximum number of solution statistics output flags */
+#define statopt 15      /* maximum number of solution statistics output flags */
 #define BDS2 "C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C16"
 #define BDS3 "C19 C20 C21 C22 C23 C24 C25 C26 C27 C28 C29 C30 C32 C33 C34 C35 C36 C37 C38 C39 C40 C41 C42 C43 C44 C45 C46 C56 C57 C58 C59 C60 C61"
 
@@ -112,6 +112,8 @@ extern "C"
 
 #define MAXITR_ROBUST 6 /* max number of iteration for robust filter */
 #define ITR_TOL    1E-5 /* iteration termination tolerance for robust filter */
+
+#define MAXINFO_ROBUST 100 /* max number of robust filter info output */
 
 #define CONS_OFF  0     /* constraint: off */
 #define CONS_NHC  1     /* NHC */
@@ -1150,7 +1152,7 @@ extern "C"
         float prev_ratio2; /* previous final AR ratio factor for validation */
         float thres;       /* AR ratio threshold for validation */
         int refstationid;  /* ref station ID */
-        int stato[10];     /* output flag  [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel, [8]nhc vel, [9]zupt */
+        int stato[statopt];     /* output flag  [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel, [8]nhc vel, [9]zupt */
         int cns;           /* number of public satellites*/
         int csat[MAXOBS];  /* public satellites*/
     } sol_t;
@@ -1397,7 +1399,7 @@ extern "C"
         int solstatic;      /* solution of static mode (0:all,1:single) */
         int sstat;          /* solution statistics level (0:off,1:states,2:residuals) */
         int ipos;           /* solution information (0:off,1:on) */
-        int stato[10];      /* output stat [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel (0:no,1:yes)*/
+        int stato[statopt];      /* output stat [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel (0:no,1:yes)*/
         int trace;          /* debug trace level (0:off,1-5:debug) */
         double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
                             /* nmeaintv[0]:gprmc,gpgga,nmeaintv[1]:gpgsv */
@@ -1540,6 +1542,18 @@ extern "C"
         double *x, *P;
     } lcgins_t;
 
+    typedef struct 
+    {
+        int type;                  /* robust filter type (0:Chi_KF,1:Huber_INO,2:IGG3_INO,3:MCKF_INO,4:Huber_RES,5:IGG3_RES,6:MCKF_RES,7:MST) */
+        double thres;              /* threshold of Chi_kf */
+        double k0,k1;              /* model parameters of IGG3 */
+        double gamma;              /* regulatory factor of huber */
+        double sigma;              /* kernel bandwidth parameter of MCKF */
+        double dof;                /* degree of freedom of MST */
+        double dv_chi;             /* error statistics of Chi_kf */
+        double dv[MAXINFO_ROBUST]; /* error statistics of huber/IGG3/MCKF/MST */
+    } robust_info_t;
+    
     typedef struct
     {                           /* RTK control/result type */
         sol_t sol;              /* RTK solution */
@@ -1569,6 +1583,7 @@ extern "C"
         ins_t ins;
         tightc_t tightc;        /* tightly coupled integration */
         lcgins_t lcgins;        /* loosely coupled integration */
+        robust_info_t robust_info; /* robust filter information */
     } rtk_t;
 
     typedef struct
@@ -1792,8 +1807,10 @@ extern "C"
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
     EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
     EXPORT int chol(const double *R, double *sR, int n);
+    EXPORT void init_robust_info(rtk_t *rtk);
+    EXPORT void out_robust_info(rtk_t *rtk, int m, int type, double thres1, double thres2, double dv_chi, double *dvi, double *W);
     EXPORT int iter_judge(const double *xp, const double *xp_pre, int n, double tol);
-    EXPORT int robust_M_function(const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
+    EXPORT int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
                                     double *Q, const double *H, const double *F, int n, int m, int mode);  
     EXPORT int filter(double *x, double *P, const double *H, const double *v,
                       const double *R, int n, int m);

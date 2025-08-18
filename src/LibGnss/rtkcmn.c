@@ -1992,6 +1992,66 @@ extern int chol(const double *R, double *sR, int n)
     return info;
 }
 
+/* init robust_info struct */
+extern void init_robust_info(rtk_t *rtk)
+{
+    robust_info_t *robust_info=&rtk->robust_info;
+    int i;
+
+    robust_info->type=-1;            /* robust filter type */
+    robust_info->thres=0.0;        /* Chi_KF threshold */
+    robust_info->gamma=0.0;        /* huber parameter */
+    robust_info->k0=0.0;           /* IGG3 parameter */
+    robust_info->k1=0.0;           /* IGG3 parameter */
+    robust_info->sigma=0.0;        /* MCKF parameter */
+    robust_info->dof=0.0;          /* MST parameter */
+    robust_info->dv_chi=0.0;       /* chi square distance */
+    for (i=0;i<MAXINFO_ROBUST;i++) robust_info->dv[i]=0.0;
+
+}
+
+/* output robust filter information */
+extern void out_robust_info(rtk_t *rtk, int m, int type, double thres1, double thres2, double dv_chi, double *dvi, double *W)
+{   
+    robust_info_t *robust_info=&rtk->robust_info;
+    robust_info->type=type;
+
+    int i=0;
+
+    /* Chi_KF */
+    if (0==type)
+    {
+        robust_info->thres=thres1;
+        robust_info->dv_chi=dv_chi;
+    }
+    /* Huber_INO */
+    else if (1==type||4==type)
+    {
+        robust_info->gamma=thres1;
+        for (i=0;i<m;i++) robust_info->dv[i]=dvi[i];
+    }
+    /* IGG3_INO */
+    else if (2==type||5==type)
+    {
+        robust_info->k0=thres1;
+        robust_info->k1=thres2;
+        for (i=0;i<m;i++) robust_info->dv[i]=dvi[i];
+    }
+    /* MCKF_INO*/
+    else if (3==type||6==type)
+    {
+        robust_info->sigma=thres1;
+        for (i=0;i<m;i++) robust_info->dv[i]=dvi[i];
+    }
+    /* MST*/
+    else if (7==type)
+    {
+        robust_info->dof=thres1;
+        for (i=0;i<m;i++) robust_info->dv[i]=W[i+i*m];
+    }
+
+}
+
 /* iteration termination judgment */
 extern int iter_judge(const double *xp, const double *xp_pre, int n, double tol)
 {
@@ -2015,17 +2075,18 @@ extern int iter_judge(const double *xp, const double *xp_pre, int n, double tol)
 }
 
 /* the unified framework for robust filters */
-extern int robust_M_function(const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
+extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const double *Pp, const double *R, double *R_, 
                             double *Q, const double *H, const double *F, int n, int m, int mode)
 {
-    int i,j,info=0;
-    double dv=0.0,low_weight=1E-4,*W,*sR,*sRW; /* M estimation */
+    int i,j,info=0,is_ino_flag=(Q==NULL)?1:0,flag=0;
+    double dv=0.0,low_weight=1E-4,*dV,*W,*sR,*sRW; /* M estimation */
     double *Q_,*vP,ak=1.0;; /* chi */
     double *HP,*Ek,*Rc,*EkR,gamma2=0.0,E_lambda=1.0,dof_ST=5.0; /*ST/MST*/
     double k0=1.0,k1=2.0; /* IGG3 */
     double gamma=1.345;   /* huber */
     double dof=1.0;       /* MCKF */
 
+    dV=zeros(m,1);
     W=zeros(m,m); sR=zeros(m,m); sRW=zeros(m,m);
     Q_=mat(m,m);  vP=zeros(1,m);
     HP=mat(m,n);  Ek=mat(m,m);   Rc=mat(m,m);    EkR=mat(m,m);
@@ -2040,12 +2101,16 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
     for (i=0;i<m;i++) {
         if (Pv[i+i*m]<=0.0) {
             showerr("Time=%s ,the innovation vector covariance matrix or the error covariance matrix is not positive definite!",Debug_Glo.chTime);
+            free(dV);
             free(W); free(sR); free(sRW);
             free(Q_);free(vP);
             free(HP);free(Ek); free(Rc);  free(EkR);
             return -1;
         }        
     }
+
+    /* initialize robust_info struct */
+    init_robust_info(rtk); 
 
     /* robust filter based on Mahalanobis distance */
     if (Robust_Chi==mode) {
@@ -2065,6 +2130,9 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
 
         /* Pv=ak*Pv */
         for (i=0;i<m;i++) for (j=0;j<m;j++) Pv[j+i*m]*=ak;
+
+        /* save robust filtering solution information */
+        out_robust_info(rtk,m,0,chisqr_[m-1],0.0,dv,NULL,NULL);
     }
     /* robust filter based on M-estimation */
     else if (IGG3==mode||Huber==mode||MCKF==mode)
@@ -2073,6 +2141,7 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
 
             /* standardized innovation/residual */
             dv=fabs(v[j])/sqrt(Pv[j+j*m]);
+            dV[j]=dv; /* save the standardized innovation/residual */
 
             /* trace(12,"dv(%d)=%.4f/%.4f %.4f\n",j,fabs(v[j]),sqrt(Pv[j+j*m]),dv); */
 
@@ -2080,7 +2149,9 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
             if (IGG3==mode) {
                 if (dv<=k0) W[j+j*m]=1.0;
                 else if (dv>k0&&dv<=k1) W[j+j*m]=k0/dv*((k1-dv)/(k1-k0))*((k1-dv)/(k1-k0));
-                else W[j+j*m]=low_weight;            
+                else W[j+j*m]=low_weight;  
+                
+                flag=is_ino_flag?2:5;
             }
             /* Huber robust algorithm */
             else if (Huber==mode) {
@@ -2089,6 +2160,8 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
 
                 /* variance lower bound constraint*/
                 if (W[j+j*m]<low_weight) W[j+j*m]=low_weight;
+
+                flag=is_ino_flag?1:4;
             }
             /* MCKF robust algorithm */
             else if (MCKF==mode) {
@@ -2096,12 +2169,15 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
 
                 /* variance lower bound constraint*/
                 if (W[j+j*m]<low_weight) W[j+j*m]=low_weight;
+
+                flag=is_ino_flag?3:6;
             }
             else {
                 W[j+j*m]=1.0;
                 trace(12,"No matching robust weight function!\n");
             }            
         }
+
         /* modified measurement noise covariance matrix based on double factor equivalent weights */
         for (i=0;i<m;i++) {
             for (j=0;j<m;j++) {
@@ -2109,6 +2185,11 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
                 else R_[j+j*m]=R[j+j*m]/(sqrt(W[i+i*m]*W[j+j*m])); 
             }
         }
+
+        /* save robust filtering solution information */
+        if (Huber==mode)     out_robust_info(rtk,m,flag,gamma,0.0,0.0,dV,NULL);
+        else if (IGG3==mode) out_robust_info(rtk,m,flag,k0,k1,0.0,dV,NULL);
+        else if (MCKF==mode) out_robust_info(rtk,m,flag,dof,0.0,0.0,dV,NULL);
     }
     /* robust filter based on Student's T distribution */
     else if (Robust_ST==mode||Robust_MST==mode) {
@@ -2146,7 +2227,10 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
                     if (i==j) R_[j+j*m]=R[j+j*m]/W[j+j*m]; 
                     else R_[j+j*m]=R[j+j*m]/(sqrt(W[i+i*m]*W[j+j*m])); 
                 }
-            }             
+            }
+            
+            /* save robust filtering solution information */
+            out_robust_info(rtk,m,7,dof_ST,0.0,0.0,NULL,W);
         }
     }
 
@@ -2161,7 +2245,7 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
         matcpy(Pv,R_,m,m);
         matmul("NN",m,n,m,H,F,Pv,1.0,1.0); /* Q=H*F+R */  
     }
-    /* robust filter based on a posteriori residuals/ST/MST */
+    /* robust filter based on a posterior residuals/ST/MST */
     else if (Q) {
         /* update the innovation vector covariance matrix */
         matcpy(Q,R_,m,m);
@@ -2169,6 +2253,7 @@ extern int robust_M_function(const double *v, double *Pv, const double *Pp, cons
     }
     /* trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4,0); */
 
+    free(dV);
     free(W); free(sR); free(sRW);
     free(Q_);free(vP);
     free(HP);free(Ek); free(Rc);  free(EkR);
@@ -2214,6 +2299,10 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
     matmul("NT",n,n,m,P,H,F,1.0,0.0); /* F=PH' */
     matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */
 
+    /* trace(12,"H=\n"); tracemat(12,H,m,n,15,9,0);
+    trace(12,"P=\n"); tracemat(12,P,n,n,15,9,0);
+    trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0); */
+
     for (i=0;i<iter;i++) {
 
         /* save the previous state vector for iteration termination judgment */
@@ -2229,7 +2318,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
         if (Robust_INO==mode||Robust_Chi==mode) {
             
             /* robust weight function */
-            if ((info=robust_M_function(v,Q,NULL,R,R_,NULL,H,F,n,m,M_function))) {
+            if ((info=robust_M_function(rtk,v,Q,NULL,R,R_,NULL,H,F,n,m,M_function))) {
                 info=-1;
                 showerr("M estimates the robust filter error!\n");break;
             }
@@ -2273,7 +2362,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
             /* for (j=0;j<m;j++) trace(12,"Iter=%d, Pv(%d)=%.10f\n",i,j,Pv[j+j*m]); */
 
             /* robust weight function */
-            if ((info=robust_M_function(vk,Pv,Pp,R,R_,Q,H,F,n,m,M_function))) {
+            if ((info=robust_M_function(rtk,vk,Pv,Pp,R,R_,Q,H,F,n,m,M_function))) {
                 info=-1;
                 showerr("M estimates the robust filter error!");break;
             }

@@ -1671,7 +1671,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     }
 
     /* ins feedback correction */
-    if (GINS_TC==opt->GI_mode) {
+    if (GINS_TC==opt->GI_mode&&SOLQ_PPP==stat) {
         ins_fedback(rtk,xp); 
     }
 

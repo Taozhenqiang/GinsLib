@@ -459,6 +459,48 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         if (rtk->sol.stato[9]) {
             p+=sprintf(p,"$ZUPT,%d,%d,%16.9f\n",week,itow,rtk->ins.zupt.Gd);
         }
+
+        /* robust filtering solution information */
+        if (rtk->sol.stato[10]){
+            if (0==rtk->robust_info.type) {
+                p+=sprintf(p,"$Chi_KF,%d,%d,%.2f,%.2f\n",week,itow,rtk->robust_info.thres,rtk->robust_info.dv_chi);
+            }
+            else if (1==rtk->robust_info.type) {
+                p+=sprintf(p,"$Huber_INO,%d,%d,%.2f",week,itow,rtk->robust_info.gamma);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }
+            else if (2==rtk->robust_info.type) {
+                p+=sprintf(p,"$IGG3_INO,%d,%d,%.2f,%.2f",week,itow,rtk->robust_info.k0,rtk->robust_info.k1);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }
+            else if (3==rtk->robust_info.type) {
+                p+=sprintf(p,"$MCKF_INO,%d,%d,%.2f",week,itow,rtk->robust_info.sigma);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }
+            else if (4==rtk->robust_info.type) {
+                p+=sprintf(p,"$Huber_RES,%d,%d,%.2f",week,itow,rtk->robust_info.gamma);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }
+            else if (5==rtk->robust_info.type) {
+                p+=sprintf(p,"$IGG3_RES,%d,%d,%.2f,%.2f",week,itow,rtk->robust_info.k0,rtk->robust_info.k1);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }
+            else if (6==rtk->robust_info.type) {
+                p+=sprintf(p,"$MCKF_RES,%d,%d,%.2f",week,itow,rtk->robust_info.sigma);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }     
+            else if (7==rtk->robust_info.type) {
+                p+=sprintf(p,"$MST,%d,%d,%.2f",week,itow,rtk->robust_info.dof);
+                for (i=0;i<MAXINFO_ROBUST;i++) p+=sprintf(p,",%.2f",rtk->robust_info.dv[i]);
+                p+=sprintf(p,"\n");
+            }                                                                     
+        }
         
     }
 
@@ -1227,7 +1269,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
                       rtk->ssat[i-1].id,fc,rtk->ssat[i-1].outc[fr]);
                 rtk->ssat[i-1].outc[fr]=0;
             }
-            /* if the satellite outage time exceeds the threshold, reset its ambiguity */
+            /* if the satellite outage time exceeds the threshold, reset its ambiguity lock count */
             if (rtk->opt.modear!=ARMODE_INST&&reset) {
                 rtk->ssat[i-1].lock[fr]=-rtk->opt.minlock;
             }
@@ -3272,6 +3314,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     ssat_t ssat0={0};
     ins_t ins0={0};
     tightc_t tightc0={0};
+    robust_info_t robust_info0={0};
 
     int i;
 
@@ -3308,6 +3351,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     rtk->initial_mode=rtk->opt.mode;
     rtk->sol.thres=(float)opt->thresar[0];
     rtk->tightc=tightc0;
+    rtk->robust_info=robust_info0;
 
     /* GNSS/INS time synchronization and alignment */
     rtk->match=NO;

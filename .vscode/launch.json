@@ -11,7 +11,8 @@
             "program": "${workspaceFolder}\\build\\Bin\\GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                "IGM-A1_Vehicle_open_20211217-nsh.conf",
+                // "CHC_Static_open_20250713.conf",
+                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
                 // "KVH1750_Vehicle_open_20211217-nsh.conf",
                 // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
                 // "IGM-A1_Vehicle_open_20201210.conf",
@@ -21,7 +22,7 @@
                 // "EG320N_Vehicle_open_20250418_campus2-CHC.conf",
                 // "EG320N_Vehicle_open_20250418-CHC.conf",
                 // "KVH1750_Vehicle_complex_20210715.conf",
-                // "STIM300_Vehicle_complex_20230102.conf",
+                "STIM300_Vehicle_complex_20230102.conf",
                 // "FSAS_Vehicle_open_20150722.conf",
                 // "FSAS_Vehicle_complex_20220315.conf",
                 // "HG4930_Vehicle_open_20201128.conf", 
@@ -29,7 +30,7 @@
                 
                 "-x","4240",
             ],
-            "cwd": "${workspaceFolder}\\data\\IGM-A1_Vehicle_open_20211217-nsh" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\STIM300_Vehicle_complex_20230102" ,//配置文件
             
         },        
         {
