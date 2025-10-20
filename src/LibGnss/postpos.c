@@ -467,7 +467,8 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     obsd_t *obs_old=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2); /* observations at the previous epoch for rover and base */
     imud_t *imu=(imud_t *)malloc(sizeof(imud_t)*MAXINS);
     double rb[3]={0};
-    int i,nobs,n,n_old,solstatic,num=0,pri[]={6,1,2,3,4,5,1,6},align,stat;
+    int i,nobs,solstatic,num=0,pri[]={6,1,2,3,4,5,1,6},align,stat;
+    int n=0,n_old=0,nr=0,nr_old=0;
 
     trace(3,"procpos : mode=%d\n",mode); /* 0=single dir, 1=combined */
 
@@ -479,14 +480,14 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
 
     while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {
 
-        /* DebugGlo initialization*/
+        /* DebugGlo initialization */
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,448032,2188); 
+        DebugTime(rtk,Debug_Glo.tNow,106219,2243); 
 
-        /* vehicle zero speed detection */
-        if (popt->constraint[1]) zerovel_detect(rtk,imu);
+        /* vehicle zero speed detection for ZUPT and ZIHR */
+        if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
 
         /* initialize GNSS sampling interval */
         if (!rtk->interval) rtk->interval=timediff(obss.data[nobs].time,obss.data[0].time);
@@ -502,16 +503,22 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
 
         /* ins initial alignment */
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
-            if (NO==rtk->match) continue;     
+            if (NO==rtk->match) continue;   
+            /* velocity vector assisted alignment */  
             if (!rtk->align) {
                 rtk->align=ins_align(rtk,obs,obs_old,n,n_old,&navs,imu,popt);
-                if (SYNC_YES==rtk->upte) {
-                    /* save the GNSS observations of the previous epoch */
-                    n_old=n; 
-                    for (i=0;i<n;i++) obs_old[i]=obs[i];                 
-                }
-                continue;
-            }       
+            } 
+            if (SYNC_YES==rtk->upte) {
+                /* determine the number of satellites of rover in the current epoch and the previous epoch */
+                for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
+                for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+                /* multi-strategy velocity estimation (TDCP/Dopple/Position difference) */
+                if (nr_old&&nr) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);
+                /* save the GNSS observations of the previous epoch */
+                n_old=n; 
+                for (i=0;i<n;i++) obs_old[i]=obs[i];                 
+            }   
+            if (!rtk->align) continue;  
         }
 
         /* carrier-phase bias correction */
@@ -577,7 +584,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             if (!solstatic) {
                 if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);
                 else outsol(fp,&rtk->sol,rtk->rb,popt,sopt);
-                rtk->sol.iFlag=0; /* reset solution flag */
+                rtk->sol.iFlag=SOLF_GNSS; /* reset solution flag */
             }
             else if (time.time==0||pri[rtk->sol.stat]<=pri[sol.stat]) {
                 sol=rtk->sol;
@@ -1104,7 +1111,7 @@ static void closeses(nav_t *nav, spcvs_t *pcvs, rpcvs_t *pcvr)
     free(nav->erp.data); nav->erp.data=NULL; nav->erp.n=nav->erp.nmax=0;
 
     /* close solution statistics and debug trace */
-    rtkclosestat();
+    rtkcloseoutfile();
     traceclose();
 }
 /* set antenna parameters ----------------------------------------------------*/
@@ -1128,6 +1135,7 @@ static void setpcv(gtime_t time, prcopt_t *popt, nav_t *nav, const spcvs_t *pcvs
         }
         nav->spcvs[i]=*spcv;
     }
+    /* set receiver antenna parameters */
     for (i=0;i<(mode?2:1);i++) {
         popt->pcvr[i]=rpcv0;
         if (!strcmp(popt->anttype[i],"*")) { /* set by station parameters */
@@ -1178,8 +1186,8 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
     q=strchr(p,'_');
 
     /* create the solution file(.pos) path */
-    sprintf(path,"%s%s%s%s%s%s_%s%s",fopt->sol_path,sep,"result",sep,fopt->ins_type,q,s1[popt->mode],
-             GINS_LC==popt->GI_mode?"_LC.pos":(GINS_TC==popt->GI_mode?"_TC.pos":(GINS_STC==popt->GI_mode?"_STC.pos":".pos"))); 
+    sprintf(path,"%s%s%s%s%s%s_%s%s",fopt->sol_path,sep,"result",sep,(GINS_OFF==popt->GI_mode?"GNSS":fopt->ins_type),q,s1[popt->mode],
+             (GINS_LC==popt->GI_mode?"_LC.pos":(GINS_TC==popt->GI_mode?"_TC.pos":(GINS_STC==popt->GI_mode?"_STC.pos":".pos")))); 
     strncpy(fopt->sol,path,1024);
 
      /* open debug trace */
@@ -1282,9 +1290,10 @@ static void namefiletm(char *outfiletm, const char *outfile)
 extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                    const solopt_t *sopt, filopt_t *fopt)
 {
-    rtk_t *rtk_ptr = (rtk_t *)malloc(sizeof(rtk_t)); /* moved from stack to heap to avoid stack overflow warning */
+    /* moved from stack to heap to avoid stack overflow warning */
+    rtk_t *rtk_ptr = (rtk_t *)malloc(sizeof(rtk_t)); 
     prcopt_t popt_=*popt;
-    char tracefile[1024],statfile[1024],iposfile[1024],path[1024],outfiletm[1024]={0};
+    char tracefile[1024],statfile[1024],iposfile[1024],azelfile[1024],path[1024],outfiletm[1024]={0};
     const char *ext;
     int i,j,k,week=0;  
 
@@ -1316,8 +1325,9 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     /* read satellite and receiver antenna parameters */
     if (*fopt->antp&&!(readpcv(fopt->antp,&pcvss,&pcvsr))) {
          /* free antenna parameters */
-        free(pcvss.pcv); pcvss.pcv=NULL; pcvss.n=pcvss.nmax=0;
-        free(pcvsr.pcv); pcvsr.pcv=NULL; pcvsr.n=pcvsr.nmax=0;
+         freeant(&pcvss,&pcvsr);
+        /* free(pcvss.pcv); pcvss.pcv=NULL; pcvss.n=pcvss.nmax=0;
+        free(pcvsr.pcv); pcvsr.pcv=NULL; pcvsr.n=pcvsr.nmax=0; */
         return 0;
     }
 
@@ -1395,17 +1405,24 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     if (sopt->sstat>0) {
         strcpy(statfile,fopt->sol);
         strcat(statfile,".stat");
-        rtkclosestat();
+        rtkcloseoutfile();
         rtkopenstat(statfile,sopt->sstat);
     }
+
     /* open ipos statistics */
     if (sopt->ipos>0) {
         strcpy(iposfile,fopt->sol);
         strcat(iposfile,".ipos");
-        rtkcloseipos();
+        rtkcloseoutfile();
         rtkopenipos(&popt_,iposfile);
     }
 
+    if (sopt->azel>0) {
+        strcpy(azelfile,fopt->sol);
+        strcat(azelfile,".azel");
+        rtkcloseoutfile();
+        rtkopenazel(&popt_,azelfile);
+    }
     /* name time events file */
     /* namefiletm(outfiletm,outfile); */
     /* write header to file with time marks */
@@ -1414,6 +1431,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     iobsu=iobsr=isbs=reverse=aborts=0;
 
     if (popt_.mode==PMODE_SINGLE||popt_.soltype==SOLTYPE_FORWARD) {
+        /* solution file (.pos) pointer */
         FILE *fp=openfile(fopt->sol);
         if (fp) {
             FILE *fptm=openfile(outfiletm);
@@ -1475,9 +1493,12 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
         else showmsg("error : memory allocation");
         free(solf); free(solb); free(rbf); free(rbb);
     }
-    /* free rtk, obs and nav data */
+
+    /* free rtk, obs/nav , ant and imu data */
     free(rtk_ptr);
     freeobsnav(&obss,&navs);
+    if (imus.data) freeimu(&imus);
+    if (pcvss.pcv&&pcvsr.pcv) freeant(&pcvss,&pcvsr);
 
     return aborts?1:0;
 }

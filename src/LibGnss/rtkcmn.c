@@ -330,8 +330,9 @@ const solopt_t solopt_default={
     0,
     0,
     0,
+    0,
     {0},
-    0,         /* solstatic,sstat,statopt,trace */
+    0,         /* solstatic,sstat,ipos,azel,statopt,trace */
     {0.0,0.0},/* nmeaintv */
     " ",
     "" /* separator/program name */
@@ -852,8 +853,8 @@ extern int satexclude(int sat,double var,int svh,const prcopt_t *opt) {
 *         snrmask_t *mask  I   SNR mask
 *return:status (1:masked,0:unmasked)
  *-----------------------------------------------------------------------------*/
-extern int testsnr(int base,int idx,double el,double snr,
-                   const snrmask_t *mask) {
+extern int testsnr(int base, int idx, double el, double snr, const snrmask_t *mask) 
+{
     double minsnr,a;
     int i;
 
@@ -1545,6 +1546,34 @@ extern int normv3(const double *a,double *b) {
     b[2]=a[2]/r;
     return 1;
 }
+/* quadratic form of vector -----------------------------------------------------------------
+*quadratic form of vector
+*args  :double *v       I   vector v (n x 1)
+*         double *Q        I   quadratic form matrix (n x n)
+*         int    n         I   size of vector v
+*return:v'*Q*v
+ *-----------------------------------------------------------------------------*/
+extern double quadratic(const double *v, const double *Q, int n)
+{
+    int info;
+    double *A,*vQ,dv=0.0;
+
+    A=mat(n,n);vQ=zeros(n,1);
+    matcpy(A,Q,n,n);
+
+    if (!(info=matinv(A,n))) {
+        matmul("TN",1,n,n,v,A,vQ,1.0,0.0);
+        matmul("NN",1,n,1,vQ,v,&dv,1.0,0.0);  
+    }
+    else {
+        showerr("quadratic: matrix inversion error (info=%d)\n",info);
+        return 0.0;      
+    }
+
+    free(A);free(vQ);
+
+    return dv;
+}
 /* copy matrix -----------------------------------------------------------------
 *copy matrix
 *args  :double *A        O   destination matrix A (n x m)
@@ -1829,6 +1858,9 @@ extern int solve(const char *tr,const double *A,const double *Y,int n,
     if (!(info=matinv(B,n)))
         matmul(tr[0]=='N'?"NN":"NT",m,n,n,Y,B,X,1.0,0.0);
         /* matmul(tr[0]=='N'?"NN":"TN",n,m,n,B,Y,X); */
+        /* trace(12,"Z=\n"); tracemat(12,B,n,n,7,2,0);
+        trace(12,"Y=\n"); tracemat(12,Y,m,n,7,2,0);
+        trace(12,"N=\n"); tracemat(12,X,m,n,7,2,0); */
     free(B);
     return info;
 }
@@ -1918,12 +1950,13 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
                 /* compute the posterior residuals and the corresponding error covariance matrix */
                 matmul("NN",m,n,1,A,x,vx,-1.0,1.0); /* vx=z-A*x */          
                 matmul("NN",m,n,n,A,Q,AQ,1.0,0.0);  /* AQ=A*Q */
-                matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); /* D=R-A*Q*A' */
+                /* matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); */ /* D=R-A*Q*A' */
 
                 for (k=0;k<m;k++) for (j=0;j<m;j++) {
                     if (k==j) {
                         /* remove auxiliary quantities that prevent least squares rank deficiency */
                         if (fabs(y[k])<1e-4) break;
+
                         /* check whether the posterior residual covariance matrix is positive definite */
                         if (D[k+j*m]<=0.0) {
                             showmsg("Waring: spp, the posterior residual covariance matrix is not positive definite!\n");
@@ -2446,8 +2479,8 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
             H_[i+j*k]=H[ix[i]+j*n];
     }
 
-    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4,0);
-    trace(12,"H=\n"); tracemat(12,H_,m,k,9,4,0);
+    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4,0); */
+    /* trace(12,"H=\n"); tracemat(12,H_,m,k,9,4,0);
     trace(12,"P=\n"); tracemat(12,P_,k,k,15,9,0);
     trace(12,"R=\n"); tracemat(12,R,m,m,9,4,0); */
 
@@ -3835,6 +3868,14 @@ extern int readpcv(const char *file,spcvs_t *pcvs,rpcvs_t *pcvr) {
               spcv->off[0][2],spcv->off[1][0],spcv->off[1][1],spcv->off[1][2]);/*trace 9*/
     }
     return stat;
+}
+/* free free antenna data -----------------------------------------------------*/
+extern void freeant(spcvs_t *pcvss, rpcvs_t *pcvsr)
+{
+    trace(3,"freeant:\n");
+
+    free(pcvss->pcv); pcvss->pcv=NULL; pcvss->n=pcvss->nmax=0;
+    free(pcvsr->pcv); pcvsr->pcv=NULL; pcvsr->n=pcvsr->nmax=0;
 }
 /* search antenna parameter ----------------------------------------------------
 *read satellite antenna phase center position
@@ -5292,8 +5333,9 @@ extern void sunmoonpos(gtime_t tutc,const double *erpv,double *rsun,
            nav_t  *nav      I   navigation messages
 * note   :
 * -----------------------------------------------------------------------------*/
-extern void BDmulCorr(rtk_t *rtk,obsd_t *obs,int n) {
-    int i,j,sat,prn,b,*f=&rtk->opt.fre[4],ix[3];
+extern void BDmulCorr(rtk_t *rtk, obsd_t *obs, int n) 
+{
+    int i,j,sat,prn,b,*f=(int *)&rtk->opt.fre[4],ix[3]={-1,-1,-1};
     double dp[3],elev,a;
 
     const static double IGSOCOEF[3][10]={
@@ -5312,24 +5354,19 @@ extern void BDmulCorr(rtk_t *rtk,obsd_t *obs,int n) {
     for (i=0;i<n&&i<MAXOBS;i++) {
         sat=obs[i].sat;
 
-        if (satsys(sat,&prn) !=SYS_CMP)
-            continue;
-
-        if (prn <=5)
-            continue;
+        if (satsys(sat,&prn)!=SYS_CMP) continue;
+        if (prn<=5) continue;
 
         elev=rtk->ssat[sat-1].azel[1]*R2D;
 
-        if (elev <=0.0)
-            continue;
+        if (elev<=0.0) continue;
 
-        for (j=0;j<3;j++)
-            dp[j]=0.0;
+        for (j=0;j<3;j++) dp[j]=0.0;
 
         a=elev*0.1;
         b=(int) a;
 
-        if (prn >=6&&prn<11) { // IGSO(C06,C07,C08,C09,C10)
+        if (prn>=6&&prn<11) { // IGSO(C06,C07,C08,C09,C10)
             if (b<0) {
                 for (j=0;j<3;j++)
                     dp[j]=IGSOCOEF[j][0];
@@ -5340,7 +5377,7 @@ extern void BDmulCorr(rtk_t *rtk,obsd_t *obs,int n) {
                 for (j=0;j<3;j++)
                     dp[j]=IGSOCOEF[j][b]*(1.0-a+b)+IGSOCOEF[j][b+1]*(a-b);
             }
-        } else if (prn >=11&&prn <=14) { // MEO(C11,C12,C13,C14)
+        } else if (prn>=11&&prn<=14) { // MEO(C11,C12,C13,C14)
             if (b<0) {
                 for (j=0;j<3;j++)
                     dp[j]=MEOCOEF[j][0];
@@ -5354,17 +5391,15 @@ extern void BDmulCorr(rtk_t *rtk,obsd_t *obs,int n) {
         } else
             continue;
 
-        /*find idx TODO:trace*/
+        /* find idx of B1I,B2I,B3I */
         for (j=0;j<MAXFREQ;j++) {
-            if (0==f[j])
-                ix[0]=j;/*B1I*/
-            if (1==f[j])
-                ix[1]=j;/*B2I*/
-            if (2==f[j])
-                ix[2]=j;/*B3I*/
+            if (0==f[j]) ix[0]=j; /* B1I */
+            if (1==f[j]) ix[1]=j; /* B2I */
+            if (2==f[j]) ix[2]=j; /* B3I */
         }
-        for (j=0;j<3;j++)
-            obs[i].P[ix[j]]+=dp[j];
+        for (j=0;j<3;j++) {
+            if (obs[i].P[ix[j]]>0.0&&ix[j]>0) obs[i].P[ix[j]]+=dp[j]; 
+        }
     }
 }
 /* uncompress file -------------------------------------------------------------

@@ -82,7 +82,7 @@ extern void trace(int level, const char *format, ...)
 
     traceswap();                          
     
-    fprintf(fp_trace,"%d ",level);        /* Print the log level to the trace file */ 
+    fprintf(fp_trace,"%2d ",level);        /* Print the log level to the trace file */ 
     fprintf(fp_trace,"%s ",Debug_Glo.chTime);        /* Print the log level to the trace */ 
     va_start(ap,format);                  /* Initialize the variable argument list again */ 
     vfprintf(fp_trace,format,ap);         /* Print the formatted message to the trace file */ 

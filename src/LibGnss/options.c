@@ -193,6 +193,7 @@ EXPORT opt_t sysopts[]={
     {"out-solstatic",   3,  (void *)&solopt_.solstatic,  STAOPT },
     {"out-nmeaintv1",   1,  (void *)&solopt_.nmeaintv[0],"s"    },
     {"out-nmeaintv2",   1,  (void *)&solopt_.nmeaintv[1],"s"    },
+    {"out-outazel",     3,  (void *)&solopt_.azel,       SWTOPT },
     {"out-outstat",     3,  (void *)&solopt_.sstat,      STSOPT },
     {"out-outipos",     3,  (void *)&solopt_.ipos,       SWTOPT },
     {"out-statopt",     2,  (void *)&stat_,              ""     },
@@ -483,6 +484,7 @@ static void buff2sysopts(void)
     prcopt_.elmaskar  =elmaskar_  *D2R;
     prcopt_.elmaskhold=elmaskhold_*D2R;
     
+    /* receiver position */
     for (i=0;i<2;i++) {
         ps=i==0?prcopt_.rovpos:prcopt_.refpos;
         rr=i==0?prcopt_.ru:prcopt_.rb;

@@ -415,7 +415,7 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
         /* skip if low SNR or missing observations */
         freq[i]=sat2freq(obs->sat,obs->code[fr],nav);
         if (freq[i]==0.0||obs->L[fr]==0.0||obs->P[fr]==0.0) continue;
-        if (testsnr(0,fr,azel[1],obs->SNR[fr]*SNR_UNIT,&opt->snrmask)) continue;
+        if (testsnr(0,i,azel[1],obs->SNR[fr]*SNR_UNIT,&opt->snrmask)) continue;
 
         /* antenna phase center and phase windup correction */
         L[i]=obs->L[fr]*CLIGHT/freq[i]-dants[fr]-dantr[fr]-phw*CLIGHT/freq[i];
@@ -1180,10 +1180,10 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     double y,r,cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc,C,fact,DCB[MAXFREQ]={0.0},rss[6]={0.0},danto[3]={0.0};
     double F1[9],dx[3],temp[3],lever[3],Cne[9],Cen[9],lever_n[3],Hpp[3],Hpa[3]; /* for TC mode */
     double var[MAXOBS*2],dtrp=0.0,dion=0.0,var_tro=0.0,var_ion=0.0,dcb,freq,res=0.0,dantr[NFREQ]={0},dants[NFREQ]={0};
-    double ve[MAXOBS*2*NFREQ]={0},vari[MAXOBS*2*NFREQ]={0},vmax=0,varmax=0.0; /* post residual check */
+    double ve[MAXOBS*2*NFREQ]={0},vari[MAXOBS*2*NFREQ]={0},vmax=0,varmax=0.0,zupt_time=0.0; /* post residual check */
     char str[32],id[4];
     int ne=0,obsi[MAXOBS*2*NFREQ]={0},frqi[MAXOBS*2*NFREQ],codei[MAXOBS*2*NFREQ],maxobs,maxfrq,maxcode,rej; /* post residual check */
-    int i,j,k,sat,sys,nv=0,nx=rtk->nx,stat=1,frq,code,fr;
+    int i,j,k,sat,sys,nv=0,nx=rtk->nx,stat=1,frq,code,fr,nv_cons=0;
 
     /* if broadcast ephemeris is used, enlarge the residual threshold */
     fact=EPHOPT_PREC==opt->sateph?1.0:2.0;
@@ -1363,7 +1363,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 
             /* reject satellite by pre-fit residuals */
             if (!post&&opt->maxinno[code]>0.0&&fabs(res)>(opt->maxinno[code]*fact)) {
-                trace(7,"(%4s) outlier rejected sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
+                trace(7,"(%4s) outlier rejected(ppp) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
                     fr+1,res,opt->maxinno[code],azel[1+i*2]*R2D);
                 exc[i]=1; rtk->ssat[sat-1].rejc[fr]++;
                 continue;
@@ -1385,11 +1385,28 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             vmax=ve[j]; varmax=vari[j]; maxobs=obsi[j]; maxfrq=frqi[j]; maxcode=codei[j]; rej=j;
         }
         sat=obs[maxobs].sat; satno2id(sat,id);
-        trace(7,"(%4s) outlier rejected (iter=%d) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",
+        trace(7,"(%4s) outlier rejected(ppp) (iter=%d) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",
             post?"post":"prio",post,id,maxcode?"P":"L",maxfrq+1,vmax,sqrt(varmax)*THRES_REJECT,azel[1+maxobs*2]*R2D);
         /* if the post-fit test fails, the solution flag is set to 0 */    
         exc[maxobs]=1; rtk->ssat[sat-1].rejc[maxfrq]++; stat=0;
     }
+
+    /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
+    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;        
+    if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
+        nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZUPT);
+        rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
+    }
+    else if (opt->constraint[0]) { /* nhc */
+        nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_NHC);
+    }
+    if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
+        nv_cons+=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZIHR);
+    }
+
+    /* update the measurement noise covariance matrix (MNCM) */
+    nv=nv+nv_cons;
     if (R) {
         for (j=0;j<nv;j++) for (i=0;i<nv;i++) R[i+j*nv]=(i==j)?var[i]:0.0;
     }
@@ -1626,9 +1643,11 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         tidedisp(gpst2utc(obs[0].time),rtk->x,opt->tidecorr==1?1:7,&nav->erp,opt->odisp[0],dr);
     }
 
-    /* initialize heap memory, consider motion constraints (NHC/ZUPT) */
-    nv=n*rtk->opt.nf*2+MAXSAT+3;
+    /* initialize xp and Pp */
     xp=mat(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
+
+    /* initialize the measurement vector size (nv=ns*nf*obs_type+maxsat(ion constraints)?+3(NHC/ZUPT)) */
+    nv=n*rtk->opt.nf*2+MAXSAT+3;    
     v=mat(nv,1); H=mat(nv,rtk->nx); R=mat(nv,nv);
     F=mat(rtk->nx,nv); Q=mat(nv,nv);
 

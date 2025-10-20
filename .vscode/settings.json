@@ -18,6 +18,9 @@
         "climits": "c",
         "cstdarg": "c",
         "cstdint": "c",
-        "cstdio": "c"
+        "cstdio": "c",
+        "cwchar": "c",
+        "*.rh": "c",
+        "math.h": "c"
     },
 }

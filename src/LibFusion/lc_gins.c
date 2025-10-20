@@ -177,11 +177,11 @@ extern int lc_gins(rtk_t *rtk)
     /* the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
     if (opt->constraint[1]&&time>1.0&&norm(ins->vel,3)<0.1) { /* zupt*/
-        nv_cons=nhc_zupt_update(ins,H,v,var,nv,nx,CONS_ZUPT);
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
     else if (opt->constraint[0]) { /* nhc */
-        nv_cons=nhc_zupt_update(ins,H,v,var,nv,nx,CONS_NHC);        
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);      
     }
 
     /* measurement noise covariance matrix R*/
@@ -203,8 +203,9 @@ extern int lc_gins(rtk_t *rtk)
     /* update state covariance matrix */
     matcpy(rtk->lcgins.P,Pp,nx,nx);
 
-    /* INS feedback correction*/
+    /* INS feedback correction */
     ins_fedback(rtk,xp);
+
     /* save solution status */
     update_lcstat(rtk,stat);
 
@@ -273,7 +274,7 @@ extern void imu_fedback(ins_t *ins, imud_t *imu)
 *         double *dx           IO  ins error state (15x1)
 *return : none
 *-------------------------------------------------------------------------------*/
-extern void psi2phi_corr(ins_t *ins, const double *dr, double *dx)
+extern void  psi2phi_corr(ins_t *ins, const double *dr, double *dx)
 {
     double d_ceta[3],dv[3];
     int i;
@@ -307,7 +308,7 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     /* NOTE: convert psi error state to phi error state */
     if (ERR_PSI==opt->err_model) psi2phi_corr(ins,dr,dx);
 
-    /*qnb=qnn_°qn_b*/
+    /* qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
     for (i=0;i<3;i++) phi_nn_[i]=dx[i];
     
@@ -317,7 +318,7 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     qnb2Cnb(ins->qnb,ins->Cnb);
     Cnb2att(ins->Cnb,ins->att);
 
-    /*Cnb=(I+[phi x])Cn'b*/
+    /* Cnb=(I+[phi x])Cn'b */
     /* for (i=0;i<9;i++) Cnb[i]=ins->Cnb[i];
 
     vskew(1.0,dx,phi);
@@ -451,7 +452,7 @@ extern void update_lcstat(rtk_t *rtk, int stat){
     }
     else {
         sol->time=rtk->sol.time;
-        sol->ns=rtk->sol.ns;        
+        sol->ns=rtk->sol.ns;      
     }
 
 }

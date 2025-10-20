@@ -1254,9 +1254,10 @@ static int outecef(uint8_t *buff, const char *s, const sol_t *sol,
                     sep,sqvar(sol->qb[4]),sep,sqvar(sol->qb[5]));
         }
         if (opt->outiflag) { /* output solution flag (GNSS/ZUPT) */
-            if (sol->iFlag) {
+            if (SOLF_ZUPT==sol->iFlag) {
                 p+=sprintf(p,"%s%8s",sep,"ZUPT");
-            } else {
+            } 
+            else {
                 p+=sprintf(p,"%s%8s",sep,"GNSS");
             }
         }           

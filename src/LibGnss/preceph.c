@@ -713,8 +713,9 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
     int i,sys,id;
     double gamma1,alpha,beta,b1,b2;
 
-    /* if has DCB file, using DCB correction*/
-    if (nav->obias_flag>0) {
+    /* if has DCB file, using DCB correction */
+    /* NOTE:for BDS, DCB/OSB corrections are only valid up to C46, so satellites after C46 use TGD corrections */
+    if (nav->obias_flag>0&&!(opt->navsys&SYS_CMP)) {
         return 0;
     }
     
@@ -722,12 +723,12 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
     init_bias_ix(); 
 
     /* if no DCB and OSB file, using TGD correction*/
-    if (0==nav->obias_flag) {
-        nav->obias_flag=OPT_TGD;
+    if (0==nav->obias_flag||(opt->navsys&SYS_CMP)) {
+        if (0==nav->obias_flag) nav->obias_flag=OPT_TGD;
         for (i=1;i<=MAXSTA;i++) {
             sys=satsys(i,&id);
             /*ref:C1W-C2W*/
-            if (sys==SYS_GPS) {
+            if (sys==SYS_GPS&&OPT_TGD==nav->obias_flag) {
                 b1=gettgd(i,nav,0); /*DCB beta*(C1-C2)*/
                 gamma1=SQR(FREQL1/FREQL2);
                 nav->obias[i-1][0]=b1;                     /* C1C beta*(C1-C2) */
@@ -739,7 +740,7 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
                 nav->obias[i-1][8]=gamma1*b1;;             /* C2C -alpha*(C1-C2) */
             }
             /*ref:C1X-C5X*/
-            if (sys==SYS_GAL) {
+            if (sys==SYS_GAL&&OPT_TGD==nav->obias_flag) {
                 b1=gettgd(i,nav,0);  /*DCB beta*(C1-C5)*/
                 b2=gettgd(i,nav,1);  /*DCB beta*(C1-C7)*/
                 /* gamma1=SQR(FREQL1/FREQL5); */
@@ -757,35 +758,55 @@ extern int tgdarrge(const prcopt_t *opt, nav_t *nav)
                 b2=gettgd(i,nav,1); /*DCB C7I-C6I*/
                 /*ref:B3I,C6I*/
                 if (EPHOPT_BRDC==opt->sateph) {
-                    if (id<19) {
-                        nav->obias[i-1][0]=b1;      /* C2I C2I-C6I */
-                        nav->obias[i-1][1]=0.0;     /* C6I */
-                        nav->obias[i-1][2]=b2;      /* C7I C7I-C6I=(C2I-C6I)-(C2I-C7I) */ 
+                    /* satellites after C46 use TGD corrections */
+                    if (OPT_TGD==nav->obias_flag) {
+                        if (id<19) {
+                            nav->obias[i-1][0]=b1;      /* C2I C2I-C6I */
+                            nav->obias[i-1][1]=0.0;     /* C6I */
+                            nav->obias[i-1][2]=b2;      /* C7I C7I-C6I=(C2I-C6I)-(C2I-C7I) */ 
+                        }
+                        else {
+                            nav->obias[i-1][0]=b1;      /* C2I C2I-C6I */
+                            nav->obias[i-1][1]=0.0;     /* C6I */
+                            nav->obias[i-1][2]=0.0;     /* no C7I  */  
+                        }                         
                     }
                     else {
-                        nav->obias[i-1][0]=b1;      /* C2I C2I-C6I */
-                        nav->obias[i-1][1]=0.0;     /* C6I */
-                        nav->obias[i-1][2]=0.0;     /* no C7I  */  
-                    }                    
+                        if (id>46) {
+                            nav->obias[i-1][0]=b1;      /* C2I C2I-C6I */
+                            nav->obias[i-1][1]=0.0;     /* C6I */
+                            nav->obias[i-1][2]=0.0;     /* no C7I  */ 
+                        }
+                   }
                 }
                 /*ref:C2I-C6I*/
                 else if (EPHOPT_PREC==opt->sateph) {
                     gamma1=SQR(FREQ1_CMP/FREQ3_CMP);
-                    alpha=gamma1/(gamma1-1);beta=-1/(gamma1-1);                    
-                    if (id<19) {
-                        nav->obias[i-1][0]=beta*b1;                     /* C2I beta*(C2I-C6I) */
-                        nav->obias[i-1][1]=-alpha*b1;                   /* C6I -alpha*(C2I-C6I)*/
-                        nav->obias[i-1][2]=-(alpha*(b1-b2)-beta*b2);    /* C7I -(alpha*(C2I-C7I)+beta*(C6I-C7I)) */ 
-                    }
+                    alpha=gamma1/(gamma1-1);beta=-1/(gamma1-1);   
+                    /* satellites after C46 use TGD corrections */
+                    if (OPT_TGD==nav->obias_flag) {
+                        if (id<19) {
+                            nav->obias[i-1][0]=beta*b1;                     /* C2I beta*(C2I-C6I) */
+                            nav->obias[i-1][1]=-alpha*b1;                   /* C6I -alpha*(C2I-C6I)*/
+                            nav->obias[i-1][2]=-(alpha*(b1-b2)-beta*b2);    /* C7I -(alpha*(C2I-C7I)+beta*(C6I-C7I)) */ 
+                        }
+                        else {
+                            nav->obias[i-1][0]=beta*b1;                     /* C2I beta*(C2I-C6I) */
+                            nav->obias[i-1][1]=-alpha*b1;                   /* C6I -alpha*(C2I-C6I)*/
+                            nav->obias[i-1][2]=0.0;                         /* no C7I  */ 
+                        }                        
+                    }              
                     else {
-                        nav->obias[i-1][0]=beta*b1;                     /* C2I beta*(C2I-C6I) */
-                        nav->obias[i-1][1]=-alpha*b1;                   /* C6I -alpha*(C2I-C6I)*/
-                        nav->obias[i-1][2]=0.0;                         /* no C7I  */ 
-                    }                      
+                        if (id>46) {
+                            nav->obias[i-1][0]=beta*b1;                     /* C2I beta*(C2I-C6I) */
+                            nav->obias[i-1][1]=-alpha*b1;                   /* C6I -alpha*(C2I-C6I)*/
+                            nav->obias[i-1][2]=0.0;                         /* no C7I  */                            
+                        }
+                    } 
                 }
             }
             /*ref:C1C-C2X?*/
-            if (sys==SYS_QZS) {
+            if (sys==SYS_QZS&&OPT_TGD==nav->obias_flag) {
                 b1=gettgd(i,nav,0);     /*DCB C2-C2*/
                 gamma1=SQR(FREQL1/FREQL2);
                 nav->obias[i-1][0]=b1;                  /* C1C beta*(C1-C2) */
@@ -816,7 +837,8 @@ extern int readdcb(const prcopt_t *prcopt, const char *file, nav_t *nav, const s
 
     trace(3,"readdcb : file=%s\n",file);
 
-    init_bias_ix(); /* init translation table from code to table column */ 
+    /* init translation table from code to table column */
+    init_bias_ix();  
 
     for (i=0;i<MAXSAT;i++) for (j=0;j<MAX_CODE_BIAS_FREQS;j++) {
         nav->cbias[i][j]=0.0;
@@ -824,9 +846,12 @@ extern int readdcb(const prcopt_t *prcopt, const char *file, nav_t *nav, const s
             nav->rbias[j][k][i]=0.0;
         }  
     }
-    for (j=0;j<MAXSTA;j++) for (k=0;k<MAXCODE;k++) {
-        nav->obias[j][k]=0.0;
+    for (j=0;j<MAXSTA;j++) {
+        for (k=0;k<MAXCODE;k++) {
+            nav->obias[j][k]=0.0;
+        }        
     }
+
         
     for (i=0;i<MAXEXFILE;i++) {
         if (!(efiles[i]=(char *)malloc(1024))) {

@@ -38,6 +38,9 @@ static int LD(int n, const double *Q, double *L, double *D)
         for (j=0;j<=i-1;j++) for (k=0;k<=j;k++) A[j+k*n]-=L[i+k*n]*L[i+j*n];
         for (j=0;j<=i;j++) L[i+j*n]/=L[i+i*n];
     }
+    /* trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
+    trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0);
+    trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0); */
     free(A);
     if (info) fprintf(stderr,"%s : LD factorization error\n",__FILE__);
     return info;
@@ -177,21 +180,38 @@ static int search(int n, int m, const double *L, const double *D,
 * return : status (0:ok,other:error)
 * notes  : matrix stored by column-major order (fortran convension)
 *-----------------------------------------------------------------------------*/
-extern int lambda(int n, int m, const double *a, const double *Q, double *F,
-                  double *s)
+extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, double *F,
+                  double *s, const int *ix, const int *ixf, int *low_ix)
 {
-    int info;
-    double *L,*D,*Z,*z,*E;
+    int info,i,j;
+    double *L,*D,*Z,*z,*E,*zQ,*Qz,*dQz;
     
     if (n<=0||m<=0) return -1;
-    L=zeros(n,n); D=mat(n,1); Z=eye(n); z=mat(n,1); E=mat(n,m);
+    L=zeros(n,n); D=mat(n,1); Z=eye(n); z=mat(n,1); E=mat(n,m); zQ=mat(n,n); Qz=mat(n,n); dQz=mat(n,1);
     
     /* LD (lower diagonal) factorization (Q=L'*diag(D)*L) */
     if (!(info=LD(n,Q,L,D))) {
         
-        /* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) */
+        /* lambda decorrelation (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) */
         reduction(n,L,D,Z);
-        /* trace(12,"Z=\n"); tracemat(12,Z,n,n,7,2,0); */
+
+        /* decorrelated ambiguity covariance matrix */
+        matmul("NN",n,n,n,Z,Q,zQ,1.0,0.0);
+        matmul("NT",n,n,n,zQ,Z,Qz,1.0,0.0);
+        /* trace(12,"Qz=\n");tracemat(12,Qz,n,n,10,5,0); */
+        /* trace(12,"Z'=\n"); tracemat(12,Z,n,n,10,5,0);
+        trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
+        trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0);
+        trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0); */
+
+        for (i=0;i<n;i++) dQz[i]=Qz[i+i*n]; /* dQz=diag(Qz) */
+        for (i=1,j=0;i<n;i++) {
+            if (dQz[i]>dQz[j]) j=i;
+        }
+
+        /* index of maximum variance */
+        /* low_ix[0]=ix[2*j+1]-(ixf[2*j]*MAXSAT+rtk->na); low_ix[1]=ixf[2*j+1]; */ 
+
         matmul("NN",n,n,1,Z,a,z,1.0,0.0);
         /* trace(12,"z=\n"); tracemat(12,z,n,1,7,2,0); */
         /* matmul("TN",n,1,n,Z,a,z); */ /* z=Z'*a */
@@ -201,11 +221,12 @@ extern int lambda(int n, int m, const double *a, const double *Q, double *F,
             L,D = transformed covariance matrix */
         if (!(info=search(n,m,L,D,z,E,s))) {  /* returns 0 if no error */
             
+            /* transform the fixed integer ambiguity to the original space, F=Z'\E */
             info=solve("T",Z,E,n,m,F);
-            /* info=solve("T",Z,E,n,m,F); */ /* F=Z'\E */
+            /* info=solve("T",Z,E,n,m,F); */ 
         }
     }
-    free(L); free(D); free(Z); free(z); free(E);
+    free(L); free(D); free(Z); free(z); free(E); free(zQ); free(Qz); free(dQz);
     return info;
 }
 /* lambda reduction ------------------------------------------------------------
@@ -268,4 +289,61 @@ extern int lambda_search(int n, int m, const double *a, const double *Q,
     
     free(L); free(D);
     return info;
+}
+
+/* calculate the matrix determinant */
+extern double determinant(const double* Qb, int n) 
+{
+    double *matrix=mat(n,n);
+    double det=1.0,temp;
+    int i,j,k;
+
+    /* 复制输入矩阵到工作矩阵 */
+    matcpy(matrix,Qb,n,n);
+
+    if (matrix==NULL||n<=0) {
+        fprintf(stderr, "Error: Invalid matrix or dimension.\n");
+        return -1;  
+    }
+
+    /* 使用高斯消元法计算行列式 */
+    for (i=0;i<n;i++) {
+        /* 找到当前列最大的元素（进行列主元选择）*/
+        int max_row=i;
+        for (j=i+1;j<n;j++) {
+            if (fabs(matrix[j*n+i])>fabs(matrix[max_row*n+i])) {
+                max_row=j;
+            }
+        }
+
+        /* 如果主元为0，则行列式为0 */
+        if (matrix[max_row*n+i]==0) {
+            return 0.0;
+        }
+
+        /* 行交换（交换当前行和最大元素所在的行）*/
+        if (i!=max_row) {
+            for (k=0;k<n;k++) {
+                temp=matrix[i*n+k];
+                matrix[i*n+k]=matrix[max_row*n+k];
+                matrix[max_row*n+k]=temp;
+            }
+            det=-det;  /* 每次交换行，行列式符号改变 */
+        }
+
+        /* 消去当前列下方元素 */
+        for (j=i+1;j<n;j++) {
+            double factor=matrix[j*n+i]/matrix[i*n+i];
+            for (k=i;k<n;k++) {
+                matrix[j*n+k]-=matrix[i*n+k]*factor;
+            }
+        }
+
+        /* 乘上对角线元素 */
+        det*=matrix[i*n+i];
+    }
+
+    free(matrix);
+
+    return det;
 }

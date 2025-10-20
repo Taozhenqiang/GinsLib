@@ -668,9 +668,13 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
         }
         stat=addimudata(imu,&imud);
     }
+    
+    /* free imu file pointer */
+    free(fp);
+
     return stat;
 }
-/* free obs and nav data -----------------------------------------------------*/
+/* free imu data -----------------------------------------------------*/
 extern void freeimu(imu_t *imu)
 {
     trace(3,"freeimu:\n");
@@ -887,7 +891,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* NOTE: The structure copy is a shallow copy! */
     rtk_t rtk_=*rtk;
     ins_t *ins=&rtk->ins;
-    int i,align_flag,nr=0,nr_old=0;
+    int i,vel_flag,nr=0,nr_old=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
     /* initialize INS position using GNSS solution */
@@ -914,7 +918,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
         for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
         for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
 
-        if (align_flag=tdcp_align(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"error : rtkpos error in ins_align!\n");
                 return 0;
@@ -927,7 +931,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             att[2]=-atan2(vn[0],vn[1]); /* yaw angle */
 
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
-            init_inspva(ins,pos,vn,att);
+            /* init_inspva(ins,pos,vn,att); */
             gnss2ins(rtk,pos,ins->pos,1);
             gnss2ins(rtk,vn,ins->vel,2);
             init_inspva(ins,ins->pos,ins->vel,att);
@@ -943,7 +947,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
 }
 
 /* TDCP-assisted motion alignment */
-extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
+extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
 {
     prcopt_t opt_=*opt;
     sol_t sol={0},sol_old={0};
@@ -959,6 +963,9 @@ extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     vare=mat(n,1);  vare_old=mat(n_old,1); resp=mat(n,1);  resp_old=mat(n_old,1);
     azel=zeros(n,2);azel_old=zeros(n_old,2);
     v=mat(nf*n,1);  H=mat(nf*n,nx); var=mat(nf*n,1); P=zeros(nf*n,nf*n); 
+
+    /* reset receiver velocity */
+    for (i=0;i<3;i++) rtk->sol.rr[i+3]=0.0;
 
     /* configured in spp mode */
     if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) {
@@ -979,12 +986,8 @@ extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
 
     /* check solution status */
     if (!stat||!stat_old) {
-        trace(7,"tdcp_align: estpos error stat=%d, stat_old=%d\n",stat,stat_old);
-        free(rs);   free(rs_old);   free(dts);  free(dts_old);
-        free(vare); free(vare_old); free(resp); free(resp_old);
-        free(azel); free(azel_old);
-        free(v);    free(H);        free(var);  free(P);        
-        return 0;        
+        trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old);
+        iok=0;
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
@@ -997,7 +1000,7 @@ extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     /* if GNSS outage, tdcp fails */
     if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
         iok=0;
-        trace(7,"tdcp_align: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
+        trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
     }
 
     /* epoch-to-epoch average velocity estimation based on tdcp */
@@ -1082,7 +1085,7 @@ extern int tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
         }
 
         if (max_vnv<nx) {
-            iok=0;trace(7,"tdcp_align: not enough valid satellites nv=%d\n",nv);
+            iok=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
         }
         else {
 
@@ -1183,9 +1186,9 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
     int i,j,nx=rtk->nx,nv,info;
     double time,vel,*xp,*Pp,*H,*v,*var,*R;
 
-    /* detected vehicle stationary time (s)*/
+    /* detected vehicle stationary time (s) and GNSS velocity */
     time=ins->zupt.count*ins->interval*ins->nn;
-    vel=norm(ins->vel,3);
+    vel=norm(sol->rr+3,3);
 
     /* initializing memory */
     xp=zeros(nx,1); Pp=zeros(nx,nx); R=zeros(3,3);
@@ -1195,13 +1198,13 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
     matcpy(Pp,rtk->P,nx,nx); 
 
     /* the vehicle is considered stationary only when the zero speed detection is passed, 
-    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s*/
+    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
     if (opt->constraint[1]&&time>1.0&&vel<0.1) { /* zupt*/
-        nv=nhc_zupt_update(ins,H,v,var,0,nx,CONS_ZUPT);
+        nv=motion_update(rtk,H,v,var,0,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
     else if (opt->constraint[0]) { /* nhc */
-        nv=nhc_zupt_update(ins,H,v,var,0,nx,CONS_NHC);        
+        nv=motion_update(rtk,H,v,var,0,nx,CONS_NHC);        
     }
     
     /* measurement noise covariance matrix */
@@ -1234,10 +1237,11 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
 }
 
 /* zupt/nhc update */
-extern int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv, int nx, int mode)
+extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode)
 {
-    int i,j,k,inv,k2[2]={0,2},k3[3]={0,1,2};
-    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0};
+    ins_t *ins=&rtk->ins;
+    int i,j,k,inv=0,k2[2]={0,2},k3[3]={0,1,2};
+    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},Ha_bg[3]={0.0},yaw=0.0;
 
     DCMT(ins->Cnb,Cbn);
     Mat3mul2(1.0,ins->Cvb,Cbn,Cvn);
@@ -1245,6 +1249,13 @@ extern int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv
     Mat3mulv(1.0,Cvn,ins->vel,ins->nhc_vel);
     Mat3mvskew(-1.0,Cvn,ins->vel,vel_v);
     Mat3mvskew(-1.0,ins->Cvb,ins->lever_nhc,lever_v);
+
+    /* H of ZIHR */
+    Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; Ha_bg[1]=0.0; Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;
+
+    /* converts the yaw from clockwise to counterclockwise */
+    if (rtk->sol.att[2]<=180) yaw=-rtk->sol.att[2]*D2R;
+    else yaw=(360.0-rtk->sol.att[2])*D2R;
 
     /* determine constraint model */
     if (CONS_NHC==mode) {
@@ -1255,19 +1266,40 @@ extern int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv
         inv=3;
         trace(12,"zupt_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4,0);
     }
+    else if (CONS_ZIHR==mode) {
+        inv=1;
+        trace(12,"zihr_constraints: yaw=\n");tracemat(12,ins->att,3,1,9,4,0);
+    }
 
     for (i=0;i<inv;i++) {
         if (CONS_NHC==mode) k=k2[i];
         else if (CONS_ZUPT==mode) k=k3[i];
+        else if (CONS_ZIHR==mode) k=0;
 
         for (j=0;j<nx;j++) {
-            H[j+nv*nx]=0.0;
-            if (j<3)             H[j+nv*nx]=vel_v[j+k*3];
-            else if (j>=3&&j<6)  H[j+nv*nx]=Cvn[(j-3)+k*3];
-            else if (j>=9&&j<12) H[j+nv*nx]=lever_v[(j-9)+k*3];
+            /* if H is NULL, return 0 */
+            if (H) H[j+nv*nx]=0.0;
+            else return 0;
+            
+            /* update the measurement coefficient of NHC/ZUPT/ZIHR in H */
+            if (CONS_NHC==mode||CONS_ZUPT==mode) {
+                if (j<3)             H[j+nv*nx]=vel_v[j+k*3];
+                else if (j>=3&&j<6)  H[j+nv*nx]=Cvn[(j-3)+k*3];
+                else if (j>=9&&j<12) H[j+nv*nx]=lever_v[(j-9)+k*3];                
+            }
+            else if (CONS_ZIHR==mode) {
+                if (j>=9&&j<12) H[j+nv*nx]=Ha_bg[j-9];
+            }
         }
-        v[nv]=ins->nhc_vel[k];
-        var[nv]=0.01; /* variance of the constraint, can be adjusted */
+
+        if (CONS_NHC==mode||CONS_ZUPT==mode) {
+            v[nv]=ins->nhc_vel[k];
+            var[nv]=0.01; /* variance of the constraint, can be adjusted */  
+        }
+        else if (CONS_ZIHR==mode) {
+            v[nv]=ins->att[2]-yaw;       /* the difference in yaw between the last GNSS update and the current INS update */
+            var[nv]=(0.1*D2R)*(0.1*D2R); /* variance of the constraint (rad), can be adjusted */          
+        }
         nv++;
     }
 

@@ -27,6 +27,7 @@
                 // "FSAS_Vehicle_complex_20220315.conf",
                 // "HG4930_Vehicle_open_20201128.conf", 
                 // "LCI_Marine_open_20150108.conf",
+                // "Readmi_Static_20251010.conf",
                 
                 "-x","4240",
             ],
@@ -86,14 +87,14 @@
             "name":"Python Script",
             
             // for Windows
-            "program": "${workspaceFolder}\\script\\excute.py",
-            "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
+            "program": "${workspaceFolder}\\script\\plot_main.py",
+            // "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
 
             // for Linux
             // "program": "${workspaceFolder}/script/excute.py",
             // "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
 
-            "console": "externalTerminal",
+            // "console": "externalTerminal",
         }
     ]
 }

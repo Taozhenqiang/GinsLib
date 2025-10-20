@@ -118,6 +118,7 @@ extern "C"
 #define CONS_OFF  0     /* constraint: off */
 #define CONS_NHC  1     /* NHC */
 #define CONS_ZUPT 2     /* ZUPT */
+#define CONS_ZIHR 3     /* ZIHR */
 
 #define NO   0          /* GNSS/INS time matching: No */
 #define YES  1          /* GNSS/INS time matching: Yes */
@@ -137,9 +138,6 @@ extern "C"
 /* ins constants/macros ----------------------------------------------------------*/
 #define NINCIMU     100000              /* incremental number of imu data */
 #define MAXINS      2                   /* maximum number of samples */
-
-#define All_AR      1
-#define PART_AR     2
 
 #define THRES_MW_JUMP 10.0
 /*end*/
@@ -181,9 +179,10 @@ extern "C"
 #define EFACT_GLO 1.5 /* error factor: GLONASS */
 #define EFACT_GAL 1.0 /* error factor: Galileo */
 #define EFACT_QZS 1.0 /* error factor: QZSS */
-#define EFACT_CMP 5.0 /* error factor: BeiDou */
+#define EFACT_CMP 1.0 /* error factor: BeiDou */
 #define EFACT_IRN 1.5 /* error factor: IRNSS */
 #define EFACT_SBS 3.0 /* error factor: SBAS */
+#define EFACT_GEO 1.0 /* error factor: GEO satellites */
 
 #define SYS_NONE 0x00 /* navigation system: none */
 #define SYS_GPS 0x01  /* navigation system: GPS */
@@ -515,6 +514,11 @@ extern "C"
 #define ARMODE_INST 2    /* AR mode: instantaneous */
 #define ARMODE_FIXHOLD 3 /* AR mode: fix and hold */
 
+#define Full_AR     1       /* AR mode: full integer ambiguity resolution */
+#define PAR     2       /* AR mode: partial integer ambiguity resolution*/
+#define BIE     3       /* AR mode: best integer estimator */
+#define ILS_BIE 4       /* AR mode: ILS + BIE */
+
 #define GLO_ARMODE_OFF 0     /* GLO AR mode: off */
 #define GLO_ARMODE_ON 1      /* GLO AR mode: on */
 #define GLO_ARMODE_AUTOCAL 2 /* GLO AR mode: autocal */
@@ -657,7 +661,7 @@ extern "C"
     typedef struct
     {                                 /* observation data record */
         gtime_t time;                 /* receiver sampling time (GPST) */
-        uint8_t sat, rcv;             /* satellite/receiver number (rcv=1,rover; rcv=2,base)*/
+        uint8_t sat, rcv;             /* satellite/receiver number (rcv=1,rover; rcv=2,base), satellite index starts at 1 */
         uint16_t SNR[NFREQ + NEXOBS]; /* signal strength (0.001 dBHz) */
         uint8_t LLI[NFREQ + NEXOBS];  /* loss of lock indicator */
         uint8_t code[NFREQ + NEXOBS]; /* code indicator (CODE_???) */
@@ -1148,6 +1152,7 @@ extern "C"
         uint8_t ns;        /* number of valid satellites */
         float age;         /* age of differential (s) */
         float ratio;       /* AR ratio factor for validation */
+        float ADOP;        /* AR ADOP for validation */
         float prev_ratio1; /* previous initial AR ratio factor for validation */
         float prev_ratio2; /* previous final AR ratio factor for validation */
         float thres;       /* AR ratio threshold for validation */
@@ -1282,7 +1287,7 @@ extern "C"
         double elmin;            /* elevation mask angle (rad) */
         snrmask_t snrmask;       /* SNR mask */
         int sateph;              /* satellite ephemeris/clock (EPHOPT_???) */
-        int artype;              /* LAMBDA algrithm type (1:all AR  2:part AR)*/
+        int artype;              /* LAMBDA algrithm type (1:FAR,2:PAR,3:BIE,4:ILS-BIE)*/
         int modear;              /* AR mode (0:off,1:continuous,2:instantaneous,3:fix and hold,4:ppp-ar) */
         int glomodear;           /* GLONASS AR mode (0:off,1:on,2:auto cal,3:ext cal) */
         int gpsmodear;           /* GPS AR mode, debug/learning only (0:off,1:on) */
@@ -1392,13 +1397,14 @@ extern "C"
         int outvel;         /* output velocity options (0:no,1:yes) */
         int outatt;         /* output attitude options [pitch,roll,yaw] (0:no,1:yes)*/
         int outbga;         /* output imu bg and ba options (0:no,1:yes)*/
-        int outiflag;       /* output imu status (GNSS/ZUPT) */
+        int outiflag;       /* output solution status (GNSS/ZUPT) */
         int datum;          /* datum (0:WGS84,1:Tokyo) */
         int height;         /* height (0:ellipsoidal,1:geodetic) */
         int geoid;          /* geoid model (0:EGM96,1:JGD2000) */
         int solstatic;      /* solution of static mode (0:all,1:single) */
         int sstat;          /* solution statistics level (0:off,1:states,2:residuals) */
         int ipos;           /* solution information (0:off,1:on) */
+        int azel;           /* azimuth/elevation angle (0:off,1:on) */
         int stato[statopt];      /* output stat [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel (0:no,1:yes)*/
         int trace;          /* debug trace level (0:off,1-5:debug) */
         double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
@@ -1501,8 +1507,11 @@ extern "C"
         double resc[MAXFREQ];        /* residuals of carrier-phase (m) */
         double icbias[MAXFREQ];      /* glonass IC bias (cycles) */
         uint8_t vsat[MAXFREQ];       /* valid satellite flag */
+        uint8_t par_ivsat[MAXFREQ];  /* invalid satellite flag for par */
         uint16_t snr_rover[MAXFREQ]; /* rover signal strength (0.25 dBHz) */
         uint16_t snr_base[MAXFREQ];  /* base signal strength (0.25 dBHz) */
+        double maxsnr_rover[MAXFREQ]; /* rover max signal strength (dBHz) */
+        double maxsnr_base[MAXFREQ];  /* base max signal strength (dBHz) */
         uint8_t fix[MAXFREQ];        /* ambiguity fix flag (1:float,2:fix,3:hold) */
         uint8_t slip[MAXFREQ];       /* cycle-slip flag */
         uint8_t half[MAXFREQ];       /* half-cycle valid flag */
@@ -1795,6 +1804,7 @@ extern "C"
     EXPORT double norm(const double *a, int n);
     EXPORT void cross3(const double *a, const double *b, double *c);
     EXPORT int normv3(const double *a, double *b);
+    EXPORT double quadratic(const double *v, const double *Q, int n);
     EXPORT void matcpy(double *A, const double *B, int n, int m);    
     EXPORT void pmatcpy(double *A, int no, int mo, int rs_o, int cs_o, int re_o, int ce_o, const double *B, int ni, int mi, int rs_i, int cs_i, int re_i, int ce_i);   
     EXPORT void matmul(const char *tr,int r1,int c1,int c2,
@@ -1892,6 +1902,8 @@ extern "C"
     EXPORT int savenav(const char *file, const nav_t *nav);
     EXPORT void freeobs(obs_t *obs);
     EXPORT void freenav(nav_t *nav, int opt);
+    EXPORT void freeant(spcvs_t *pcvss, rpcvs_t *pcvsr);
+    EXPORT void freeimu(imu_t *imu);
     EXPORT int readblq(const char *file, const char *sta, double *odisp);
     EXPORT int readerp(const char *file, erp_t *erp);
     EXPORT int geterp(const erp_t *erp, gtime_t time, double *val);
@@ -2294,8 +2306,9 @@ extern "C"
     EXPORT void strsetproxy(const char *addr);
 
     /* integer ambiguity resolution ----------------------------------------------*/
-    EXPORT int lambda(int n, int m, const double *a, const double *Q, double *F,
-                      double *s);
+    EXPORT double determinant(const double* Qb, int n);
+    EXPORT int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, double *F,
+                      double *s, const int *ix, const int *ixf,int *low_ix);
     EXPORT int lambda_reduction(int n, const double *Q, double *Z);
     EXPORT int lambda_search(int n, int m, const double *a, const double *Q,
                              double *F, double *s);
@@ -2309,7 +2322,8 @@ extern "C"
                       int *vsat, double *resp); 
     EXPORT int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
                       const nav_t *nav, const prcopt_t *opt, sol_t *sol, const double *azel, const int *vsat);  
-    EXPORT double varerr_spp(const prcopt_t *opt, const ssat_t *ssat, const obsd_t *obs, double el, int sys);                       
+    EXPORT double varerr_spp(const prcopt_t *opt, const ssat_t *ssat, const obsd_t *obs, double el, int sys); 
+    EXPORT void outsolazel(rtk_t *rtk, const obsd_t *obs, const int nu);                 
 
     /* precise positioning -------------------------------------------------------*/
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
@@ -2318,9 +2332,9 @@ extern "C"
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);
     EXPORT int rtkopenstat(const char *file, int level);
-    EXPORT void rtkclosestat(void);
     EXPORT int rtkopenipos(prcopt_t *opt, const char *file);
-    EXPORT void rtkcloseipos(void);
+    EXPORT int rtkopenazel(prcopt_t *opt, const char *file);
+    EXPORT void rtkcloseoutfile(void);
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
     /* precise point positioning -------------------------------------------------*/
@@ -2340,17 +2354,16 @@ extern "C"
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
     EXPORT void imucpy(imud_t *imu, imu_t imus, int iimu, const int nn);
-    EXPORT void freeimu(imu_t *imu);
     EXPORT int  ins_init(ins_t *ins, const prcopt_t *prcopt);
     EXPORT void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att);
     EXPORT int  readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week);
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt);
-    EXPORT int  tdcp_align(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
+    EXPORT int  tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
-    EXPORT int nhc_zupt_update(ins_t *ins, double *H, double *v, double *var, int nv, int nx, int mode);
+    EXPORT int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
     EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);
     EXPORT void phi_update(ins_t *ins, const prcopt_t *popt);
