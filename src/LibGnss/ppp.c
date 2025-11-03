@@ -338,12 +338,14 @@ static double varerr(int sat, int sys, double el, double snr_rover,
     double snr_max=opt->err[5];
     double fact=1.0;
     double sinel=sin(el),var;
-    int frq,code;
+    int frq,code,prn;
 
+    satsys(sat,&prn);
     frq=f/2;code=f%2; /* 0=phase, 1=code */
     /* increase variance for pseudoranges */
     if (code) fact=opt->eratio[frq];
     if (fact<=0.0) fact=opt->eratio[0];
+    
     /* adjust variances for constellation */
     switch (sys) {
         case SYS_GPS: fact*=EFACT_GPS;break;
@@ -351,7 +353,10 @@ static double varerr(int sat, int sys, double el, double snr_rover,
         case SYS_GAL: fact*=EFACT_GAL;break;
         case SYS_SBS: fact*=EFACT_SBS;break;
         case SYS_QZS: fact*=EFACT_QZS;break;
-        case SYS_CMP: fact*=EFACT_CMP;break;
+        case SYS_CMP: 
+            if (prn<=5||prn>=59)  fact*=EFACT_CMP*EFACT_GEO;
+            else fact*=EFACT_CMP;
+            break;
         case SYS_IRN: fact*=EFACT_IRN;break;
         default:      fact*=EFACT_GPS;break;
     }
@@ -1393,17 +1398,19 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
 
     /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    zupt_time=ins->zupt.count*ins->interval*ins->nn;        
-    if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
-        nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZUPT);
-        rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
-    }
-    else if (opt->constraint[0]) { /* nhc */
-        nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_NHC);
-    }
-    if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-        nv_cons+=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZIHR);
-    }
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;    
+    if (GINS_OFF!=opt->GI_mode) {
+        if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
+            nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZUPT);
+            rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
+        }
+        else if (opt->constraint[0]) { /* nhc */
+            nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_NHC);
+        }
+        if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
+            nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,rtk->nx,CONS_ZIHR);
+        }        
+    }    
 
     /* update the measurement noise covariance matrix (MNCM) */
     nv=nv+nv_cons;
@@ -1440,10 +1447,14 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     }
     /* posterior result check */
     if ((GINS_TC==opt->GI_mode&&!stat)||(GINS_TC==opt->GI_mode&&rtk->sol.ns<MIN_NSAT_SOL)) {
-       rtk->sol.stat=SOLQ_INS; 
-       rtk->sol.ns=0;
+        rtk->sol.stat=SOLQ_INS; 
+        rtk->sol.ns=0;
     }
-    else rtk->sol.stat=rtk->sol.ns<MIN_NSAT_SOL?SOLQ_NONE:stat;
+    else {
+        /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
+        if (rtk->outage<=MAX_OUTIME)rtk->outage=0;
+        rtk->sol.stat=rtk->sol.ns<MIN_NSAT_SOL?SOLQ_NONE:stat; 
+    }
 
     if (GINS_TC==opt->GI_mode) 
     {
@@ -1646,8 +1657,8 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     /* initialize xp and Pp */
     xp=mat(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
 
-    /* initialize the measurement vector size (nv=ns*nf*obs_type+maxsat(ion constraints)?+3(NHC/ZUPT)) */
-    nv=n*rtk->opt.nf*2+MAXSAT+3;    
+    /* initialize the measurement vector size (nv=ns*nf*obs_type+maxsat(ion constraints)?+4(NHC/ZUPT and ZIHR)) */
+    nv=n*rtk->opt.nf*2+MAXSAT+4;    
     v=mat(nv,1); H=mat(nv,rtk->nx); R=mat(nv,nv);
     F=mat(rtk->nx,nv); Q=mat(nv,nv);
 

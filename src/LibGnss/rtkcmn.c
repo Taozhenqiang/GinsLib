@@ -555,7 +555,8 @@ extern void initx(rtk_t *rtk, double xi, double var, int i)
     int j;
     rtk->x[i]=xi;
     for (j=0;j<rtk->nx;j++) rtk->P[i+j*rtk->nx]=0.0;
-    for (j=0;j<rtk->nx;j++) rtk->P[j+i*rtk->nx]=0.0;
+    for (j=0;j<rtk->nx;j++) rtk->P[j+i*rtk->nx]=0.0;            
+
     rtk->P[i+i*rtk->nx]=var;
 }
 /* reset cross-covariance -------------------------------------------
@@ -572,6 +573,25 @@ extern void init_crosscov(rtk_t *rtk, int ns, int n)
             if (i<ns&&j>=ns) rtk->P[j+i*n]=0.0;
             if (i>=ns&&j<ns) rtk->P[j+i*n]=0.0; 
         }
+    }
+}
+
+/* reset fix and par_ivsatflag for all sats (1=float, 2=fix) --------------------
+*args  :  rtk_t    *rtk   I   rtk structure
+*return:none
+*-----------------------------------------------------------------------------*/
+extern void reset_fix(rtk_t *rtk)
+{
+    prcopt_t *opt=&rtk->opt;
+    int i,j,sys,fr;
+
+    for (i=0;i<MAXSAT;i++) {
+        sys=satsys(i+1,NULL);
+        for (j=0;j<NFREQ;j++) {
+            fr=sys2freid(sys,j,opt);
+            rtk->ssat[i].fix[fr]=0;
+            rtk->ssat[i].par_ivsat[fr]=0;
+        }       
     }
 }
 /* satellite system+prn/slot number to satellite number ------------------------
@@ -1399,6 +1419,11 @@ extern void repspace(char *str)
 {
     char *p=str,*q=str;
     int in_space=0;
+
+    /* skip leading spaces */
+    while (*p && isspace((unsigned char)*p)) {
+        p++;
+    }
 
     while (*p) {
         if (isspace((unsigned char)*p)) {

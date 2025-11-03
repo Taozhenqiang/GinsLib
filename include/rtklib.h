@@ -129,11 +129,16 @@ extern "C"
 #define IMUT_INCRENT 0  /* imu data type: increment */
 #define IMUT_RATE    1  /* imu data type: rate */
 
-#define INSALI_MANUAL 0       /* manual alignment */
-#define INSALI_VELTOR 1       /* velocity vector alignment */
+#define BODYF_RFU 0     /* body frame direction: RFU */
+#define BODYF_FRD 1     /* body frame direction: FRD */
+
+#define INSALI_MANUAL 0 /* manual alignment */
+#define INSALI_VELTOR 1 /* velocity vector alignment */
 
 #define SOLF_GNSS 0     /* solution falg: GNSS */
 #define SOLF_ZUPT 1     /* solution falg: ZUPT */
+
+#define MAX_OUTIME  60  /* INS maximum independent working time */
 
 /* ins constants/macros ----------------------------------------------------------*/
 #define NINCIMU     100000              /* incremental number of imu data */
@@ -182,7 +187,7 @@ extern "C"
 #define EFACT_CMP 1.0 /* error factor: BeiDou */
 #define EFACT_IRN 1.5 /* error factor: IRNSS */
 #define EFACT_SBS 3.0 /* error factor: SBAS */
-#define EFACT_GEO 1.0 /* error factor: GEO satellites */
+#define EFACT_GEO 5.0 /* error factor: GEO satellites */
 
 #define SYS_NONE 0x00 /* navigation system: none */
 #define SYS_GPS 0x01  /* navigation system: GPS */
@@ -514,10 +519,13 @@ extern "C"
 #define ARMODE_INST 2    /* AR mode: instantaneous */
 #define ARMODE_FIXHOLD 3 /* AR mode: fix and hold */
 
-#define Full_AR     1       /* AR mode: full integer ambiguity resolution */
-#define PAR     2       /* AR mode: partial integer ambiguity resolution*/
-#define BIE     3       /* AR mode: best integer estimator */
-#define ILS_BIE 4       /* AR mode: ILS + BIE */
+#define Full_AR     0   /* AR mode: full integer ambiguity resolution */
+#define PAR     1       /* AR mode: partial integer ambiguity resolution*/
+#define BIE     2       /* AR mode: best integer estimator */
+#define PAR_BIE 3       /* AR mode: PAR + BIE */
+
+#define BIE_amb 1       /* BIE quality control considering ambiguity solition */
+#define BIE_amb_rec 2   /* BIE quality control considering ambiguity + position solution */
 
 #define GLO_ARMODE_OFF 0     /* GLO AR mode: off */
 #define GLO_ARMODE_ON 1      /* GLO AR mode: on */
@@ -1287,7 +1295,7 @@ extern "C"
         double elmin;            /* elevation mask angle (rad) */
         snrmask_t snrmask;       /* SNR mask */
         int sateph;              /* satellite ephemeris/clock (EPHOPT_???) */
-        int artype;              /* LAMBDA algrithm type (1:FAR,2:PAR,3:BIE,4:ILS-BIE)*/
+        int artype;              /* LAMBDA algrithm type (0:FAR,1:PAR,2:BIE,3:PAR-BIE)*/
         int modear;              /* AR mode (0:off,1:continuous,2:instantaneous,3:fix and hold,4:ppp-ar) */
         int glomodear;           /* GLONASS AR mode (0:off,1:on,2:auto cal,3:ext cal) */
         int gpsmodear;           /* GPS AR mode, debug/learning only (0:off,1:on) */
@@ -1350,6 +1358,7 @@ extern "C"
 
         int imudatype;           /* imu data type (IMUT_???) */
         char imu_order[10];      /* imu data order (AgGd, AgGr, GdAg, GrAg) */
+        int bodyframe;           /* body frame direction(0:RFU,1:FRD) */
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
         int alingetype;          /* ins initial alignment type */
@@ -1589,6 +1598,7 @@ extern "C"
         gtime_t upte_time;      /* time of last GNSS/INS measureemnt update */
         int nominal_update;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
         int align;
+        int outage;             /* GNSS outage count, if GNSS is available, outage is reset to 0 */
         ins_t ins;
         tightc_t tightc;        /* tightly coupled integration */
         lcgins_t lcgins;        /* loosely coupled integration */
@@ -2307,6 +2317,8 @@ extern "C"
 
     /* integer ambiguity resolution ----------------------------------------------*/
     EXPORT double determinant(const double* Qb, int n);
+    EXPORT int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const double *y, const double *b, 
+                     int na, int nb, int num_candidate, int mode, double *b_BIE, double *temp); 
     EXPORT int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, double *F,
                       double *s, const int *ix, const int *ixf,int *low_ix);
     EXPORT int lambda_reduction(int n, const double *Q, double *Z);
@@ -2328,6 +2340,7 @@ extern "C"
     /* precise positioning -------------------------------------------------------*/
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
+    EXPORT void reset_fix(rtk_t *rtk);
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt);
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);

@@ -265,7 +265,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
     if (0<=iobsu&&iobsu<obss.n) {
-        settime((time=obss.data[iobsu].time));
+        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu].time)));
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
         }
@@ -304,6 +304,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             rtk->nominal_update=NO;
             ndt=fabs(sec-round((sec+rtk->ins.interval/2.0)/rtk->interval)*rtk->interval);
 
+            /* the second condition is used to process the IMU time on both sides being 0.5 IMU sampling interval away from GNSS time */
             if ((fabs(ndt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0
                 &&(fabs(timediff(imus.data[iimu].time,rtk->upte_time))>=(rtk->interval-rtk->ins.interval))) {
                 rtk->nominal_update=YES;
@@ -484,7 +485,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,106219,2243); 
+        DebugTime(rtk,Debug_Glo.tNow,547010,2362); 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -505,7 +506,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
             if (NO==rtk->match) continue;   
             /* velocity vector assisted alignment */  
-            if (!rtk->align) {
+            if (!rtk->align||rtk->outage>MAX_OUTIME) {
                 rtk->align=ins_align(rtk,obs,obs_old,n,n_old,&navs,imu,popt);
             } 
             if (SYNC_YES==rtk->upte) {
@@ -539,12 +540,13 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         }
 
         /* for GNSS/INS integration navigation, when GNSS is not available, use motion constraints to assist */
-        if (GINS_OFF!=popt->GI_mode&&n<=0&&(popt->constraint[0]||popt->constraint[1])) {
+        if (GINS_OFF!=popt->GI_mode&&n<=0&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
             motion_constraints(rtk,popt);
         }
 
         /* GNSS outage simulation */
         if (isoutage(rtk,Debug_Glo.tNow,sim)||YES==rtk->nominal_update||0==n) {
+            rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
                 rtk->lcgins.sol.stat=SOLQ_INS;
                 update_instat(&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
@@ -1326,8 +1328,6 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     if (*fopt->antp&&!(readpcv(fopt->antp,&pcvss,&pcvsr))) {
          /* free antenna parameters */
          freeant(&pcvss,&pcvsr);
-        /* free(pcvss.pcv); pcvss.pcv=NULL; pcvss.n=pcvss.nmax=0;
-        free(pcvsr.pcv); pcvsr.pcv=NULL; pcvsr.n=pcvsr.nmax=0; */
         return 0;
     }
 

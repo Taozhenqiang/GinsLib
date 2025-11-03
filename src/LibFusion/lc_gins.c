@@ -98,7 +98,7 @@ extern int ins_update(rtk_t *rtk)
     /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"Pk-1=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2,0); */
     /* trace(12,"Pk-1=\n"); tracemat(12,P,nx,nx,9,2,0); */
 
-    /* Time update */
+    /* time update */
     matmul("NN",nx,nx,nx,ins->Phi,P,FP,1.0,0.0);          /* FP=F*P */
     matmul("NT",nx,nx,nx,FP,ins->Phi,P,1.0,0.0);          /* FPF=FP*F' */
 
@@ -124,23 +124,24 @@ extern int lc_gins(rtk_t *rtk)
     sol_t *sol=&rtk->lcgins.sol;
     prcopt_t *opt=&rtk->opt;
     int i,j,nx=rtk->lcgins.nx,nv=3,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.filter;
-    double p_ins[3],p_gnss[3],iFpv[9],dp[3],time;
+    double p_ins[3],p_gnss[3],iFpv[9],dp[3],zupt_time;
     double lever_n[3],lever_nx[9],Re[9],Rn[9];
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
 
     /* check GNSS status and output INS navigation information if GNSS is unavailable */
     if (SOLQ_INS==rtk->sol.stat) {
+        rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(ins,rtk->lcgins.P,sol,nx);
         return 1;
     }
 
     /* detected vehicle stationary time span (s)*/
-    time=ins->zupt.count*ins->interval*ins->nn;
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;
 
-    /* initialize heap memory, consider NHC/ZUPT constraints */
+    /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints */
     I3=eye(3); x=zeros(nx,1); P=zeros(nx,nx); xp=zeros(nx,1); Pp=zeros(nx,nx);
-    v=zeros(nv+3,1); H=zeros(nv+3,nx); var=mat(nv+3,1); R=zeros(nv+3,nv+3);
+    v=zeros(nv+4,1); H=zeros(nv+4,nx); var=mat(nv+4,1); R=zeros(nv+4,nv+4);
 
     /* initialize states */
     matcpy(P,rtk->lcgins.P,nx,nx);
@@ -174,15 +175,18 @@ extern int lc_gins(rtk_t *rtk)
     for (i=0;i<nv;i++) var[i]=Rn[i+i*nv];
 
     /* motion constraints */
-    /* the vehicle is considered stationary only when the zero speed detection is passed, 
+    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (opt->constraint[1]&&time>1.0&&norm(ins->vel,3)<0.1) { /* zupt*/
+    if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
         nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
     else if (opt->constraint[0]) { /* nhc */
         nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);      
     }
+    if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
+        nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,nx,CONS_ZIHR);
+    }     
 
     /* measurement noise covariance matrix R*/
     for (i=0;i<(nv+nv_cons);i++) {
@@ -451,6 +455,8 @@ extern void update_lcstat(rtk_t *rtk, int stat){
         sol->ns=0;
     }
     else {
+        /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
+        if (rtk->outage<=MAX_OUTIME) rtk->outage=0;
         sol->time=rtk->sol.time;
         sol->ns=rtk->sol.ns;      
     }

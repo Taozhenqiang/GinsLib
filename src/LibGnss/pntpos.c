@@ -758,7 +758,9 @@ static void update_stat(rtk_t *rtk, int n, int stat)
     ins_t *ins=&rtk->ins;
     sol_t *sol=&rtk->sol;
     int nx=rtk->nx;
-   
+    
+    /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
+    if (rtk->outage<=MAX_OUTIME) rtk->outage=0;
     sol->ns=n;
     sol->stat=stat;
     
@@ -1011,9 +1013,9 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         /* if GNSS solution fails, do not enable GNSS/INS integration mode */
         if (stat) {
 
-            /* initialization, consider motion constraints (NHC/ZUPT) */
+            /* initialization, consider motion constraints (NHC/ZUPT/ZIHR) */
             xp=zeros(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
-            nv=2*n+3;
+            nv=2*n+4;
             v=mat(nv,1); H=mat(nv,rtk->nx); var=mat(nv,1); R=zeros(nv,nv); sati=imat(2*n,1);  
 
             /* initialize clock drift */
@@ -1041,7 +1043,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
                 nv_cons=motion_update(rtk,H,v,var,nv+nv_dop,rtk->nx,CONS_NHC);        
             }
             if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-                nv_cons+=motion_update(rtk,H,v,var,nv+nv_dop,rtk->nx,CONS_ZIHR);
+                nv_cons+=motion_update(rtk,H,v,var,nv+nv_dop+nv_cons,rtk->nx,CONS_ZIHR);
             }            
 
             /* measurement noise covariance matrix */
@@ -1081,7 +1083,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             return stat;
         }
         /* motion constraints (nhc/zupt) */
-        else if (opt->constraint[0]||opt->constraint[1]) {
+        else if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
             motion_constraints(rtk,opt);
             return SOLQ_CONS;
         }
@@ -1194,6 +1196,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     if (n<=0) {
         /* if the number of available satellites is 0, output INS solution */
         if (SOLQ_INS==sol->stat) {
+            rtk->outage++;
             if (GINS_LC==opt_.GI_mode||GINS_STC==opt_.GI_mode) {
                 update_instat(&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
             }
@@ -1245,6 +1248,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
 
     /* TC mode and GNSS unavailable, output INS solution */
     if (!stat&&GINS_TC==opt->GI_mode) {
+        rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(&rtk->ins,rtk->P,sol,rtk->nx);
         return SOLQ_NONE;

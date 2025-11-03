@@ -1548,7 +1548,7 @@ extern int outnmea_gsv(uint8_t *buff, const sol_t *sol, const ssat_t *ssat)
 *-----------------------------------------------------------------------------*/
 extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
 {
-    int fr;
+    int fr,motion_flag=0;
     const int sys[]={
         SYS_GPS,SYS_GLO,SYS_GAL,SYS_QZS,SYS_CMP,SYS_IRN,SYS_SBS,0
     };
@@ -1586,6 +1586,13 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     const char *s11[]={
         "OFF","ON","AutoCal","Fix and Hold",""
     };  
+    const char *s12[]={
+        "FAR","PAR","BIE","PAR-BIE",""
+    };
+    const char *s13[]={
+        "NHC","ZUPT","ZIHR",""
+    };
+
     int i,j,k=0;
     char *p=(char *)buff;
     
@@ -1595,7 +1602,22 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     else if (GINS_TC==opt->GI_mode)  p+=sprintf(p,"%s pos mode  : %s%cINS TC\r\n",COMMENTH,s1[opt->mode],'/');
     else if (GINS_STC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS STC\r\n",COMMENTH,s1[opt->mode],'/');
     else p+=sprintf(p,"%s pos mode  : %s\r\n",COMMENTH,s1[opt->mode]);
-    
+
+    for (i=0;i<3;i++) {
+        if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]&&!motion_flag) {
+            p+=sprintf(p,"%s motion cons   :",COMMENTH);
+            motion_flag=1;
+        }
+        if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]) p+=sprintf(p," %s",s13[i]);
+    }
+    if (motion_flag) p+=sprintf(p,"\r\n");
+ 
+    p+=sprintf(p,"%s system    :",COMMENTH);
+    for (i=0;sys[i];i++) {
+        if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
+    }
+    p+=sprintf(p,"\r\n");
+
     if (PMODE_DGPS<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
         p+=sprintf(p,"%s freqs     : ",COMMENTH);
         for (i=0;sys[i];i++) {
@@ -1623,16 +1645,13 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     p+=sprintf(p,"%s ionos opt : %s\r\n",COMMENTH,s4[opt->ionoopt]);
     p+=sprintf(p,"%s tropo opt : %s\r\n",COMMENTH,s5[opt->tropopt]);
     p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);
-        p+=sprintf(p,"%s system    :",COMMENTH);
-        for (i=0;sys[i];i++) {
-            if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
-        }
-    p+=sprintf(p,"\r\n");
+
     p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
     if (Robust_INO==opt->filter||Robust_RES==opt->filter) {
         p+=sprintf(p,"%s M_robust  : %s\r\n",COMMENTH,s9[opt->M_robust]);
     }
     if (PMODE_KINEMA<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
+        p+=sprintf(p,"%s amb opt   : %s\r\n",COMMENTH,s12[opt->artype]);
         p+=sprintf(p,"%s amb res   : %s\r\n",COMMENTH,s10[opt->modear]);
         if (opt->navsys&SYS_GLO) {
             p+=sprintf(p,"%s amb glo   : %s\r\n",COMMENTH,s11[opt->glomodear]);

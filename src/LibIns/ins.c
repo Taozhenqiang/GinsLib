@@ -658,6 +658,22 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
                 }
             }            
         } 
+
+        /* Body frame adjustment, normalized to FRU frame */
+        if (BODYF_FRD==prcopt->bodyframe) {
+            /* gyroscope data */
+            for (i=0;i<3;i++) data[i]=dw[i];
+            dw[0]=data[1];
+            dw[1]=data[0];
+            dw[2]=-data[2];
+            /* accelerometer data */
+            for (i=0;i<3;i++) data[i]=dv[i];
+            dv[0]=data[1];
+            dv[1]=data[0];
+            dv[2]=-data[2];
+            for (i=0;i<3;i++) data[i]=0.0;
+        }
+
         /* rotation angle compensation */
         Mat3mulv(1.0,Cvb,dw,imud.dw);
         Mat3mulv(1.0,Cvb,dv,imud.dv);
@@ -668,9 +684,6 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
         }
         stat=addimudata(imu,&imud);
     }
-    
-    /* free imu file pointer */
-    free(fp);
 
     return stat;
 }
@@ -698,7 +711,7 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
     eth->e1=sqrt(eth->Rl*eth->Rl-eth->Rs*eth->Rs)/eth->Rl;
     eth->e2=sqrt(eth->Rl*eth->Rl-eth->Rs*eth->Rs)/eth->Rs;
     eth->wie=OMGE;
-    /* Gravity related parameters, ref psins */
+    /* gravity related parameters, ref psins */
     eth->beta[0]=5.2790414E-3;
     eth->beta[1]=2.32718E-5;
     eth->beta[2]=3.086E-6;
@@ -877,10 +890,12 @@ extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const 
         ins->p1vel[i]=vel[i];
         ins->p2vel[i]=vel[i];
         ins->vel[i]=vel[i];
-        ins->att[i]=att[i];
+        if (att) ins->att[i]=att[i];
     }
-    att2qnb(ins->att,ins->qnb);
-    att2Cnb(ins->att,ins->Cnb);     
+    if (att) {
+        att2qnb(ins->att,ins->qnb);
+        att2Cnb(ins->att,ins->Cnb);         
+    }
 
     earth_init(ins->pos,ins->vel,&ins->eth);  
 }
@@ -891,19 +906,26 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* NOTE: The structure copy is a shallow copy! */
     rtk_t rtk_=*rtk;
     ins_t *ins=&rtk->ins;
-    int i,vel_flag,nr=0,nr_old=0;
+    int i,j,vel_flag,nr=0,nr_old=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
     /* initialize INS position using GNSS solution */
     rtk_.opt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
-    rtk_.opt.mode=PMODE_SINGLE; /* set to SPP mode */
+    if (!rtk->align) rtk_.opt.mode=PMODE_SINGLE; /* set to SPP mode */
+
+    /* determine the number of satellites of rover in the current epoch and the previous epoch */
+    for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
+    for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
 
     /* manual alignment */
-    if (INSALI_MANUAL==opt->alingetype&&opt->ts.time)
+    if (!rtk->align&&INSALI_MANUAL==opt->alingetype&&opt->ts.time)
     {   
         if ((fabs(timediff(imu[0].time,opt->ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
             init_inspva(ins,opt->initpos,opt->initvel,opt->initatt); 
+            trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
+            showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
+
             return 1;            
         }
         else if (timediff(imu[0].time,opt->ts)>0) {
@@ -912,15 +934,11 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     }
 
     /* velocity vector assisted yaw initialization based on tdcp */
-    if (INSALI_VELTOR==opt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
-
-        /* determine the number of satellites of rover in the current epoch and the previous epoch */
-        for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
-        for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+    if (!rtk->align&&INSALI_VELTOR==opt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
 
         if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
             if (!rtkpos(&rtk_,obs,n,nav)) {
-                trace(7,"error : rtkpos error in ins_align!\n");
+                trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
             }
             /* initialize position and velocity */
@@ -931,7 +949,6 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             att[2]=-atan2(vn[0],vn[1]); /* yaw angle */
 
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
-            /* init_inspva(ins,pos,vn,att); */
             gnss2ins(rtk,pos,ins->pos,1);
             gnss2ins(rtk,vn,ins->vel,2);
             init_inspva(ins,ins->pos,ins->vel,att);
@@ -939,11 +956,54 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
 
             return 1;            
-
         }
     }
 
-    return 0;
+    /* reinitialize INS in the event of a long-term GNSS outage */
+    if (rtk->align&&rtk->outage>MAX_OUTIME&&SYNC_YES==rtk->upte) {
+
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
+            if (!rtkpos(&rtk_,obs,n,nav)) {
+                trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
+                return 1;
+            }
+            /* if GNSS becomes available after a long interruption, set the GNSS interruption count to zero */
+            rtk->outage=0;
+            /* reinitialize ins position and velocity,consider lever arm correction */
+            ecef2pos(rtk_.sol.rr,pos);        
+            ecef2enu(pos,rtk->sol.rr+3,vn);
+            gnss2ins(rtk,pos,ins->pos,1);
+            gnss2ins(rtk,vn,ins->vel,2);
+            init_inspva(ins,ins->pos,ins->vel,NULL);
+
+            /* for (i=3;i<6;i++) {
+                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[i+j*rtk->lcgins.nx]=0.0;
+                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[j+i*rtk->lcgins.nx]=0.0; 
+                rtk->lcgins.P[i+i*rtk->lcgins.nx]=1.0;
+
+                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[(i+3)+j*rtk->lcgins.nx]=0.0;
+                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[j+(i+3)*rtk->lcgins.nx]=0.0;
+                rtk->lcgins.P[(i+3)+(i+3)*rtk->lcgins.nx]=10.0;
+            } */
+           /* for (i=0;i<3;i++) {
+                for (j=0;j<rtk->nx;j++) rtk->P[(i+3)+j*rtk->nx]=0.0;
+                for (j=0;j<rtk->nx;j++) rtk->P[j+(i+3)*rtk->nx]=0.0; 
+                rtk->P[(i+3)+(i+3)*rtk->nx]=1.0;
+
+                for (j=0;j<rtk->nx;j++) rtk->P[(i+6)+j*rtk->nx]=0.0;
+                for (j=0;j<rtk->nx;j++) rtk->P[j+(i+6)*rtk->nx]=0.0;
+                rtk->P[(i+6)+(i+6)*rtk->nx]=100.0;
+            } */
+            /* trace(12,"P=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,16,8,0); */
+            /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,rtk->lcgins.nx,rtk->lcgins.nx,16,8,0); */
+
+            showerr("INS reinitialization completed: %s!",Debug_Glo.chTime);             
+        }
+        
+        return 1;
+    }
+
+    return (rtk->outage>MAX_OUTIME)?1:0;
 }
 
 /* TDCP-assisted motion alignment */
@@ -955,8 +1015,10 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
-    int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,iok=1,mode=Robust_RES;
+    int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,flag=1,vel_flag=1,mode=Robust_RES;
     int vsat[MAXOBS]={0},vsat_old[MAXOBS]={0},svh[MAXOBS]={0},svh_old[MAXOBS]={0};
+
+    if (!n||!n_old) return 0;
 
     /* initializing memory*/
     rs=mat(n,6);    rs_old=mat(n_old,6);   dts=mat(n,2);   dts_old=mat(n_old,2);
@@ -987,7 +1049,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     /* check solution status */
     if (!stat||!stat_old) {
         trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old);
-        iok=0;
+        flag=0;
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
@@ -999,12 +1061,12 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
     /* if GNSS outage, tdcp fails */
     if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
-        iok=0;
+        flag=0;
         trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
     }
 
     /* epoch-to-epoch average velocity estimation based on tdcp */
-    if (iok) {
+    if (flag) {
         /* check whether a cycle slip occurs in the current epoch observation */
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
@@ -1085,7 +1147,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
         }
 
         if (max_vnv<nx) {
-            iok=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
+            vel_flag=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
         }
         else {
 
@@ -1106,10 +1168,10 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
             /* least square estimation */
             if ((info=lsq_roubst(H,v,P,4,nv,dx,Q,mode))) {
-                iok=0;trace(7,"tdcp lsq error info=%d\n!",info);
+                vel_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
             }
             
-            if (iok) {
+            if (vel_flag) {
                 for (i=0;i<3;i++) rtk->sol.rr[i+3]=dx[i]/rtk->interval;  
 
                 /* matcpy(rtk->sol.tdcp_vel,rtk->sol.rr+3,3,1);
@@ -1119,21 +1181,21 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     }
 
     /* if tdcp fails, velocity estimation is performed using Doppler observations */
-    if (!iok&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
-        iok=1;
+    if (flag&&!vel_flag&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
+        vel_flag=1;
         matcpy(rtk->sol.rr+3,sol.rr+3,3,1);
     }
 
     /* if tdcp and dopple fail, velocity estimation is performed using the spp position difference between epochs */
-    if (!iok) {
-        iok=1;
+    if (flag&&!vel_flag) {
+        vel_flag=1;
         /* calculate the average velocity between epochs */
         for (i=0;i<3;i++) rtk->sol.rr[i+3]=(rr[i]-rr_old[i])/rtk->interval;
     }
 
     /* when the vehicle velocity exceeds the threshold, the alignment is considered complete */
-    if (iok&&norm(rtk->sol.rr+3,3)<thres) {
-        iok=0;
+    if (!rtk->align&&vel_flag&&norm(rtk->sol.rr+3,3)<thres) {
+        vel_flag=0;
     }
 
     /* freeing up memory */
@@ -1142,7 +1204,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     free(azel); free(azel_old);
     free(v);    free(H);        free(var);  free(P);        
 
-    return iok;
+    return flag?vel_flag:0;
 }
 
 /* zero speed detection*/
@@ -1183,11 +1245,11 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
 {
     ins_t *ins=&rtk->ins;
     sol_t *sol=&rtk->sol;
-    int i,j,nx=rtk->nx,nv,info;
-    double time,vel,*xp,*Pp,*H,*v,*var,*R;
+    int i,j,nx=rtk->nx,nv=0,info;
+    double zupt_time,vel,*xp,*Pp,*H,*v,*var,*R;
 
     /* detected vehicle stationary time (s) and GNSS velocity */
-    time=ins->zupt.count*ins->interval*ins->nn;
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;
     vel=norm(sol->rr+3,3);
 
     /* initializing memory */
@@ -1197,14 +1259,17 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
     /* copy the covariance matrix */
     matcpy(Pp,rtk->P,nx,nx); 
 
-    /* the vehicle is considered stationary only when the zero speed detection is passed, 
+    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (opt->constraint[1]&&time>1.0&&vel<0.1) { /* zupt*/
+    if (opt->constraint[1]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zupt */
         nv=motion_update(rtk,H,v,var,0,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
     else if (opt->constraint[0]) { /* nhc */
         nv=motion_update(rtk,H,v,var,0,nx,CONS_NHC);        
+    }
+    if (opt->constraint[2]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zihr */
+        nv=motion_update(rtk,H,v,var,nv,nx,CONS_ZIHR);
     }
     
     /* measurement noise covariance matrix */
@@ -1224,12 +1289,14 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
         free(xp); free(Pp); free(H); free(v); free(var);
     }
     /* update solution status */
-    sol->stat=SOLQ_CONS; 
+    sol->stat=SOLQ_CONS;
+
     /* update the covariance matrix */
     matcpy(rtk->P,Pp,nx,nx); 
     
     /* ins feedback correction */
     ins_fedback(rtk,xp);
+
     /* update solution status */
     update_instat(ins,rtk->P,sol,rtk->nx);
 
@@ -1241,7 +1308,7 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 {
     ins_t *ins=&rtk->ins;
     int i,j,k,inv=0,k2[2]={0,2},k3[3]={0,1,2};
-    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},Ha_bg[3]={0.0},yaw=0.0;
+    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},Ha_bg[3]={0.0},att[3]={0.0},yaw=0.0;
 
     DCMT(ins->Cnb,Cbn);
     Mat3mul2(1.0,ins->Cvb,Cbn,Cvn);
@@ -1254,8 +1321,11 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; Ha_bg[1]=0.0; Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;
 
     /* converts the yaw from clockwise to counterclockwise */
-    if (rtk->sol.att[2]<=180) yaw=-rtk->sol.att[2]*D2R;
-    else yaw=(360.0-rtk->sol.att[2])*D2R;
+    if (GINS_LC==rtk->opt.GI_mode) for (i=0;i<3;i++) att[i]=rtk->lcgins.sol.att[i];
+    else for (i=0;i<3;i++) att[i]=rtk->sol.att[i];
+
+    if (att[2]<=180) yaw=-att[2]*D2R;
+    else yaw=(360.0-att[2])*D2R;
 
     /* determine constraint model */
     if (CONS_NHC==mode) {
@@ -1294,7 +1364,7 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 
         if (CONS_NHC==mode||CONS_ZUPT==mode) {
             v[nv]=ins->nhc_vel[k];
-            var[nv]=0.01; /* variance of the constraint, can be adjusted */  
+            var[nv]=1; /* variance of the constraint, can be adjusted */  
         }
         else if (CONS_ZIHR==mode) {
             v[nv]=ins->att[2]-yaw;       /* the difference in yaw between the last GNSS update and the current INS update */
@@ -1363,16 +1433,14 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt)
     Mat3mulv(1.0,Ce,delta_vb,delta_vn);
 
     /* NOTE: velocity update */
-    for (i=0;i<3;i++)
-    {
+    for (i=0;i<3;i++) {
         ins->vel[i]=ins->p1vel[i]+(ins->eth.gcc[i]*interval)+delta_vn[i];
     }
 
     /* NOTE: position update */
     Mat3mulv(1.0/2.0*interval,ins->eth.Fpv,ins->p1vel,temp1);
     Mat3mulv(1.0/2.0*interval,ins->eth.Fpv,ins->vel,temp2);
-    for (i=0;i<3;i++)
-    {
+    for (i=0;i<3;i++) {
         ins->pos[i]=ins->p1pos[i]+(temp1[i]+temp2[i]);
     }
 
@@ -1411,6 +1479,7 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
     nx=ins->nx;
     Fg=zeros(3,3);I=eye(nx);I3=eye(3);
 
+    /* initialize F and G */
     for (i=0;i<nx;i++){
         for (j=0;j<nx;j++){
             ins->F[j+i*nx]=0.0;
@@ -1592,10 +1661,11 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
         }                
     }
 
+    /* discretization of the state transition matrix Phi */
     matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
     /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16,0);
-    trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16,0); */
-    /* trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4,0); */ /*ok*/
+    trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16,0);
+    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4,0); */ /*ok*/
 
     free(Fg);free(I);free(I3);
 }

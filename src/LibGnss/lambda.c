@@ -92,15 +92,15 @@ static void reduction(int n, double *L, double *D, double *Z)
 }
 /* modified lambda (mlambda) search (ref. [2]) -------------------------------
 * args   : n      I  number of float parameters
-*          m      I  number of fixed solution
+*          m      I  number of candidate fixed solution
            L,D    I  transformed covariance matrix
-           zs     I  transformed double-diff phase biases
-           zn     O  fixed solutions
+           zs     I  transformed double-diff float solutions
+           zn     O  transformed double-diff fixed solutions
            s      O  sum of residuals for fixed solutions                    */
 static int search(int n, int m, const double *L, const double *D,
                   const double *zs, double *zn, double *s)
 {
-    int i,j,k,c,nn=0,imax=0;
+    int i,j,k,l,c,nn=0,imax=0;
     double newdist,maxdist=1E99,y;
     double *S=zeros(n,n),*dist=mat(n,1),*zb=mat(n,1),*z=mat(n,1),*step=mat(n,1);
     
@@ -124,10 +124,12 @@ static int search(int n, int m, const double *L, const double *D,
             }
             /* Case 2: store the found candidate and try next valid integer */
             else {
-                if (nn<m) {  /* store the first m initial points */
+                /* store the first m initial points, execute only once */
+                if (nn<m) {  
                     if (nn==0||newdist>s[imax]) imax=nn;
                     for (i=0;i<n;i++) zn[i+nn*n]=z[i];
                     s[nn++]=newdist;
+                    /* if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); } */
                 }
                 else {
                     if (newdist<s[imax]) {
@@ -153,17 +155,20 @@ static int search(int n, int m, const double *L, const double *D,
             }
         }
     }
-    for (i=0;i<m-1;i++) { /* sort by s */
+
+    /* sort the searched set of integer candidates based on quadratic residuals (s) */
+    for (i=0;i<m-1;i++) { 
         for (j=i+1;j<m;j++) {
             if (s[i]<s[j]) continue;
             SWAP(s[i],s[j]);
-            for (k=0;k<n;k++) SWAP(zn[k+i*n],zn[k+j*n]);
+            for (l=0;l<n;l++) SWAP(zn[l+i*n],zn[l+j*n]);
         }
     }
     free(S); free(dist); free(zb); free(z); free(step);
     
     if (c>=LOOPMAX) {
-        fprintf(stderr,"%s : search loop count overflow\n",__FILE__);
+        /* fprintf(stderr,"%s : search loop count overflow\n",__FILE__); */
+        trace(12,"search loop count overflow\n");
         return -2;
     }
     return 0;
@@ -172,7 +177,7 @@ static int search(int n, int m, const double *L, const double *D,
 * integer least-square estimation. reduction is performed by lambda (ref.[1]),
 * and search by mlambda (ref.[2]).
 * args   : int    n      I  number of float parameters
-*          int    m      I  number of fixed solutions
+*          int    m      I  number of candidate fixed solutions
 *          double *a     I  float parameters (n x 1) (double-diff phase biases)
 *          double *Q     I  covariance matrix of float parameters (n x n)
 *          double *F     O  fixed solutions (n x m)
@@ -203,7 +208,8 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
         trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0);
         trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0); */
-
+        
+        /* the ambiguity covariance after decorrelation is used as a screening criterion for PAR */
         for (i=0;i<n;i++) dQz[i]=Qz[i+i*n]; /* dQz=diag(Qz) */
         for (i=1,j=0;i<n;i++) {
             if (dQz[i]>dQz[j]) j=i;
@@ -222,8 +228,8 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         if (!(info=search(n,m,L,D,z,E,s))) {  /* returns 0 if no error */
             
             /* transform the fixed integer ambiguity to the original space, F=Z'\E */
-            info=solve("T",Z,E,n,m,F);
-            /* info=solve("T",Z,E,n,m,F); */ 
+            /* the fixed solution here is the row vector, so F(mxn)=(Z'\E)'=E'*Z^-1 */
+            info=solve("T",Z,E,n,m,F); 
         }
     }
     free(L); free(D); free(Z); free(z); free(E); free(zQ); free(Qz); free(dQz);
@@ -346,4 +352,98 @@ extern double determinant(const double* Qb, int n)
     free(matrix);
 
     return det;
+}
+
+extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const double *y, const double *b, 
+                     int na, int nb, int num_candidate, int mode, double *b_BIE, double *temp) 
+{
+    int i,j,vnum,nx=rtk->nx;
+    double gamma,sum_p,delta_b,res_da=0.0;
+    double *QaIb,*IQb,*Qa,*db,*da;
+
+    IQb=mat(nb,nb); QaIb=mat(na,nb); Qa=mat(na,na); db=mat(nb,1); da=mat(na,1);
+
+    /* quality control for BIE */
+    if (BIE_amb_rec==mode) {
+        matcpy(IQb,Qb,nb,nb);
+        if (matinv(IQb,nb)) {
+            trace(12,"resamb_LAMBDA: floating ambiguity covariance matrix inversion error\n");
+            return 0;
+        }        
+    }
+
+    /* QaIb=Qab*Qb^-1 */
+    for (j=0;j<nb;j++) db[j]=y[j]-b[j];
+    if (BIE_amb_rec==mode) {
+        matmul("NN",na,nb,nb,Qab,IQb,QaIb,1.0,0.0);
+        for (i=0;i<na;i++) Qa[i+i*na]=rtk->P[i+i*nx];
+        /* da=Qab*Qb^-1*(b0-b)*/
+        matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+        res_da=quadratic(da,Qa,na);      
+    }
+    else res_da=0.0;
+
+    /* overall quality control, test threshold */
+    gamma=rtk->sol.thres*rtk->sol.thres*(quadratic(db,Qb,nb)+res_da);
+    vnum=num_candidate;
+    while (1) {
+        for (i=0,sum_p=0.0;i<vnum;i++) {
+            for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+            if (BIE_amb_rec==mode) {
+                matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+                res_da=quadratic(da,Qa,na);              
+            }
+            sum_p+=(quadratic(db,Qb,nb)+res_da);
+        }
+        if (sum_p>gamma*vnum) {
+            vnum--;
+            continue;
+        }
+        else break;
+    }
+
+    /* BIE soluiton */
+    for (i=0,sum_p=0.0;i<vnum;i++) {
+        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+        if (BIE_amb_rec==mode) {
+            matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+            res_da=quadratic(da,Qa,na);              
+        }
+        sum_p+=exp(-0.5*(quadratic(db,Qb,nb)+res_da));
+    }
+    for (i=0;i<vnum;i++) {
+        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+        if (BIE_amb_rec==mode) {
+            matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+            res_da=quadratic(da,Qa,na);              
+        }
+        for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*(quadratic(db,Qb,nb)+res_da))/sum_p;
+    }
+    /* round BIE solution to integer */
+    for (i=0;i<nb;i++) {
+        delta_b=fabs(b_BIE[i]-round(b_BIE[i]));
+        if (delta_b<0.1) b_BIE[i]=round(b_BIE[i]);
+    }
+
+    /* residual quadratic of BIE solution */
+    for (i=0;i<nb;i++) db[i]=y[i]-b_BIE[i]; 
+    if (BIE_amb_rec==mode) {
+        matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+        res_da=quadratic(da,Qa,na);              
+    }
+    temp[0]=quadratic(db,Qb,nb)+res_da;
+
+    /* residual quadratic of ILS solution */
+    for (i=0;i<nb;i++) db[i]=y[i]-b[i]; 
+    if (BIE_amb_rec==mode) {
+        matmul("NN",na,nb,1,QaIb,db,da,1.0,0.0);  
+        res_da=quadratic(da,Qa,na);              
+    }  
+    temp[1]=quadratic(db,Qb,nb)+res_da;
+
+    trace(12,"BIE/chi=%.4f BIE/ILS=%.3f BIE=\n",temp[0]/chisqr[na+nb-1],temp[0]/temp[1]); tracemat(12,b_BIE,1,nb,7,2,0); 
+
+    free(QaIb); free(IQb); free(Qa); free(db); free(da);
+
+    return 1;
 }

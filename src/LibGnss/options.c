@@ -148,6 +148,7 @@ EXPORT opt_t sysopts[]={
 
     {"ins-type",        2,  (void *)&filopt_.ins_type,   ""     }, 
     {"ins-dataorder",   2,  (void *)&prcopt_.imu_order,  ""     },
+    {"ins-bodyframe",   0,  (void *)&prcopt_.bodyframe,  ""     },
     {"ins-imudatype",   0,  (void *)&prcopt_.imudatype,  ""     },
     {"ins-nnts",        0,  (void *)&prcopt_.nn,         ""     },
     {"ins-insample",    0,  (void *)&prcopt_.insample,   ""     },
