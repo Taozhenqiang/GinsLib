@@ -1166,7 +1166,7 @@ extern double code2freq(int sys,uint8_t code,int fcn) {
 *         nav_t  *nav_t    I   navigation data for GLONASS (NULL: not used)
 *return:carrier frequency (Hz) (0.0: error)
  *-----------------------------------------------------------------------------*/
-extern double sat2freq(int sat,uint8_t code,const nav_t *nav) {
+extern double sat2freq(int sat, uint8_t code, const nav_t *nav) {
     int i,fcn=0,sys,prn;
 
     sys=satsys(sat,&prn);

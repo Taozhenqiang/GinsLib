@@ -1108,8 +1108,9 @@ extern "C"
         int glo_fcn[32];                                            /* GLONASS FCN + 8 */
         double cbias[MAXSAT][MAX_CODE_BIAS_FREQS];                  /* satellite DCB [0:P1-C1,1:P2-C2][code] (m) */
         double obias[MAXSTA][MAXCODE];                              /* satellite DCB  (m) GPS/GLONASS/Galileo/Beidou/QZSS*/
+        double bds_tgd[NSATCMP][MAXCODE];                           /* tgd for BDS (m) , the BDS broadcast and precise ephemeris clock reference are inconsistent.*/
         double rbias[MAXRCV][MAX_CODE_BIAS_FREQS][MAX_CODE_BIASES]; /* receiver DCB (0:P1-P2,1:P1-C1,2:P2-C2) (m) */
-        spcv_t spcvs[MAXSAT];                                         /* satellite antenna pcv */
+        spcv_t spcvs[MAXSAT];                                       /* satellite antenna pcv */
         sbssat_t sbssat;                                            /* SBAS satellite corrections */
         sbsion_t sbsion[MAXBAND + 1];                               /* SBAS ionosphere corrections */
         dgps_t dgps[MAXSAT];                                        /* DGPS corrections */

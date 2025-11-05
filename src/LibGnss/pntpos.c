@@ -139,10 +139,10 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
                      double *var, double *dcb)
 {
     double P1,P2,gamma,b1=0.0,freq1=0.0,freq2=0.0;
-    int sat,sys,f2,bias_ix[2],flag=0,fr2[2];
+    int sat,sys,id,f2,bias_ix[2],flag=0,fr2[2];
 
     sat=obs->sat;
-    sys=satsys(sat,NULL);
+    sys=satsys(sat,&id);
     fr2[0]=sys2freid(sys,0,opt);
     fr2[1]=sys2freid(sys,1,opt);
     P1=obs->P[fr2[0]];
@@ -154,8 +154,13 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
     bias_ix[1]=code2bias_ix(sys,obs->code[fr2[1]]);
 
     /* obias_flag 1:DCB product, 2:OSB product */
-    if (OPT_OSB==nav->obias_flag&&opt->sateph==EPHOPT_BRDC&&sys==SYS_CMP) { 
-        flag=0;
+    /* BDS broadcast ephemeris DCB corrections */
+    if (opt->sateph==EPHOPT_BRDC&&sys==SYS_CMP) { 
+        if (bias_ix[0]>=0) {
+            P1-=nav->bds_tgd[id-1][bias_ix[0]];
+            *dcb=nav->bds_tgd[id-1][bias_ix[0]];
+        }
+        if (bias_ix[1]>=0) P2-=nav->bds_tgd[id-1][bias_ix[1]];
     }
     else if (nav->obias_flag>0) {
         if (bias_ix[0]>=0) {
@@ -163,7 +168,6 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
             *dcb=nav->obias[sat-1][bias_ix[0]];
         }
         if (bias_ix[1]>=0) P2-=nav->obias[sat-1][bias_ix[1]];
-        flag=1;
     }
 
     /* P1-C1,P2-C2 DCB correction */
@@ -194,8 +198,6 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
             freq1=code2freq(SYS_CMP,obs->code[fr2[0]],0);
             freq2=code2freq(SYS_CMP,obs->code[fr2[1]],0);
             gamma=SQR(freq1/freq2);
-            if      (!flag&&obs->code[fr2[0]]==CODE_L2I) {P1-=gettgd(sat,nav,0);} /* TGD_B1I */
-            else if (!flag&&obs->code[fr2[1]]==CODE_L7I) {P2-=gettgd(sat,nav,1);} /* TGD_B2I */
             return (P2-gamma*P1)/(1.0-gamma);
         }
         else if (sys==SYS_IRN) { /* L5-S */
@@ -215,10 +217,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const prcopt_t *opt,
             return P1-b1/(gamma-1.0);
         }
         else if (sys==SYS_CMP) {
-            if      (!flag&&obs->code[fr2[0]]==CODE_L2I) b1=gettgd(sat,nav,0); /* TGD_B1I */
-            else if (!flag&&obs->code[fr2[0]]==CODE_L7I) b1=gettgd(sat,nav,1); /* TGD_B2I */
-            *dcb=b1;
-            return P1-b1;
+            return P1;
         }
         else if (sys==SYS_IRN) { /* L5 */
             gamma=SQR(FREQs/FREQL5);

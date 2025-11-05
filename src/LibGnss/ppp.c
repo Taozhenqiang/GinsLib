@@ -332,13 +332,18 @@ static int model_phw(gtime_t time, int sat, const char *type, int opt,
 }
 /* measurement error variance ------------------------------------------------*/
 static double varerr(int sat, int sys, double el, double snr_rover,
-                     int f, const prcopt_t *opt, const obsd_t *obs)
+                     int f, const prcopt_t *opt, const obsd_t *obs, const nav_t *nav)
 {
     double a,b,e;
     double snr_max=opt->err[5];
-    double fact=1.0;
-    double sinel=sin(el),var;
-    int frq,code,prn;
+    double fact=1.0,BDS_fact=1.0,IF_fact=0.0,sinel=sin(el),var,freq1,freq2;
+    int fr1,fr2,frq,code,prn;
+
+    fr1=sys2freid(sys,0,opt); freq1=sat2freq(sat,obs->code[fr1],nav); 
+    fr2=sys2freid(sys,1,opt); freq2=sat2freq(sat,obs->code[fr2],nav); 
+    a=freq1*freq1/(freq1*freq1-freq2*freq2);
+    b=-freq2*freq2/(freq1*freq1-freq2*freq2);
+    IF_fact=sqrt(a*a+b*b);
 
     satsys(sat,&prn);
     frq=f/2;code=f%2; /* 0=phase, 1=code */
@@ -353,10 +358,7 @@ static double varerr(int sat, int sys, double el, double snr_rover,
         case SYS_GAL: fact*=EFACT_GAL;break;
         case SYS_SBS: fact*=EFACT_SBS;break;
         case SYS_QZS: fact*=EFACT_QZS;break;
-        case SYS_CMP: 
-            if (prn<=5||prn>=59)  fact*=EFACT_CMP*EFACT_GEO;
-            else fact*=EFACT_CMP;
-            break;
+        case SYS_CMP: fact*=BDS_fact*EFACT_CMP;break;
         case SYS_IRN: fact*=EFACT_IRN;break;
         default:      fact*=EFACT_GPS;break;
     }
@@ -377,7 +379,7 @@ static double varerr(int sat, int sys, double el, double snr_rover,
         else var+=SQR(opt->err[7]*obs->Lstd[frq]*0.004*0.2); /* 0.004 cycles -> m) */
     }
     /* FIXME: the scaling factor is not 3 for other signals/constellations than GPS L1/L2 */
-    var*=(opt->ionoopt==IONOOPT_IFLC)?SQR(3.0):1.0;
+    var*=(opt->ionoopt==IONOOPT_IFLC)?SQR(IF_fact):1.0;
     return var;
 }
 /* geometry-free phase measurement -------------------------------------------*/
@@ -412,8 +414,9 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
                       double *Lc, double *Pc, double *dcb)
 {
     double freq[NFREQ]={0},C1,C2;
-    int i,ix=0,frq,frq2=1,bias_ix,sys=satsys(obs->sat,NULL),fr;
+    int i,ix=0,frq,frq2=1,bias_ix,sys,id,fr;
 
+    sys=satsys(obs->sat,&id);
     for (i=0;i<opt->nf;i++) {
         fr=sys2freid(sys,i,opt);
         L[i]=P[i]=0.0;
@@ -444,15 +447,21 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
             P[i]+=(nav->ssr[obs->sat-1].cbias[obs->code[i]-1]-nav->ssr[obs->sat-1].cbias[ix]);
         }
         else {   
-            /* apply code bias corrections from file */
-            bias_ix=code2bias_ix(sys,obs->code[fr]);                 /* look up bias index in table */
+            /* apply code bias corrections from file (DCB/OSB) */
+            bias_ix=code2bias_ix(sys,obs->code[fr]);    /* look up bias index in table */
             /* The pseudorange bias and the ephemeris product must be in alignment!!! */
             /* NOTE: Precise ephemeris matching DCB/OSB products or Broadcast ephemeris matches TGD products */
             if (bias_ix>=0&&((EPHOPT_PREC==opt->sateph&&(OPT_DCB==nav->obias_flag||OPT_OSB==nav->obias_flag))
-                ||(EPHOPT_BRDC==opt->sateph&&nav->obias_flag>0))) {
-            
-               P[i]-=nav->obias[obs->sat-1][bias_ix];               /* DCB/OSB*/  
-               if (dcb) dcb[fr]=nav->obias[obs->sat-1][bias_ix];    /* save DCB/OSB */              
+                    ||(EPHOPT_BRDC==opt->sateph&&nav->obias_flag>0))) {
+                /* BDS Broadcast Ephemeris DCB Correction */
+                if (SYS_CMP==sys&&EPHOPT_BRDC==opt->sateph) {
+                    P[i]-=nav->bds_tgd[id-1][bias_ix];               /* DCB/OSB*/  
+                    if (dcb) dcb[fr]=nav->bds_tgd[id-1][bias_ix];    /* save DCB/OSB */                        
+                }
+                else {
+                    P[i]-=nav->obias[obs->sat-1][bias_ix];               /* DCB/OSB*/  
+                    if (dcb) dcb[fr]=nav->obias[obs->sat-1][bias_ix];    /* save DCB/OSB */                     
+                }                             
             }
         }
     }
@@ -734,7 +743,7 @@ static void udclk_ppp(rtk_t *rtk)
                 initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
             }  
             else {
-                rtk->P[ic+ic*rtk->nx]+=SQR(1e-3)*fabs(rtk->tt);
+                rtk->P[ic+ic*rtk->nx]+=SQR(1e-4)*fabs(rtk->tt);
             }
         }
         else if (opt->sysisb==GNSISB_WN) {
@@ -1228,7 +1237,8 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     ecef2pos(rr,pos);
 
     for (i=0;i<n&&i<MAXOBS;i++) {
-        sat=obs[i].sat; satno2id(sat,id);
+        sat=obs[i].sat; 
+        satno2id(sat,id);
 
         /* calculate satellite-receiver geometric distance and satellite elevation angle */
         if ((r=geodist(rs+i*6,rr,e))<=0.0||satazel(pos,e,azel+i*2)<opt->elmin) {
@@ -1359,7 +1369,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             if (v) v[nv]=res;
 
             /* variance */
-            var[nv]=varerr(sat,sys,azel[1+i*2],SNR_UNIT*rtk->ssat[sat-1].snr_rover[fr],j,opt,obs+i);
+            var[nv]=varerr(sat,sys,azel[1+i*2],SNR_UNIT*rtk->ssat[sat-1].snr_rover[fr],j,opt,obs+i,nav);
             var[nv]+=var_tro+SQR(C)*var_ion+var_rs[i];
             if (sys==SYS_GLO&&code==1) var[nv]+=VAR_GLO_IFB;
 

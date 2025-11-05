@@ -780,8 +780,7 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     }
 }
 /* read prec ephemeris, sbas data, tec grid and open rtcm --------------------*/
-static int readpreceph(const filopt_t *fopt, const prcopt_t *prcopt,
-                        nav_t *nav, sbs_t *sbs)
+static int readpreceph(const filopt_t *fopt, const prcopt_t *prcopt, nav_t *nav, sbs_t *sbs)
 {
     seph_t seph0={0};
     int i;
