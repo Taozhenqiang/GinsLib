@@ -485,7 +485,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,547010,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,9861,2126); 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -501,6 +501,9 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
         }
         if (GINS_OFF==popt->GI_mode&&n<=0) continue;
         else if (GINS_OFF!=popt->GI_mode&&n<=0&&!rtk->align) continue;
+
+        /* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
+        if ((GINS_OFF==popt->GI_mode||SYNC_YES==rtk->upte)&&!rtk->dopsgn) dopple_sgn(rtk,obs,obs_old,n,n_old);
 
         /* ins initial alignment */
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){

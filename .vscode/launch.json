@@ -12,7 +12,7 @@
             "args": [
                 "-k",
                 // "CHC_Static_open_20250713.conf",
-                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
+                "IGM-A1_Vehicle_open_20211217-nsh.conf",
                 // "KVH1750_Vehicle_open_20211217-nsh.conf",
                 // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
                 // "IGM-A1_Vehicle_open_20201210.conf",
@@ -30,11 +30,12 @@
                 // "LCI_Marine_open_20150108.conf",
                 // "Readmi_Static_20251010.conf",
                 // "ISA-100C_Vehicle_complex_20220309.conf",
-                "INS_Railway_open_20201004.conf",
+                // "INS_Railway_open_20201004.conf",
+                // "CPT_Vehicle_open_20190328.conf",
                 
                 "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\INS_Railway_open_20201004" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\IGM-A1_Vehicle_open_20211217-nsh" ,//配置文件
             
         },        
         {

@@ -1646,7 +1646,9 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     p+=sprintf(p,"%s tropo opt : %s\r\n",COMMENTH,s5[opt->tropopt]);
     p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);
 
-    p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
+    if (opt->mode>PMODE_SINGLE||opt->GI_mode>GINS_OFF) {
+        p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
+    }
     if (Robust_INO==opt->filter||Robust_RES==opt->filter) {
         p+=sprintf(p,"%s M_robust  : %s\r\n",COMMENTH,s9[opt->M_robust]);
     }

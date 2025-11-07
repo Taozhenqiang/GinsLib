@@ -336,7 +336,7 @@ static double varerr(int sat, int sys, double el, double snr_rover,
 {
     double a,b,e;
     double snr_max=opt->err[5];
-    double fact=1.0,BDS_fact=1.0,IF_fact=0.0,sinel=sin(el),var,freq1,freq2;
+    double fact=1.0,BDS_fact=5.0,IF_fact=0.0,sinel=sin(el),var,freq1,freq2;
     int fr1,fr2,frq,code,prn;
 
     fr1=sys2freid(sys,0,opt); freq1=sat2freq(sat,obs->code[fr1],nav); 
@@ -358,7 +358,10 @@ static double varerr(int sat, int sys, double el, double snr_rover,
         case SYS_GAL: fact*=EFACT_GAL;break;
         case SYS_SBS: fact*=EFACT_SBS;break;
         case SYS_QZS: fact*=EFACT_QZS;break;
-        case SYS_CMP: fact*=BDS_fact*EFACT_CMP;break;
+        case SYS_CMP: 
+            if (prn<=5||prn>=59)  fact*=BDS_fact*EFACT_CMP*EFACT_GEO;
+            else fact*=BDS_fact*EFACT_CMP;
+            break;
         case SYS_IRN: fact*=EFACT_IRN;break;
         default:      fact*=EFACT_GPS;break;
     }
@@ -1024,7 +1027,7 @@ static void satantpcv(const double *rs, const double *rr, const spcv_t *spcv,
     antmodel_s(spcv,nadir,dant);
 }
 /* precise tropospheric model ------------------------------------------------*/
-static double trop_model_prec(gtime_t time, const double *pos,
+static double trop_model_prec(gtime_t time, const prcopt_t *opt, const double *pos,
                               const double *azel, const double *x, double *dtdx,
                               double *var)
 {
@@ -1037,7 +1040,8 @@ static double trop_model_prec(gtime_t time, const double *pos,
     /* mapping function */
     m_h=tropmapf(time,pos,azel,&m_w);
 
-    if (azel[1]>0.0) {
+    /* the estimated parameter is the zenith wet delay */
+    if (opt->tropopt>=TROPOPT_ESTG&&azel[1]>0.0) {
 
         /* m_w=m_0+m_0*cot(el)*(Gn*cos(az)+Ge*sin(az)): ref [6] */
         cotz=1.0/tan(azel[1]);
@@ -1072,7 +1076,7 @@ static int model_trop(gtime_t time, const double *pos, const double *azel,
     }
     if (opt->tropopt==TROPOPT_EST||opt->tropopt==TROPOPT_ESTG) {
         matcpy(trp,x+IT(opt),opt->tropopt==TROPOPT_EST?1:3,1);
-        *dtrp=trop_model_prec(time,pos,azel,trp,dtdx,var);
+        *dtrp=trop_model_prec(time,opt,pos,azel,trp,dtdx,var);
         return 1;
     }
     return 0;
@@ -1146,9 +1150,9 @@ static double satantoff_ppp(prcopt_t *opt, const obsd_t *obs, const nav_t *nav, 
 * args   : int    code      I   observation type (0:phase,1:code)
 * return : status(1:ok,0:error)
 *-----------------------------------------------------------------------------*/
-extern int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int fr, const double *rs, const double *rr, const double *azel, const double res, 
-                        const double cdtr, const double dts, const double dtrp, const double dion, const double bias, const double *danto,
-                        const double *dants, const double dcb)
+extern int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int fr, const double *rs, const double *rr, const double range, 
+                        const double *azel, const double res, const double cdtr, const double dts, const double dtrp, const double dion, 
+                        const double bias, const double *danto, const double *dants, const double dcb)
 {
     int k;
 
@@ -1167,6 +1171,7 @@ extern int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int
     } 
 
     /* frequency independent terms */
+    ssat->range[0]=range;                   /* distance from satellite to receiver at the current epoch */
     for (k=0;k<3;k++) ssat->rs[k]=rs[k];    /* ECEF satellite position */
     if (azel) for (k=0;k<2;k++) ssat->azel[k]=azel[k]; /* azimuth/elevation (deg) */
     ssat->cdtr=cdtr;                        /* receiver clock (m) */
@@ -1205,13 +1210,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     time2str(obs[0].time,str,2);
 
     /* reset satellite status flags */
-    for (i=0;i<MAXSAT;i++) {
-        sys=satsys(i+1,NULL);
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
-            rtk->ssat[i].vsat[fr]=0;
-        }
-    }
+    init_ssatpar(rtk,NULL,0,PPP_vsat);
 
     /* initial or update user position */
     if (GINS_TC==opt->GI_mode&&!post) {
@@ -1388,7 +1387,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
                 obsi[ne]=i; frqi[ne]=fr; ve[ne]=res; vari[ne]=var[nv]; codei[ne]=code; ne++;
             }
             /* update solution status */
-            update_ssat(&rtk->ssat[sat-1],opt,code,sat,fr,rss,rr,azel+i*2,res,cdtr,dts[i*2],dtrp,C*dion,bias,danto,dants,DCB[fr]);
+            update_ssat(&rtk->ssat[sat-1],opt,code,sat,fr,rss,rr,r,azel+i*2,res,cdtr,dts[i*2],dtrp,C*dion,bias,danto,dants,DCB[fr]);
             nv++;
         }
     }
@@ -1632,21 +1631,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel=zeros(2,n);
 
     /* reset ambiguity fix flag */
-    for (i=0;i<MAXSAT;i++) {
-        sys=satsys(i+1,NULL);
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
-            rtk->ssat[i].fix[fr]=0;
-        }
-    }
-    for (i=0;i<n&&i<MAXOBS;i++) {
-        sys=satsys(obs[i].sat,NULL);
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
-            rtk->ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
-            rtk->ssat[obs[i].sat-1].snr_base[fr]=0;
-        }  
-    }
+    init_ssatpar(rtk,obs,n,PPP_ssat);
 
     /* time update of ekf states */
     udstate_ppp(rtk,obs,n,nav);

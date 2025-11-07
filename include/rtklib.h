@@ -138,6 +138,16 @@ extern "C"
 #define SOLF_GNSS 0     /* solution falg: GNSS */
 #define SOLF_ZUPT 1     /* solution falg: ZUPT */
 
+/* init ssat struct for spp/ppp/rtk */
+#define SPP_ssat 0      /* init ssat struct for spp */
+#define SPP_range 1     /* store the distance from the satellite to the receiver at the current epoch */
+#define PPP_ssat 2      /* init ssat struct for ppp */
+#define PPP_vsat 3      /* reset vsat flag for spp */
+#define RTK_ssat 4      /* init ssat struct for rtk */
+#define RTK_resi 5      /* reset resc/resp for rtk */
+#define RTK_fix  6      /* init fix flag for rtk */
+
+
 #define MAX_OUTIME  60  /* INS maximum independent working time */
 
 /* ins constants/macros ----------------------------------------------------------*/
@@ -1500,6 +1510,7 @@ extern "C"
         uint8_t sys;               /* navigation system */
         char id[4];                /* satellite prn */
         uint8_t vs;                /* valid satellite flag single */
+        double range[2];           /* current and previous distance from satellite to receiver */
         double rs[3];              /* satellite position (ecef) (m) */
         double azel[2];            /* azimuth/elevation angles {az,el} (rad) */
         double cdtr;               /* receiver clock error (m) */
@@ -1579,6 +1590,7 @@ extern "C"
         double rb[6];           /* base position/velocity (ecef) (m|m/s) */
         double ru[6];           /* user position/velocity predicted by ins (ecef) (m|m/s) */
         int nx, na;             /* number of float states=(NR(opt)+NB(opt))/fixed states=NR(opt) */
+        double dopsgn;             /* symbol definition of Doppler observations */
         double tt;              /* time difference between current and previous (s) */
         double interval;        /* GNSS sampling interval */
         double *x, *P;          /* float states and their covariance */
@@ -2223,8 +2235,9 @@ extern "C"
     EXPORT int gen_rtcm3(rtcm_t *rtcm, int type, int subtype, int sync);
 
     /* solution functions --------------------------------------------------------*/
-    EXPORT int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int fr, const double *rs, const double *rr, const double *azel, const double res, 
-        const double cdtr, const double dts, const double dtrp, const double dion, const double bias, const double *danto, const double *dants, const double dcb);
+    EXPORT int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int fr, const double *rs, const double *rr, const double range, const double *azel, 
+            const double res, const double cdtr, const double dts, const double dtrp, const double dion, const double bias, const double *danto, const double *dants, 
+            const double dcb);
     EXPORT void initsolbuf(solbuf_t *solbuf, int cyclic, int nmax);
     EXPORT void freesolbuf(solbuf_t *solbuf);
     EXPORT void freesolstatbuf(solstatbuf_t *solstatbuf);
@@ -2341,7 +2354,8 @@ extern "C"
     /* precise positioning -------------------------------------------------------*/
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
-    EXPORT void reset_fix(rtk_t *rtk);
+    EXPORT int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode);
+    EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt);
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);

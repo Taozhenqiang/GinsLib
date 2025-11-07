@@ -161,7 +161,9 @@
 #define POLYCRC32 0xEDB88320u /* CRC32 polynomial */
 #define POLYCRC24Q 0x1864CFBu /* CRC24Q polynomial */
 
-#define SQR(x) ((x)*(x))
+#define SQR(x)      ((x)*(x))
+#define MAX(x,y)    ((x)>=(y)?(x):(y))
+#define SGN(x)      ((x>0)?1:-1)
 #define MAX_VAR_EPH SQR(300.0) /* max variance eph to reject satellite (m^2) */
 
 static const double gpst0[]={1980,1,6,0,0,0};/* gps time reference */
@@ -576,23 +578,156 @@ extern void init_crosscov(rtk_t *rtk, int ns, int n)
     }
 }
 
-/* reset fix and par_ivsatflag for all sats (1=float, 2=fix) --------------------
-*args  :  rtk_t    *rtk   I   rtk structure
-*return:none
+/* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
+extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old)
+{   
+    int i,j,fr,sys,nr,nr_old;
+    double dr;
+
+    /* determine the number of satellites of rover in the current epoch and the previous epoch */
+    for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
+    for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+
+    for (i=0;i<nr;i++) {
+        sys=satsys(obs[i].sat,NULL);
+        fr=sys2freid(sys,0,&rtk->opt);
+        for (j=0;j<nr_old;j++) {
+            if (obs[i].sat==obs_old[j].sat&&obs[i].P[fr]&&obs_old[j].P[fr]&&obs[i].D[fr]) break;
+        }
+        if (j>=nr_old) continue;
+        else break;
+    }
+
+    if (i>=nr) return 0;
+
+    /* pseudorange variation between adjacent epochs */
+    dr=obs[i].P[fr]-obs_old[j].P[fr];
+
+    /* when the satellite is close to the receiver, the Doppler sign is positive; otherwise, it is negative */
+    if (SGN(dr)==-SGN(obs[i].D[fr])) {
+        rtk->dopsgn=-1.0;
+    }
+    else {
+        rtk->dopsgn=1.0;
+    }
+
+    return 1;
+}
+
+/* init ssat structure (SPP/RTK/PPP) ----------------------------------------
+* args  :  rtk_t    *rtk   IO   rtk structure
+           obsd_t   *obs   I   observation struct
+           int        n    I   number of obs satellites
+           int       mode  I   mode option
+* return:none
 *-----------------------------------------------------------------------------*/
-extern void reset_fix(rtk_t *rtk)
+extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
 {
     prcopt_t *opt=&rtk->opt;
+    ssat_t *ssat=rtk->ssat;
     int i,j,sys,fr;
 
-    for (i=0;i<MAXSAT;i++) {
-        sys=satsys(i+1,NULL);
-        for (j=0;j<NFREQ;j++) {
-            fr=sys2freid(sys,j,opt);
-            rtk->ssat[i].fix[fr]=0;
-            rtk->ssat[i].par_ivsat[fr]=0;
-        }       
+    /* reset fix and par_ivsat flag for all sats (RTK) */
+    if (SPP_ssat==mode) {
+        if (!obs||!n) {
+            trace(7,"SPP_ssat init error!\n");
+            return 0;
+        }
+        for (i=0;i<MAXSAT;i++) {
+            satno2id(i+1,ssat[i].id);
+            sys=satsys(i+1,NULL); fr=sys2freid(sys,0,opt);
+            ssat[i].sys=sys;
+            ssat[i].vs=0;  /* initialize spp valid satellite flag */
+            ssat[i].range[0]=0.0;
+            ssat[i].azel[0]=ssat[i].azel[1]=0.0;
+            ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
+            ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0;
+        }
+        for (i=0;i<n;i++) {
+            sys=satsys(obs[i].sat,NULL); 
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
+                ssat[obs[i].sat-1].maxsnr_rover[fr]=MAX((SNR_UNIT*obs[i].SNR[fr]),ssat[obs[i].sat-1].maxsnr_rover[fr]);                
+            }         
+        }
     }
+    /* store the distance from the satellite to the receiver at the current epoch (SPP) */
+    else if (SPP_range==mode) {
+        for (i=0;i<n;i++) {
+            if (ssat[obs[i].sat-1].range[0]>0) {
+                ssat[obs[i].sat-1].range[1]=ssat[obs[i].sat-1].range[0];
+            }
+            else {
+                ssat[obs[i].sat-1].range[1]=0.0;
+            }
+        }
+    }
+    /* reset ambiguity fix flag and SNR (RTK) */
+    else if (RTK_ssat==mode) {
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL); /* gnss system */
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].vsat[fr]=0;  /* valid satellite */
+                ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0.0;
+            }
+        }
+    }
+    /* reset residual phase and code biases for all satellites (RTK) */
+    else if (RTK_resi==mode) {
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
+            }  
+        }
+    }
+    /* clear fix and par_ivsatflag for all sats (1=float, 2=fix) (RTK) */
+    else if (RTK_fix==mode) {
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].fix[fr]=ssat[i].par_ivsat[fr]=0;
+            }       
+        } 
+    }   
+    /* reset ambiguity fix flag and SNR (PPP) */
+    else if (PPP_ssat==mode) {
+        if (!obs||!n) {
+            trace(7,"PPP_ssat init error!\n");
+            return 0;
+        }
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].fix[fr]=0;
+            }
+        }
+        for (i=0;i<n&&i<MAXOBS;i++) {
+            sys=satsys(obs[i].sat,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
+            }  
+        }
+    }
+    /* reset satellite status flags (PPP) */
+    else if (PPP_vsat==mode) {
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].vsat[fr]=0;
+                ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
+            }
+        }
+    }    
+
+    return 1;
 }
 /* satellite system+prn/slot number to satellite number ------------------------
 *convert satellite system+prn/slot number to satellite number
@@ -5112,15 +5247,15 @@ static double nmf(gtime_t time,const double pos[],const double azel[],
 
         {5.8021897E-4,5.6794847E-4,5.8118019E-4,5.9727542E-4,6.1641693E-4},
         {1.4275268E-3,1.5138625E-3,1.4572752E-3,1.5007428E-3,1.7599082E-3},
-        {4.3472961E-2,4.6729510E-2,4.3908931E-2,4.4626982E-2,5.4736038E-2}};
+        {4.3472961E-2,4.6729510E-2,4.3908931E-2,4.4626982E-2,5.4736038E-2}
+    };
     const double aht[]={2.53E-5,5.49E-3,1.14E-3};/* height correction */
 
     double y,cosy,ah[3],aw[3],dm,el=azel[1],lat=pos[0]*R2D,hgt=pos[2];
     int i;
 
     if (el <=0.0) {
-        if (mapfw)
-            *mapfw=0.0;
+        if (mapfw) *mapfw=0.0;
         return 0.0;
     }
     /* year from doy 28,added half a year for southern latitudes */
@@ -5136,8 +5271,7 @@ static double nmf(gtime_t time,const double pos[],const double azel[],
     /* ellipsoidal height is used instead of height above sea level */
     dm=(1.0/sin(el)-mapf(el,aht[0],aht[1],aht[2]))*hgt/1E3;
 
-    if (mapfw)
-        *mapfw=mapf(el,aw[0],aw[1],aw[2]);
+    if (mapfw) *mapfw=mapf(el,aw[0],aw[1],aw[2]);
 
     return mapf(el,ah[0],ah[1],ah[2])+dm;
 }
@@ -5165,8 +5299,7 @@ extern double tropmapf(gtime_t time,const double pos[],const double azel[],
           pos[0]*R2D,pos[1]*R2D,pos[2],azel[0]*R2D,azel[1]*R2D);
 
     if (pos[2]<-1000.0||pos[2]>20000.0) {
-        if (mapfw)
-            *mapfw=0.0;
+        if (mapfw) *mapfw=0.0;
         return 0.0;
     }
 #ifdef IERS_MODEL

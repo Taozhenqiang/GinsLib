@@ -214,7 +214,7 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
-    int n,nf=(PMODE_SINGLE==opt->mode)?1:NF(opt);
+    int n,nf=(PMODE_SINGLE==opt->mode)?1:opt->nf;
 
     trace(3,"rtkopenipos: file=%s\n",file);
 
@@ -780,9 +780,7 @@ static double varerr(rtk_t *rtk, int sat, int sys, double el, double snr_rover, 
                      double bl, double dt, int f, const prcopt_t *opt, const obsd_t *obs)
 {
     double a,b,c,d,e;
-    double snr_max=0.0;
-    double fact;
-    double sinel=sin(el),var;
+    double snr_max=0.0,fact,sinel=sin(el),var;
     int nf=NF(opt),frq,code,prn,fr;
 
     satsys(sat,&prn);
@@ -2213,14 +2211,9 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
     Ri=mat(ns*nf*2+2,1); Rj=mat(ns*nf*2+2,1); im=mat(ns,1);
     tropu=mat(ns,1); tropr=mat(ns,1); dtdxu=mat(ns,3); dtdxr=mat(ns,3);
 
-    /* zero out residual phase and code biases for all satellites */
-    for (i=0;i<MAXSAT;i++) {
-        sys=satsys(i+1,NULL);
-        for (j=0;j<NFREQ;j++) {
-            fr=sys2freid(sys,j,opt);
-            rtk->ssat[i].resp[fr]=rtk->ssat[i].resc[fr]=0.0;
-        }  
-    }
+    /* reset residual phase and code biases for all satellites */
+    init_ssatpar(rtk,NULL,0,RTK_resi);
+
     /* compute factors of ionospheric and tropospheric delay
            - only used if kalman filter contains states for ION and TROP delays
            usually insignificant for short baselines (<10km)*/
@@ -2641,7 +2634,7 @@ static int ddidx(rtk_t *rtk, int *ix, int *ixf, int *lower_ix, int gps, int glo,
                 fr=sys2freid(rtk->ssat[sat].sys,f,opt);
                 /* if ((rtk->ssat[sat].maxsnr_rover[fr]-rtk->ssat[sat].snr_rover[fr]*SNR_UNIT)>5.0) continue; */
                 /* skip if sat not active or invalid for par (including GEO satellites(C01-C05/C59 C60 ...) of BDS) */
-                if (rtk->x[i]==0.0||!rtk->ssat[sat].vsat[fr]||rtk->ssat[sat].par_ivsat[fr]) { /*||(m==3&&prn<=5)||(m==3&&prn>=59)*/
+                if (rtk->x[i]==0.0||!rtk->ssat[sat].vsat[fr]||rtk->ssat[sat].par_ivsat[fr]||(m==3&&prn<=5)||(m==3&&prn>=59)) { 
                     continue;
                 }
                 /* set sat to use for fixing ambiguity if meets criteria */
@@ -2875,7 +2868,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
 
     rtk->sol.ratio=0.0; rtk->nb_ar=0;
     /* clear fix and par_ivsatflag for all sats (1=float, 2=fix) */
-    reset_fix(rtk);
+    init_ssatpar(rtk,NULL,0,RTK_fix);
 
     /* create index of single to double-difference transformation matrix (D')
           used to translate phase biases to double difference */
@@ -2887,7 +2880,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
         if (iter>=maxiter||(low_ix[0]>=0&&rtk->ssat[low_ix[0]].azel[1]>40*D2R)) {
             if (PAR_BIE==opt->artype) {
                 PAR_flag=0;
-                reset_fix(rtk);
+                init_ssatpar(rtk,NULL,0,RTK_fix);
                 num_candidate=10; /* reset num_candidate for BIE */ 
             }
             else return 0; /* exit ambiguity resolution for PAR mode */
@@ -3384,16 +3377,9 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     rs=mat(6,n);   dts=mat(2,n);  var=mat(1,n);
     y=mat(nf*2,n); e=mat(3,n);    azel=zeros(2,n);   freq=zeros(nf,n);
 
-    /* init satellite status arrays */
-    for (i=0;i<MAXSAT;i++) {
-        rtk->ssat[i].sys=satsys(i+1,NULL); /* gnss system */
-        for (j=0;j<NFREQ;j++) {
-            fr=sys2freid(rtk->ssat[i].sys,j,opt);
-            rtk->ssat[i].vsat[fr]=0;  /* valid satellite */
-            rtk->ssat[i].snr_rover[fr]=0;
-            rtk->ssat[i].snr_base[fr] =0;
-        }
-    }
+    /* init vsat vlag and snr */
+    init_ssatpar(rtk,NULL,0,RTK_ssat);
+
     /* compute satellite positions, velocities and clocks for base and rover */
     satposs(time,obs,n,nav,opt->sateph,rs,dts,var,svh);
 
@@ -3608,7 +3594,8 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     rtk->nx=opt->mode<=PMODE_FIXED?NX(opt):pppnx(opt);
     rtk->na=opt->mode<=PMODE_FIXED?NR(opt):pppnx(opt);
     rtk->tt=0.0;
-    rtk->interval=0.0;    
+    rtk->interval=0.0;
+    rtk->dopsgn=0.0;    
     rtk->epoch=0;
     rtk->x=zeros(rtk->nx,1);
     rtk->P=zeros(rtk->nx,rtk->nx);

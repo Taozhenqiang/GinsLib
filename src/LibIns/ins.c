@@ -1181,7 +1181,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     }
 
     /* if tdcp fails, velocity estimation is performed using Doppler observations */
-    if (flag&&!vel_flag&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
+    if (flag&&!vel_flag&&rtk->dopsgn&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
         vel_flag=1;
         matcpy(rtk->sol.rr+3,sol.rr+3,3,1);
     }
