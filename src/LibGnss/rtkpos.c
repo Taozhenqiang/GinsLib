@@ -2858,11 +2858,11 @@ static void holdamb(rtk_t *rtk, const double *xa)
 static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo, int sbs)
 {
     prcopt_t *opt=&rtk->opt;
-    int i,j,nb,nb1,info,nx=rtk->nx,na=rtk->na,sys,fr,num_candidate=(BIE==opt->artype)?10:2,vnum;
-    double *DP,*y,*b,*b_BIE,*db,*Qb,*Qab,*QQ,s[10]={0.0},gamma=0.0,delta_b=0.0;
+    int i,j,nb,nb1,info,nx=rtk->nx,na=rtk->na,sys,fr,num_candidate=(BIE==opt->artype)?10:2;
+    double *DP,*y,*b,*b_BIE,*db,*Qb,*Qab,*QQ,s[10]={0.0};
     double *tcx;
     int *ix,*ixf,low_ix[2]={0},PAR_flag=1,iter=0,maxiter=25;/*25*/
-    double det,p=0.0,sum_p=0.0,coeff[3],temp[2]={0.0};
+    double det,p=0.0,coeff[3],temp[2]={0.0};
 
     trace(3,"resamb_LAMBDA : nx=%d\n",nx);
 

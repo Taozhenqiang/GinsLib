@@ -20,56 +20,56 @@ def plot_imubias(solution):
         ba[n, :] = solution[n, 15:18]  # Accelerometer biases (ug) 
 
     # Plot gyroscope biases
-    scrsz = plt.gcf().get_size_inches() * plt.gcf().dpi  # Screen size (Width x Height)
     Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
 
     # Gyroscope bias plot
-    fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+    fig, ax_bg = plt.subplots(3, 1)
     
-    axes[0].plot(time, bg[:, 0], color=Fcolor[0], linestyle='-', marker='.')
-    axes[0].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[0].set_ylabel('bgx [deg/h]', fontsize=12, family='Times New Roman')
-    axes[0].set_title('Gyroscope bias', fontsize=12, family='Times New Roman')
+    ax_bg[0].plot(time, bg[:, 0], color=Fcolor[0],  linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_bg[0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_bg[0].set_ylabel('bgx [deg/h]', fontsize=12, family='Times New Roman')
+    ax_bg[0].set_title('Gyroscope bias', fontsize=12, family='Times New Roman')
 
-    axes[1].plot(time, bg[:, 1], color=Fcolor[1], linestyle='-', marker='.')
-    axes[1].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[1].set_ylabel('bgy [deg/h]', fontsize=12, family='Times New Roman')
+    ax_bg[1].plot(time, bg[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_bg[1].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_bg[1].set_ylabel('bgy [deg/h]', fontsize=12, family='Times New Roman')
 
-    axes[2].plot(time, bg[:, 2], color=Fcolor[2], linestyle='-', marker='.')
-    axes[2].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[2].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
-    axes[2].set_ylabel('bgz [deg/h]', fontsize=12, family='Times New Roman')
+    ax_bg[2].plot(time, bg[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_bg[2].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_bg[2].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax_bg[2].set_ylabel('bgz [deg/h]', fontsize=12, family='Times New Roman')
 
     # Remove scientific notation for axis labels
-    for ax in axes:
+    for ax in ax_bg:
         ax.ticklabel_format(style='plain', axis='x')
         ax.ticklabel_format(style='plain', axis='y')
 
     plt.tight_layout()
-    plt.show()
+
 
     # Plot accelerometer biases
-    fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+    fig, ax_ba = plt.subplots(3, 1)
 
     # Accelerometer bias plot
-    axes[0].plot(time, ba[:, 0], color=Fcolor[0], linestyle='-', marker='.')
-    axes[0].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[0].set_ylabel('bax [ug]', fontsize=12, family='Times New Roman')
-    axes[0].set_title('Accelerometer bias', fontsize=12, family='Times New Roman')
+    ax_ba[0].plot(time, ba[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_ba[0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_ba[0].set_ylabel('bax [ug]', fontsize=12, family='Times New Roman')
+    ax_ba[0].set_title('Accelerometer bias', fontsize=12, family='Times New Roman')
 
-    axes[1].plot(time, ba[:, 1], color=Fcolor[1], linestyle='-', marker='.')
-    axes[1].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[1].set_ylabel('bay [ug]', fontsize=12, family='Times New Roman')
+    ax_ba[1].plot(time, ba[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_ba[1].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_ba[1].set_ylabel('bay [ug]', fontsize=12, family='Times New Roman')
 
-    axes[2].plot(time, ba[:, 2], color=Fcolor[2], linestyle='-', marker='.')
-    axes[2].grid(True, linestyle='--', color='k', alpha=0.3)
-    axes[2].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
-    axes[2].set_ylabel('baz [ug]', fontsize=12, family='Times New Roman')
+    ax_ba[2].plot(time, ba[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax_ba[2].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax_ba[2].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax_ba[2].set_ylabel('baz [ug]', fontsize=12, family='Times New Roman')
 
     # Remove scientific notation for axis labels
-    for ax in axes:
+    for ax in ax_ba:
         ax.ticklabel_format(style='plain', axis='x')
         ax.ticklabel_format(style='plain', axis='y')
 
     plt.tight_layout()
+    # 调用一次 show() 即可显示所有图像
     plt.show()

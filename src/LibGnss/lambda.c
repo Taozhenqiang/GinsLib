@@ -129,7 +129,7 @@ static int search(int n, int m, const double *L, const double *D,
                     if (nn==0||newdist>s[imax]) imax=nn;
                     for (i=0;i<n;i++) zn[i+nn*n]=z[i];
                     s[nn++]=newdist;
-                    /* if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); } */
+                    if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); }
                 }
                 else {
                     if (newdist<s[imax]) {
@@ -169,8 +169,15 @@ static int search(int n, int m, const double *L, const double *D,
     if (c>=LOOPMAX) {
         /* fprintf(stderr,"%s : search loop count overflow\n",__FILE__); */
         trace(12,"search loop count overflow\n");
+        /* trace(12,"not ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */
         return -2;
     }
+    else {
+        /* trace(12,"ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */        
+    }
+
+
+
     return 0;
 }
 /* lambda/mlambda integer least-square estimation ------------------------------

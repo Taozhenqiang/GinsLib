@@ -39,32 +39,25 @@ def plot_velocity(solution):
         vel0 = vel0[:j, :]
 
     # Set up the figure window
-    fig, axes = plt.subplots(3, 1, figsize=(10, 6))
-    scrsz = plt.gcf().get_size_inches() * plt.gcf().dpi  # Screen size (Width x Height)
+    fig, axes = plt.subplots(3, 1)
     Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
 
     # Plot East (E) velocity change
-    axes[0].plot(time, vel0[:, 0], color=Fcolor[0], linestyle='-', marker='.')
+    axes[0].plot(time, vel0[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
     axes[0].grid(True, linestyle='--', color='k', alpha=0.3)
     axes[0].set_ylabel('E [m/s]', fontsize=12, family='Times New Roman')
-    axes[0].tick_params(axis='y', labelsize=12)
-    axes[0].tick_params(axis='x', labelsize=12)
     axes[0].set_title('Velocity', fontsize=12, family='Times New Roman')
 
     # Plot North (N) velocity change
-    axes[1].plot(time, vel0[:, 1], color=Fcolor[1], linestyle='-', marker='.')
+    axes[1].plot(time, vel0[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
     axes[1].grid(True, linestyle='--', color='k', alpha=0.3)
     axes[1].set_ylabel('N [m/s]', fontsize=12, family='Times New Roman')
-    axes[1].tick_params(axis='y', labelsize=12)
-    axes[1].tick_params(axis='x', labelsize=12)
 
     # Plot Up (U) velocity change
-    axes[2].plot(time, vel0[:, 2], color=Fcolor[2], linestyle='-', marker='.')
+    axes[2].plot(time, vel0[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
     axes[2].grid(True, linestyle='--', color='k', alpha=0.3)
     axes[2].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
     axes[2].set_ylabel('U [m/s]', fontsize=12, family='Times New Roman')
-    axes[2].tick_params(axis='y', labelsize=12)
-    axes[2].tick_params(axis='x', labelsize=12)
 
     # Remove scientific notation for axis labels
     for ax in axes:
