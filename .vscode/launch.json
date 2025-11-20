@@ -18,12 +18,12 @@
                 // "IGM-A1_Vehicle_open_20201210.conf",
                 // "KVH1750_Vehicle_open_20201210.conf",
                 // "EG320N_Vehicle_open_20250419-CHC.conf",
-                "EG320N_Vehicle_complex_20250419-CHC.conf",
+                // "EG320N_Vehicle_complex_20250419-CHC.conf",
                 // "EG320N_Vehicle_open_20250418_campus1-CHC.conf",
                 // "EG320N_Vehicle_open_20250418_campus2-CHC.conf",
                 // "EG320N_Vehicle_open_20250418-CHC.conf",
                 // "KVH1750_Vehicle_complex_20210715.conf",
-                // "STIM300_Vehicle_complex_20230102.conf",
+                "STIM300_Vehicle_complex_20230102.conf",
                 // "FSAS_Vehicle_open_20150722.conf",
                 // "FSAS_Vehicle_complex_20220315.conf",
                 // "HG4930_Vehicle_open_20201128.conf", 
@@ -35,7 +35,7 @@
                 
                 "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\EG320N_Vehicle_complex_20250419" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\STIM300_Vehicle_complex_20230102" ,//配置文件
             
         },        
         {

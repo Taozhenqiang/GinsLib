@@ -552,12 +552,12 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
                 rtk->lcgins.sol.stat=SOLQ_INS;
-                update_instat(&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
+                update_instat(&rtk->opt,&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
                 outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);                
             }
             else if (GINS_TC==popt->GI_mode){
                 rtk->sol.stat=SOLQ_INS;
-                update_instat(&rtk->ins,rtk->P,&rtk->sol,rtk->nx); 
+                update_instat(&rtk->opt,&rtk->ins,rtk->P,&rtk->sol,rtk->nx); 
                 outsol(fp,&rtk->sol,rtk->rb,popt,sopt);                 
             }
             continue;

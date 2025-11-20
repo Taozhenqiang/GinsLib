@@ -328,7 +328,7 @@ const solopt_t solopt_default={
     0,
     0,
     0,
-    0,/* degf,outhead,outopt,outvel,outatt,outbga,outiFlag,datum,height,geoid */
+    0,/* degf,outhead,outpos,outopt,outvel,outatt,outbga,outiFlag,datum,height,geoid */
     0,
     0,
     0,

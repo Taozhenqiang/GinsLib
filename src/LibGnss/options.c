@@ -178,6 +178,7 @@ EXPORT opt_t sysopts[]={
     {"out-solformat",   3,  (void *)&solopt_.posf,       SOLOPT },
     {"out-outhead",     3,  (void *)&solopt_.outhead,    SWTOPT },
     {"out-outopt",      3,  (void *)&solopt_.outopt,     SWTOPT },
+    {"out-outpos",      0,  (void *)&prcopt_.outpos,     ""     },
     {"out-outvel",      3,  (void *)&solopt_.outvel,     SWTOPT },
     {"out-outatt",      3,  (void *)&solopt_.outatt,     SWTOPT },
     {"out-outbga",      3,  (void *)&solopt_.outbga,     SWTOPT },

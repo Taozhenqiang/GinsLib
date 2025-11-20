@@ -668,7 +668,7 @@ static void udpos_spp(rtk_t *rtk)
     ins_t *ins=&rtk->ins;
 
     /* convert INS solutions (pos and vel) to GNSS antenna center */
-    ins2gnss(rtk,p_ins,6);
+    ins2gnss(ins,p_ins,6);
     pos2ecef(p_ins,rtk->ru);
 
     xyz2enu(p_ins,Cne);
@@ -775,7 +775,7 @@ static void update_stat(rtk_t *rtk, int n, int stat)
     sol->stat=stat;
     
     /* update ins state */
-    update_instat(ins,rtk->P,sol,nx);
+    update_instat(opt,ins,rtk->P,sol,nx);
 
     /* store clock and isb */
     rtk->sol.dtr[0]=rtk->x[IC(0,opt)]/CLIGHT; /* GPS clock (s) */
@@ -1208,10 +1208,10 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         if (SOLQ_INS==sol->stat) {
             rtk->outage++;
             if (GINS_LC==opt_.GI_mode||GINS_STC==opt_.GI_mode) {
-                update_instat(&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
+                update_instat(&rtk->opt,&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
             }
             else if (GINS_TC==opt_.GI_mode) {
-                update_instat(&rtk->ins,rtk->P,sol,rtk->nx);                  
+                update_instat(&rtk->opt,&rtk->ins,rtk->P,sol,rtk->nx);                  
             }
         }
         trace(7,"no observation data");
@@ -1243,7 +1243,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     if (!stat&&GINS_TC==opt->GI_mode) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
-        update_instat(&rtk->ins,rtk->P,sol,rtk->nx);
+        update_instat(&rtk->opt,&rtk->ins,rtk->P,sol,rtk->nx);
         return SOLQ_NONE;
     }
 

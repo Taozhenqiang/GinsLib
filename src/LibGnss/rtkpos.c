@@ -888,7 +888,7 @@ static void udpos(rtk_t *rtk, double tt)
     if(GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
-        ins2gnss(rtk,p_ins,3);
+        ins2gnss(&rtk->ins,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
         if (GINS_STC==rtk->opt.GI_mode) {
@@ -1568,7 +1568,7 @@ static int zdres(rtk_t  *rtk, int base, const obsd_t *obs, int n, const double *
 
     /* initial or update user position */
     if (!base&&GINS_TC==opt->GI_mode) {
-        ins2gnss(rtk,p_ins,3);
+        ins2gnss(&rtk->ins,p_ins,3);
         pos2ecef(p_ins,rr_);
     }
     else {
@@ -2197,7 +2197,7 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
 
     /* initial or update user position */
     if (GINS_TC==opt->GI_mode){
-        ins2gnss(rtk,p_ins,3);
+        ins2gnss(ins,p_ins,3);
         pos2ecef(p_ins,rr);
     } 
     else {
@@ -3017,7 +3017,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                     
                     trace(11,"resamb : validation ok (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)\n",
                         nb,s[0]==0.0?0.0:s[1]/s[0],rtk->sol.thres,s[0],s[1]);
-                    trace(12,"fix=\n"); tracemat(12,b,1,nb,7,2,0);
+                    trace(11,"fix=\n"); tracemat(12,b,1,nb,7,2,0);
 
                     /* translate double diff fixed phase-bias values to single diff fix phase-bias values, result in xa */
                     restamb(rtk,bias,nb,xa);
@@ -3033,7 +3033,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                 }
                 else {
                     /* validation failed */
-                    trace(12,"float=\n"); tracemat(12,y,1,nb,7,2,0);
+                    trace(11,"float=\n"); tracemat(12,y,1,nb,7,2,0);
                     trace(10,"ambiguity validation failed (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)!\n",nb,s[1]/s[0],rtk->sol.thres,s[0],s[1]);
                     nb=0;break;                    
                 }
@@ -3210,7 +3210,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
 {  
     const prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
-    double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9];
+    double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9],p_gnss[6]={0.0};
     int nf=rtk->opt.ionoopt==IONOOPT_IFLC?1:rtk->opt.nf,i,j,k,sys,fr;
 
     if (stat!=SOLQ_NONE) rtk->sol.stat=stat;
@@ -3224,10 +3224,21 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         /* update solution status */
         if (SOLQ_FIX==stat) 
         {
-            pos2ecef(ins->xa+6,re);
-            xyz2enu(ins->xa+6,Cne);
-            DCMT(Cne,Cen);
-            Mat3mulv(1.0,Cen,ins->xa+3,ve);
+            /* convert INS solution to GNSS center */
+            if (OUTPOS_GNSS==opt->outpos) {
+                insfix2gnss(ins,p_gnss,6);
+
+                pos2ecef(p_gnss,re);
+                xyz2enu(p_gnss,Cne);
+                DCMT(Cne,Cen);
+                Mat3mulv(1.0,Cen,p_gnss+3,ve); 
+            }
+            else {
+                pos2ecef(ins->xa+6,re);
+                xyz2enu(ins->xa+6,Cne);
+                DCMT(Cne,Cen);
+                Mat3mulv(1.0,Cen,ins->xa+3,ve);                
+            }
     
             for (i=0;i<3;i++) {
                 rtk->sol.rr [i]=re[i];
@@ -3259,7 +3270,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
             covtosol_bga(Qbg,Qba,&rtk->sol);
         }
         else {
-            update_instat(ins,rtk->P,&rtk->sol,rtk->nx);
+            update_instat(opt,ins,rtk->P,&rtk->sol,rtk->nx);
             /* if the ambiguity resolution of the current epoch fails, reset the hold ambiguity count */
             rtk->nfix=0;                       
         }

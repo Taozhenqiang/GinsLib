@@ -132,7 +132,7 @@ extern int lc_gins(rtk_t *rtk)
     if (SOLQ_INS==rtk->sol.stat) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
-        update_instat(ins,rtk->lcgins.P,sol,nx);
+        update_instat(opt,ins,rtk->lcgins.P,sol,nx);
         return 1;
     }
 
@@ -151,7 +151,7 @@ extern int lc_gins(rtk_t *rtk)
     matinv(iFpv,3);
 
     /* lever arm correction to convert INS position to GNSS position */
-    ins2gnss(rtk,p_ins,3);
+    ins2gnss(&rtk->ins,p_ins,3);
     ecef2pos(rtk->sol.rr,p_gnss);
 
     Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
@@ -393,18 +393,30 @@ extern void ins_fedback_fix(rtk_t *rtk, double *dx)
 }
 
 /* update INS solution state */
-extern void update_instat(ins_t *ins, double *P, sol_t *sol, int nx)
+extern void update_instat(const prcopt_t *opt, ins_t *ins, double *P, sol_t *sol, int nx)
 {
     int i,j;
     double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qbg[9],Qba[9],Qr[9],Cne[9],Cen[9];
+    double p_gnss[6];
 
     /* solution status */
     sol->time=ins->time;
+    
+    /* convert ins pos/vel to GNSS pos/vel */
+    if (OUTPOS_GNSS==opt->outpos) {
+        ins2gnss(ins,p_gnss,6);
 
-    pos2ecef(ins->pos,re);
-    xyz2enu(ins->pos,Cne);
-    DCMT(Cne,Cen);
-    Mat3mulv(1.0,Cen,ins->vel,ve);
+        pos2ecef(p_gnss,re);
+        xyz2enu(p_gnss,Cne);
+        DCMT(Cne,Cen);
+        Mat3mulv(1.0,Cen,p_gnss+3,ve);  
+    }
+    else {
+        pos2ecef(ins->pos,re);
+        xyz2enu(ins->pos,Cne);
+        DCMT(Cne,Cen);
+        Mat3mulv(1.0,Cen,ins->vel,ve);
+    }
 
     for (i=0;i<3;i++){
         sol->rr [i]=re[i];
@@ -445,7 +457,7 @@ extern void update_lcstat(rtk_t *rtk, int stat){
     int i,j,nx=rtk->lcgins.nx;
 
     /* update ins state */
-    update_instat(ins,rtk->lcgins.P,sol,nx);
+    update_instat(&rtk->opt,ins,rtk->lcgins.P,sol,nx);
 
     /* solution status */
     if (stat!=SOLQ_NONE) sol->stat=stat;

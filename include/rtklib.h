@@ -147,6 +147,8 @@ extern "C"
 #define RTK_resi 5      /* reset resc/resp for rtk */
 #define RTK_fix  6      /* init fix flag for rtk */
 
+#define OUTPOS_INS 0        /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
+#define OUTPOS_GNSS 1       /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
 
 #define MAX_OUTIME  60  /* INS maximum independent working time */
 
@@ -1152,7 +1154,7 @@ extern "C"
         gtime_t eventime;  /* time of event (GPST) */
         double rr[6];      /* position/velocity (m|m/s) */
                            /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
-        double vel[3];
+        double vel[3];     /* ins velocity (m/s) */
         double att[3];     /* attitude [pitch,roll,yaw] (deg) */
         double bg[3];      /* gyroscope bias (deg/h) */
         double ba[3];      /* accelerometer bias (ug) */ 
@@ -1370,6 +1372,7 @@ extern "C"
         int imudatype;           /* imu data type (IMUT_???) */
         char imu_order[10];      /* imu data order (AgGd, AgGr, GdAg, GrAg) */
         int bodyframe;           /* body frame direction(0:RFU,1:FRD) */
+        int outpos;              /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
         int alingetype;          /* ins initial alignment type */
@@ -2396,7 +2399,8 @@ extern "C"
     EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);
     EXPORT void phi_update(ins_t *ins, const prcopt_t *popt);
     EXPORT int  ins_update(rtk_t *rtk);
-    EXPORT void ins2gnss(rtk_t *rtk, double *pv_g, int n);
+    EXPORT void ins2gnss(ins_t *ins, double *pv_g, int n);
+    EXPORT void insfix2gnss(ins_t *ins, double *pv_g, int n);
     EXPORT void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int mode);
     EXPORT void earth_update(const double *pos, const double *vel, eth_t *eth);
     EXPORT void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, double *dv_rot, double *dv_pad);
@@ -2406,7 +2410,7 @@ extern "C"
     EXPORT void ins_fedback_fix(rtk_t *rtk, double *dx);
     EXPORT int lc_gins(rtk_t *rtk);
     EXPORT void update_lcstat(rtk_t *rtk, int stat);
-    EXPORT void update_instat(ins_t *ins, double *P, sol_t *sol, int nx);
+    EXPORT void update_instat(const prcopt_t *opt, ins_t *ins, double *P, sol_t *sol, int nx);
     EXPORT void update_ins(ins_t *ins);
     EXPORT void earth_init(const double *pos, const double *vel, eth_t *eth);
     EXPORT void update_crosscov(rtk_t *rtk);

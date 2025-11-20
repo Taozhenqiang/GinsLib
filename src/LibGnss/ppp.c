@@ -583,7 +583,7 @@ static void udpos_ppp(rtk_t *rtk)
     if (GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
-        ins2gnss(rtk,p_ins,3);
+        ins2gnss(&rtk->ins,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
         if (GINS_STC==rtk->opt.GI_mode) {
@@ -1438,7 +1438,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
 {
     const prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
-    double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9];    
+    double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9],p_gnss[6];    
     int i,j,sys,fr;
 
     /* test # of valid satellites */
@@ -1470,10 +1470,21 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
         /* update solution status */
         if (SOLQ_FIX==stat) 
         {
-            pos2ecef(ins->xa+6,re);
-            xyz2enu(ins->xa+6,Cne);
-            DCMT(Cne,Cen);
-            Mat3mulv(1.0,Cen,ins->xa+3,ve);
+            /* convert INS solution to GNSS center */
+            if (OUTPOS_GNSS==opt->outpos) {
+                insfix2gnss(ins,p_gnss,6);
+
+                pos2ecef(p_gnss,re);
+                xyz2enu(p_gnss,Cne);
+                DCMT(Cne,Cen);
+                Mat3mulv(1.0,Cen,p_gnss+3,ve); 
+            }
+            else {
+                pos2ecef(ins->xa+6,re);
+                xyz2enu(ins->xa+6,Cne);
+                DCMT(Cne,Cen);
+                Mat3mulv(1.0,Cen,ins->xa+3,ve);                
+            }
     
             for (i=0;i<3;i++) {
                 rtk->sol.rr [i]=re[i];
@@ -1507,7 +1518,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
         }
         else {
             /* update ins state */
-            update_instat(ins,rtk->P,&rtk->sol,rtk->nx);
+            update_instat(opt,ins,rtk->P,&rtk->sol,rtk->nx);
         }
     } 
     else if (rtk->sol.stat==SOLQ_FIX) {

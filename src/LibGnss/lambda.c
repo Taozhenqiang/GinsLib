@@ -61,9 +61,10 @@ static void perm(int n, double *L, double *D, int j, double del, double *Z)
     int k;
     double eta,lam,a0,a1;
     
-    eta=D[j]/del;
-    lam=D[j+1]*L[j+1+j*n]/del;
-    D[j]=eta*D[j+1]; D[j+1]=del;
+    eta=D[j]/del;    /* di/di+1_hat */
+    lam=D[j+1]*L[j+1+j*n]/del; /* li+1_hat*/
+    D[j]=eta*D[j+1]; /* di_hat */
+    D[j+1]=del;      /* di+1_hat */
     for (k=0;k<=j-1;k++) {
         a0=L[j+k*n]; a1=L[j+1+k*n];
         L[j+k*n]=-L[j+1+j*n]*a0+a1;
@@ -74,9 +75,9 @@ static void perm(int n, double *L, double *D, int j, double del, double *Z)
     for (k=0;k<n;k++) SWAP(Z[k+j*n],Z[k+(j+1)*n]);
 }
 /* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) (ref.[1]) ---------------*/
-static void reduction(int n, double *L, double *D, double *Z)
+static void reduction(int n, double *L, double *D, double *Z, int *idx)
 {
-    int i,j,k;
+    int i,j,k,temp;
     double del;
     
     j=n-2; k=n-2;
@@ -84,6 +85,9 @@ static void reduction(int n, double *L, double *D, double *Z)
         if (j<=k) for (i=j+1;i<n;i++) gauss(n,L,Z,i,j);
         del=D[j]+L[j+1+j*n]*L[j+1+j*n]*D[j+1];
         if (del+1E-6<D[j+1]) { /* compared considering numerical error */
+            /* swap index */
+            if (idx) temp=idx[j]; idx[j]=idx[j+1]; idx[j+1]=temp;
+
             perm(n,L,D,j,del,Z);
             k=j; j=n-2;
         }
@@ -129,7 +133,7 @@ static int search(int n, int m, const double *L, const double *D,
                     if (nn==0||newdist>s[imax]) imax=nn;
                     for (i=0;i<n;i++) zn[i+nn*n]=z[i];
                     s[nn++]=newdist;
-                    if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); }
+                    /* if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); } */
                 }
                 else {
                     if (newdist<s[imax]) {
@@ -170,13 +174,11 @@ static int search(int n, int m, const double *L, const double *D,
         /* fprintf(stderr,"%s : search loop count overflow\n",__FILE__); */
         trace(12,"search loop count overflow\n");
         /* trace(12,"not ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */
-        return -2;
+        return -1;
     }
     else {
         /* trace(12,"ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */        
     }
-
-
 
     return 0;
 }
@@ -197,21 +199,25 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
 {
     int info,i,j;
     double *L,*D,*Z,*z,*E,*zQ,*Qz,*dQz;
+    int *idx;
     
     if (n<=0||m<=0) return -1;
-    L=zeros(n,n); D=mat(n,1); Z=eye(n); z=mat(n,1); E=mat(n,m); zQ=mat(n,n); Qz=mat(n,n); dQz=mat(n,1);
+    L=zeros(n,n); D=mat(n,1); Z=eye(n); z=mat(n,1); E=mat(n,m); zQ=mat(n,n); Qz=mat(n,n); dQz=mat(n,1); idx=imat(n,1);
     
+    for (i=0;i<n;i++) idx[i]=i;
+
     /* LD (lower diagonal) factorization (Q=L'*diag(D)*L) */
     if (!(info=LD(n,Q,L,D))) {
         
         /* lambda decorrelation (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) */
-        reduction(n,L,D,Z);
+        reduction(n,L,D,Z,idx);
 
         /* decorrelated ambiguity covariance matrix */
         matmul("NN",n,n,n,Z,Q,zQ,1.0,0.0);
         matmul("NT",n,n,n,zQ,Z,Qz,1.0,0.0);
         /* trace(12,"Qz=\n");tracemat(12,Qz,n,n,10,5,0); */
-        /* trace(12,"Z'=\n"); tracemat(12,Z,n,n,10,5,0);
+
+        /* trace(12,"Z'=\n");tracemat(12,Z,n,n,10,5,0);
         trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
         trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0);
         trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0); */
@@ -223,7 +229,7 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         }
 
         /* index of maximum variance */
-        /* low_ix[0]=ix[2*j+1]-(ixf[2*j]*MAXSAT+rtk->na); low_ix[1]=ixf[2*j+1]; */ 
+        /* low_ix[0]=ix[2*idx[j]+1]-(ixf[2*idx[j]]*MAXSAT+rtk->na); low_ix[1]=ixf[2*idx[j]+1]; */ 
 
         matmul("NN",n,n,1,Z,a,z,1.0,0.0);
         /* trace(12,"z=\n"); tracemat(12,z,n,1,7,2,0); */
@@ -267,7 +273,7 @@ extern int lambda_reduction(int n, const double *Q, double *Z)
         return info;
     }
     /* lambda reduction */
-    reduction(n,L,D,Z);
+    reduction(n,L,D,Z,NULL);
      
     free(L); free(D);
     return 0;

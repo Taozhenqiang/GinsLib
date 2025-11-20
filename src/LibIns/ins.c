@@ -1284,7 +1284,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
         trace(7,"motion_constraints: filter_gins error info=%d\n",info);
         sol->stat=SOLQ_INS;
         /* update solution status */
-        update_instat(ins,rtk->P,sol,rtk->nx);
+        update_instat(opt,ins,rtk->P,sol,rtk->nx);
         
         free(xp); free(Pp); free(H); free(v); free(var);
     }
@@ -1298,7 +1298,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
     ins_fedback(rtk,xp);
 
     /* update solution status */
-    update_instat(ins,rtk->P,sol,rtk->nx);
+    update_instat(opt,ins,rtk->P,sol,rtk->nx);
 
     free(xp); free(Pp); free(H); free(v); free(var);
 }
@@ -1672,9 +1672,8 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
 
 
 /* Convert INS solutions to GNSS center */
-extern void ins2gnss(rtk_t *rtk, double *pv_g, int n)
+extern void ins2gnss(ins_t *ins, double *pv_g, int n)
 {
-    ins_t *ins=&rtk->ins;
     int i;
     double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
 
@@ -1689,6 +1688,30 @@ extern void ins2gnss(rtk_t *rtk, double *pv_g, int n)
         vskewmv(1.0,wbeb,ins->lever,temp);
         Mat3mulv(1.0,ins->Cnb,temp,d_v);
         vnadd(3,ins->vel,1.0,d_v,1.0,pv+3);        
+    }
+
+    for (i=0;i<n;i++)
+    {
+        pv_g[i]=pv[i];
+    }
+}
+
+extern void insfix2gnss(ins_t *ins, double *pv_g, int n)
+{
+    int i;
+    double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
+
+    Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
+    Mat3mulv(1.0,F1,ins->lever,lever_n);
+    vnadd(3,ins->xa+6,1.0,lever_n,1.0,pv);       
+
+    if (n==6) {
+        DCMT(ins->Cnb,Cbn);
+        Mat3mulv(1.0,Cbn,ins->eth.wnie,wbie);
+        Mat3add2(ins->wbib,1.0,wbie,-1.0,wbeb);
+        vskewmv(1.0,wbeb,ins->lever,temp);
+        Mat3mulv(1.0,ins->Cnb,temp,d_v);
+        vnadd(3,ins->xa+3,1.0,d_v,1.0,pv+3);        
     }
 
     for (i=0;i<n;i++)

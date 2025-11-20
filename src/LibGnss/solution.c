@@ -1298,14 +1298,19 @@ static int outpos(uint8_t *buff, const char *s, const sol_t *sol,
     
     if (opt->outvel) { /* output velocity */
         soltocov_vel(sol,P);
-        ecef2enu(pos,sol->rr+3,vel);
-        covenu(pos,P,Q);
+        covenu(pos,P,Q);        
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
+            ecef2enu(pos,sol->vel,vel);           
+        }
+        else {
+            ecef2enu(pos,sol->rr+3,vel);         
+        }
         p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
                    "%8.5f%s%8.5f",
                    sep,vel[1],sep,vel[0],sep,vel[2],sep,SQRT(Q[4]),sep,
                    SQRT(Q[0]),sep,SQRT(Q[8]),sep,sqvar(Q[1]),sep,sqvar(Q[2]),
-                   sep,sqvar(Q[5]));
-    }
+                   sep,sqvar(Q[5]));  
+    }    
     if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         if (opt->outatt) { /* output attitude */
             p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s"
@@ -1321,7 +1326,15 @@ static int outpos(uint8_t *buff, const char *s, const sol_t *sol,
                     sol->ba[0],sep,sol->ba[1],sep,sol->ba[2],sep,sqvar(sol->qb[0]),
                     sep,sqvar(sol->qb[1]),sep,sqvar(sol->qb[2]),sep,sqvar(sol->qb[3]),
                     sep,sqvar(sol->qb[4]),sep,sqvar(sol->qb[5]));
-        }           
+        }   
+        if (opt->outiflag) { /* output solution flag (GNSS/ZUPT) */
+            if (SOLF_ZUPT==sol->iFlag) {
+                p+=sprintf(p,"%s%8s",sep,"ZUPT");
+            } 
+            else {
+                p+=sprintf(p,"%s%8s",sep,"GNSS");
+            }
+        }         
     }
     p+=sprintf(p,"\r\n");
     return (int)(p-(char *)buff);
@@ -1592,6 +1605,9 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     const char *s13[]={
         "NHC","ZUPT","ZIHR",""
     };
+    const char *s14[]={
+        "INS","GNSS",
+    };
 
     int i,j,k=0;
     char *p=(char *)buff;
@@ -1603,9 +1619,13 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     else if (GINS_STC==opt->GI_mode) p+=sprintf(p,"%s pos mode  : %s%cINS STC\r\n",COMMENTH,s1[opt->mode],'/');
     else p+=sprintf(p,"%s pos mode  : %s\r\n",COMMENTH,s1[opt->mode]);
 
+    if (GINS_OFF!=opt->GI_mode) {
+        p+=sprintf(p,"%s out pos   : %s\r\n",COMMENTH,s14[opt->outpos]);
+    }
+
     for (i=0;i<3;i++) {
         if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]&&!motion_flag) {
-            p+=sprintf(p,"%s motion cons   :",COMMENTH);
+            p+=sprintf(p,"%s motion con:",COMMENTH);
             motion_flag=1;
         }
         if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]) p+=sprintf(p," %s",s13[i]);
