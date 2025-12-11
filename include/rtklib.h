@@ -146,9 +146,19 @@ extern "C"
 #define RTK_ssat 4      /* init ssat struct for rtk */
 #define RTK_resi 5      /* reset resc/resp for rtk */
 #define RTK_fix  6      /* init fix flag for rtk */
+#define RTK_slip 7      /* reset clip flag for rtk */
 
 #define OUTPOS_INS 0        /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
 #define OUTPOS_GNSS 1       /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
+
+#define OUTFILE_AZEL   0    /* output azel file */
+#define OUTFILE_SATDOP 1    /* output satdop file */
+
+#define diag_var 0       /* option: covariance */
+#define diag_wei 1       /* option: weights */
+
+#define TURE  1          /* true */         
+#define FASLE 0          /* false */
 
 #define MAX_OUTIME  60  /* INS maximum independent working time */
 
@@ -495,6 +505,9 @@ extern "C"
 #define SOLQ_CONS 8   /* solution status: motion constraints */
 #define MAXSOLQ 9     /* max number of solution status */
 
+#define MECH_FORWARD  0   /* forward ins mechanization */
+#define MECH_BACKWARD 1   /* backward ins mechanization */
+
 #define SOLTYPE_FORWARD 0          /* solution type: forward */
 #define SOLTYPE_BACKWARD 1         /* solution type: backward */
 #define SOLTYPE_COMBINED 2         /* solution type: combined */
@@ -681,7 +694,7 @@ extern "C"
     typedef struct
     {                                 /* observation data record */
         gtime_t time;                 /* receiver sampling time (GPST) */
-        uint8_t sat, rcv;             /* satellite/receiver number (rcv=1,rover; rcv=2,base), satellite index starts at 1 */
+        uint8_t sat,rcv;              /* satellite/receiver number (rcv=1,rover; rcv=2,base), satellite index starts at 1 */
         uint16_t SNR[NFREQ + NEXOBS]; /* signal strength (0.001 dBHz) */
         uint8_t LLI[NFREQ + NEXOBS];  /* loss of lock indicator */
         uint8_t code[NFREQ + NEXOBS]; /* code indicator (CODE_???) */
@@ -709,8 +722,7 @@ extern "C"
         double e1;                  /* earth's first eccentricity */
         double e2;                  /* earth's second eccentricity */
         double RM;                  /* curvature radius corresponding to longitude */
-        double RN;                  /* curvature radius corresponding to latitude */
-        double Fpv[9];              /* position update auxiliary matrix (3x3) */ 
+        double RN;                  /* curvature radius corresponding to latitude */ 
         double g0;                  /* equatorial gravity */
         double g;                   /* local gravity */
         double beta[4];             /* gravity related parameters */
@@ -723,7 +735,7 @@ extern "C"
         double F3[9];
         double F4[9];               /* psi angle error model gravity coefficient */
         double Frr[9];              /* auxiliary matrix for position update */
-        double Frp[9];              /* error transformation matrix from BLH frame to ENU frame */
+        double Frp[9];              /* error transformation matrix from ENU frame to BLH frame */
     } eth_t;
 
     typedef struct
@@ -752,8 +764,9 @@ extern "C"
         double p1dw[3];              /* gyroscope angle increment of the previous epoch */
         double p1dv[3];              /* accelerometer speed increment of the previous epoch */            
         double pos[3];               /* ins position (B,L,H) (rad,rad,m) */
-        double vel[3];               /* ins velocity (E,N,U) */
-        double nhc_vel[3];           /* vehicle speed in v frame (m/s) */
+        double vel[3];               /* ins velocity in n frame (m/s) (E,N,U) */
+        double body_vel[3];          /* ins velocity in b frame (m/s) */
+        double nhc_vel[3];           /* ins velocity in v frame (m/s) */
         double p1vel[3];             /* ins velocity of the previous one epoch (E,N,U) */
         double p1pos[3];             /* ins position of the previous one epoch (E,N,U) */
         double p2vel[3];             /* ins velocity of the previous two epoch (E,N,U) */
@@ -1158,14 +1171,15 @@ extern "C"
         double att[3];     /* attitude [pitch,roll,yaw] (deg) */
         double bg[3];      /* gyroscope bias (deg/h) */
         double ba[3];      /* accelerometer bias (ug) */ 
-        double qr[9];      /* position variance/covariance (m^2) */
+        double qr[6];      /* position variance/covariance (m^2) */
                             /* {c_xx,c_yy,c_zz,c_xy,c_yz,c_zx} or */
                             /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
-        double qv[9];      /* velocity variance/covariance (m^2/s^2) */
-        double qa[9];      /* attitude variance/covariance (deg^2) */
+        double qv[6];      /* velocity variance/covariance (m^2/s^2) */
+        double qa[6];      /* attitude variance/covariance (deg^2) */
         double qb[6];      /* bg/ba variance/covariance (deg^2/h^2,ug^2)*/
                            /* {bgx,bgy,bgz,bax,bay,baz} */
-        double tdcp_vel[3];/* tdcp velocity (m/s) */
+        double tdcp_vel[3];/* tdcp velocity in e frame (m/s) */
+        double yaw;        /* yaw based TDCP velocity (deg) */
         double dtr[7];     /* receiver clock bias to time systems (s) */ /* clock for GPS and isb for others (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
         uint8_t type;      /* type (0:xyz-ecef,1:enu-baseline) */
         uint8_t stat;      /* solution status (SOLQ_???) */
@@ -1174,6 +1188,7 @@ extern "C"
         float age;         /* age of differential (s) */
         float ratio;       /* AR ratio factor for validation */
         float ADOP;        /* AR ADOP for validation */
+        double dop[4];     /* DOP (GDOP,PDOP,HDOP,VDOP) */
         float prev_ratio1; /* previous initial AR ratio factor for validation */
         float prev_ratio2; /* previous final AR ratio factor for validation */
         float thres;       /* AR ratio threshold for validation */
@@ -1293,6 +1308,7 @@ extern "C"
         int GI_mode;             /* GNSS/INS positioning mode (GINS_???) */    
         int mode;                /* GNSS positioning mode (PMODE_???) */
         int soltype;             /* solution type (0:forward,1:backward,2:combined) */
+        int reverse;             /* analysis direction (0:forward,1:backward) */
         int nf;                  /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
         int fre[MAXSYS][MAXFREQ];    
                                  /* idx of frequencies
@@ -1428,6 +1444,7 @@ extern "C"
         int sstat;          /* solution statistics level (0:off,1:states,2:residuals) */
         int ipos;           /* solution information (0:off,1:on) */
         int azel;           /* azimuth/elevation angle (0:off,1:on) */
+        int satdop;         /* number of observed satellites and dop (0:off,1:on) */
         int stato[statopt];      /* output stat [0]pos, [1]vel, [2]clk, [3]tro, [4]ion, [5]disb, [6]csat, [7]tdcp vel (0:no,1:yes)*/
         int trace;          /* debug trace level (0:off,1-5:debug) */
         double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
@@ -2263,7 +2280,7 @@ extern "C"
     EXPORT void outprcopt(FILE *fp, const prcopt_t *opt);
     EXPORT void outsolhead(FILE *fp, const prcopt_t *popt, const solopt_t *opt);
     EXPORT void outsol(FILE *fp, sol_t *sol, const double *rb, const prcopt_t *popt, const solopt_t *opt);
-    EXPORT void outsolstat(rtk_t *rtk,const nav_t *nav);
+    EXPORT void outsolstat(rtk_t *rtk, const nav_t *nav);
     EXPORT void outsolex(FILE *fp, const sol_t *sol, const ssat_t *ssat,
                          const solopt_t *opt);
     EXPORT int outnmea_rmc(uint8_t *buff, const sol_t *sol);
@@ -2352,11 +2369,14 @@ extern "C"
     EXPORT int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
                       const nav_t *nav, const prcopt_t *opt, sol_t *sol, const double *azel, const int *vsat);  
     EXPORT double varerr_spp(const prcopt_t *opt, const ssat_t *ssat, const obsd_t *obs, double el, int sys); 
-    EXPORT void outsolazel(rtk_t *rtk, const obsd_t *obs, const int nu);                 
+    EXPORT int valsol(sol_t *sol, const double *azel, const int *vsat, int n, const prcopt_t *opt, const double *v, double *P, int nv, int nx);
+    EXPORT void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode);                 
 
     /* precise positioning -------------------------------------------------------*/
+    EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss);
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
+    EXPORT void diag_Cov(int nx, const double *var, double *P, int opt);
     EXPORT int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode);
     EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt);
@@ -2365,6 +2385,7 @@ extern "C"
     EXPORT int rtkopenstat(const char *file, int level);
     EXPORT int rtkopenipos(prcopt_t *opt, const char *file);
     EXPORT int rtkopenazel(prcopt_t *opt, const char *file);
+    EXPORT int rtkopensatdop(prcopt_t *opt, const char *file);
     EXPORT void rtkcloseoutfile(void);
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
@@ -2380,11 +2401,10 @@ extern "C"
                       const nav_t *nav, const double *azel, double *x, double *P);
 
     /* post-processing positioning -----------------------------------------------*/
-    EXPORT int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
-                       const solopt_t *sopt, filopt_t *fopt);              
+    EXPORT int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt);              
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
-    EXPORT void imucpy(imud_t *imu, imu_t imus, int iimu, const int nn);
+    EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
     EXPORT int  ins_init(ins_t *ins, const prcopt_t *prcopt);
     EXPORT void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att);
     EXPORT int  readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week);
@@ -2399,10 +2419,10 @@ extern "C"
     EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);
     EXPORT void phi_update(ins_t *ins, const prcopt_t *popt);
     EXPORT int  ins_update(rtk_t *rtk);
-    EXPORT void ins2gnss(ins_t *ins, double *pv_g, int n);
+    EXPORT void ins2gnss(const prcopt_t *popt, ins_t *ins, double *pv_g, int n);
     EXPORT void insfix2gnss(ins_t *ins, double *pv_g, int n);
     EXPORT void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int mode);
-    EXPORT void earth_update(const double *pos, const double *vel, eth_t *eth);
+    EXPORT void earth_update(const prcopt_t *popt,const double *pos, const double *vel, eth_t *eth);
     EXPORT void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, double *dv_rot, double *dv_pad);
     EXPORT void imu_fedback(ins_t *ins, imud_t *imu);
     EXPORT void psi2phi_corr(ins_t *ins, const double *dr, double *dx);

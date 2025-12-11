@@ -1,7 +1,6 @@
 #Minimum requirement of CMake version : 3.5.0
 cmake_minimum_required(VERSION 3.10.0)	#项目执行所需最低版本cmake
 
-
 #Project name and version number
 project(${libGnss} VERSION 0.1.0)	#设置项目名称
 

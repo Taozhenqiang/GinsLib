@@ -6,17 +6,31 @@
 
 static imu_t imus={0};          /* imu data */
 
-extern void imucpy(imud_t *imu, imu_t imus, int iimu, const int nn)
+extern void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn)
 {
-    int i;
+    int i,j;
 
-    /* single sample + previous*/   
+    /* single sample + previous */   
     if (1==nn) {
         imu[0]=imus.data[iimu];     
     }
     /* double sample */
     else if (2==nn) {
-        for (i=0;i<nn;i++) imu[i]=imus.data[iimu+i];
+        if (MECH_FORWARD==popt->reverse) {
+            for (i=0;i<nn;i++) imu[i]=imus.data[iimu+i];            
+        }
+        else if (MECH_BACKWARD==popt->reverse) {
+            for (i=0;i<nn;i++) imu[i]=imus.data[iimu-i];
+        }
+    }
+
+    /* backward mechanization negates the sign of the gyroscope output */
+    if (MECH_BACKWARD==popt->reverse) {
+        for (i=0;i<nn;i++) {
+            for (j=0;j<3;j++) {
+                imu[i].dw[j]=-imu[i].dw[j];
+            }
+        }
     }
 }
 
@@ -721,14 +735,14 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
     eth->RM=eth->RN*(1.0-eth->e1*eth->e1)/(1.0-eth->e1*eth->e1*sinB2);
     Rmh=eth->RM+pos[2];Rnh=eth->RN+pos[2];
 
+    /* the default is forward mechanization */
     eth->wnie[0]=0.0; eth->wnie[1]=eth->wie*cos(pos[0]); eth->wnie[2]=eth->wie*sin(pos[0]);
-    eth->wnen[0]=-vel[1]/(Rmh); 
-    eth->wnen[1]= vel[0]/(Rnh); 
+    eth->wnen[0]=-vel[1]/Rmh; 
+    eth->wnen[1]= vel[0]/Rnh; 
     eth->wnen[2]= vel[0]*sin(pos[0])/(Rnh*cos(pos[0])); 
     vnadd(3,eth->wnie,1.0,eth->wnen,1.0,eth->wnin);
     for (i=0;i<9;i++)
     {
-        eth->Fpv[i]=0.0; 
         eth->F1 [i]=0.0; 
         eth->F2 [i]=0.0;
         eth->F3 [i]=0.0;
@@ -737,9 +751,6 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
         eth->Frr[i]=0.0;        
         eth->Frp[i]=0.0;
     }
-    eth->Fpv[1]=1.0/Rmh;
-    eth->Fpv[3]=secB/Rnh;
-    eth->Fpv[8]=1.0;
 
     eth->g=eth->g0*(1+eth->beta[0]*sinB2-eth->beta[1]*sin2B2)-eth->beta[2]*pos[2];
     eth->gn[0]=0.0; eth->gn[1]=0.0; eth->gn[2]=-1.0*eth->g;
@@ -752,7 +763,7 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
 }
 
 /* update earth related parameters -----------------------------------------------*/
-extern void earth_update(const double *pos, const double *vel, eth_t *eth)
+extern void earth_update(const prcopt_t *popt, const double *pos, const double *vel, eth_t *eth)
 { 
     int i;
     double sinB,cosB,cos2B,tanB,sin2B,sinB2,sin2B2,secB,secB2,Rmh,Rnh,Rmh2,Rnh2,temp1[3];
@@ -765,14 +776,23 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
     Rmh=eth->RM+pos[2];Rnh=eth->RN+pos[2];
     Rmh2=Rmh*Rmh;Rnh2=Rnh*Rnh;
 
-    eth->wnie[0]=0.0; eth->wnie[1]=eth->wie*cos(pos[0]); eth->wnie[2]=eth->wie*sin(pos[0]);
-    eth->wnen[0]=-vel[1]/(Rmh); 
-    eth->wnen[1]= vel[0]/(Rnh); 
-    eth->wnen[2]= vel[0]*sin(pos[0])/(Rnh*cos(pos[0]));
+    if (MECH_FORWARD==popt->reverse) {
+        eth->wnie[0]=0.0; eth->wnie[1]=eth->wie*cos(pos[0]); eth->wnie[2]=eth->wie*sin(pos[0]);       
+    }
+    /* backward mechanization negates the wie symbol */
+    else if (MECH_BACKWARD==popt->reverse) {
+        eth->wnie[0]=0.0; eth->wnie[1]=-eth->wie*cos(pos[0]); eth->wnie[2]=-eth->wie*sin(pos[0]);  
+    }
+
+    /* wnen */
+    eth->wnen[0]=-vel[1]/Rmh; 
+    eth->wnen[1]= vel[0]/Rnh; 
+    eth->wnen[2]= vel[0]*sin(pos[0])/(Rnh*cos(pos[0])); 
+    /* wnin */
     vnadd(3,eth->wnie,1.0,eth->wnen,1.0,eth->wnin);
+
     for (i=0;i<9;i++)
     {
-        eth->Fpv[i]=0.0; 
         eth->F1 [i]=0.0; 
         eth->F2 [i]=0.0;
         eth->F3 [i]=0.0;
@@ -781,9 +801,9 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
         eth->Frr[i]=0.0;        
         eth->Frp[i]=0.0;
     }
-    eth->Fpv[1]=1.0/Rmh;
-    eth->Fpv[3]=secB/Rnh;
-    eth->Fpv[8]=1.0;
+    eth->Frp[1]=1.0/Rmh;               
+    eth->Frp[3]=secB/Rnh;               
+    eth->Frp[8]=1.0;
 
     eth->g=eth->g0*(1+eth->beta[0]*sinB2-eth->beta[1]*sin2B2)-eth->beta[2]*pos[2];
     eth->gn[0]=0.0; eth->gn[1]=0.0; eth->gn[2]=-eth->g;
@@ -803,7 +823,6 @@ extern void earth_update(const double *pos, const double *vel, eth_t *eth)
     eth->Fav[1]=-1.0/Rmh;            eth->Fav[3]=1.0/Rnh;                eth->Fav[6]=tanB/Rnh;    
     eth->Frr[0]=vel[2]/Rnh-vel[1]*tanB/Rmh;                              eth->Frr[1]=vel[0]*tanB/Rmh;
     eth->Frr[2]=-vel[0]/Rnh;         eth->Frr[4]=vel[2]/Rmh;             eth->Frr[5]=-vel[1]/Rmh;
-    eth->Frp[1]=1/Rmh;               eth->Frp[3]=secB/Rnh;               eth->Frp[8]=1.0;
 }
 
 /* initialize ins related parameters -----------------------------------------------*/
@@ -822,7 +841,6 @@ extern int ins_init(ins_t *ins, const prcopt_t *opt)
     ins->dttol=ins->interval/1e3;
     ins->discretime=(opt->insample%10)==0?1e-1:((opt->insample%25)==0?25*ins->interval:ins->interval);
     
-   
     /* accelerometer and gyroscope velocity random walk and angle random walk and bias drive noise */
     ins->corr_time=opt->corr_time; 
     ins->psd_gyro=opt->psd_gyro;
@@ -868,6 +886,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *opt)
         ins->p1pos[i]=0.0;
         ins->pos[i]=0.0;
         ins->vel[i]=0.0;
+        ins->body_vel[i]=0.0;
         ins->nhc_vel[i]=0.0;
         ins->att[i]=0.0;       
     }
@@ -901,7 +920,7 @@ extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const 
 }
 
 /* ins initial alignment -------------------------------------------*/
-extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt)
+extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *popt)
 {
     /* NOTE: The structure copy is a shallow copy! */
     rtk_t rtk_=*rtk;
@@ -909,34 +928,37 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     int i,j,vel_flag,nr=0,nr_old=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
+    /* initialize rtk_ TDCP velocity */
+    for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=rtk_.sol.tdcp_vel[i]=0.0; 
+
     /* initialize INS position using GNSS solution */
     rtk_.opt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
-    if (!rtk->align) rtk_.opt.mode=PMODE_SINGLE; /* set to SPP mode */
+    if (!rtk->align) rtk_.opt.mode=PMODE_SINGLE; /* set to spp mode */
 
     /* determine the number of satellites of rover in the current epoch and the previous epoch */
     for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
     for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
 
     /* manual alignment */
-    if (!rtk->align&&INSALI_MANUAL==opt->alingetype&&opt->ts.time)
+    if (!rtk->align&&INSALI_MANUAL==popt->alingetype&&popt->ts.time)
     {   
-        if ((fabs(timediff(imu[0].time,opt->ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
+        if ((fabs(timediff(imu[0].time,popt->ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
-            init_inspva(ins,opt->initpos,opt->initvel,opt->initatt); 
+            init_inspva(ins,popt->initpos,popt->initvel,popt->initatt); 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
 
             return 1;            
         }
-        else if (timediff(imu[0].time,opt->ts)>0) {
+        else if (timediff(imu[0].time,popt->ts)>0) {
             showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); return 0;
         }
     }
 
     /* velocity vector assisted yaw initialization based on tdcp */
-    if (!rtk->align&&INSALI_VELTOR==opt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
+    if (!rtk->align&&INSALI_VELTOR==popt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
 
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,popt)) {
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
@@ -944,12 +966,23 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             /* initialize position and velocity */
             ecef2pos(rtk_.sol.rr,pos);        
             ecef2enu(pos,rtk->sol.rr+3,vn);
+            
             /* initialize pitch and yaw using the velocity in the n frame */
             att[0]=atan2(vn[2],sqrt(vn[0]*vn[0]+vn[1]*vn[1])); /* pitch angle */
-            att[2]=-atan2(vn[0],vn[1]); /* yaw angle */
+            att[2]=-atan2(vn[0],vn[1]);                        /* yaw angle */
+            /* yaw (counterclockwise to clockwise, deg) */
+            rtk->sol.yaw=att[2]*R2D;
+            if (rtk->sol.yaw<0) rtk->sol.yaw*=-1;
+            else rtk->sol.yaw=360.0-rtk->sol.yaw;
+            /* output the initial alignment solution status */
+            /* outsolstat(rtk,nav); */
 
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
             gnss2ins(rtk,pos,ins->pos,1);
+            /* reverse the velocity vector if the solution type is backward */
+            if (SOLTYPE_BACKWARD==popt->soltype) {
+                for (i=0;i<3;i++) vn[i]=-vn[i];
+            }
             gnss2ins(rtk,vn,ins->vel,2);
             init_inspva(ins,ins->pos,ins->vel,att);
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
@@ -962,7 +995,8 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* reinitialize INS in the event of a long-term GNSS outage */
     if (rtk->align&&rtk->outage>MAX_OUTIME&&SYNC_YES==rtk->upte) {
 
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,opt)) {
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,popt)) 
+        {
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
                 return 1;
@@ -1013,6 +1047,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     sol_t sol={0},sol_old={0};
     double *rs,*rs_old,*dts,*dts_old,*vare,*vare_old,*resp,*resp_old,*azel,*azel_old;
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
+    double sgn=(SOLTYPE_BACKWARD==opt->soltype?-1.0:1.0);
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
     int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,flag=1,vel_flag=1,mode=Robust_RES;
@@ -1031,11 +1066,9 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
     /* configured in spp mode */
     if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) {
-        opt_.mode=PMODE_SINGLE;
-        opt_.GI_mode=GINS_OFF;
+        opt_.GI_mode=GINS_OFF;     opt_.mode=PMODE_SINGLE;
         opt_.sateph =EPHOPT_BRDC;
-        opt_.ionoopt=IONOOPT_BRDC;
-        opt_.tropopt=TROPOPT_SAAS;
+        opt_.ionoopt=IONOOPT_BRDC; opt_.tropopt=TROPOPT_SAAS;
     }
 
     /* satellite positons, velocities and clocks of current and previous epoch */
@@ -1048,8 +1081,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
     /* check solution status */
     if (!stat||!stat_old) {
-        trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old);
-        flag=0;
+        flag=0; trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old); 
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
@@ -1061,20 +1093,13 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
     /* if GNSS outage, tdcp fails */
     if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
-        flag=0;
-        trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
+        flag=0; trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
     }
 
     /* epoch-to-epoch average velocity estimation based on tdcp */
     if (flag) {
         /* check whether a cycle slip occurs in the current epoch observation */
-        for (i=0;i<MAXSAT;i++) {
-            sys=satsys(i+1,NULL);
-            for (j=0;j<rtk->opt.nf;j++) {
-                fr=sys2freid(sys,j,opt);
-                rtk->ssat[i].slip[fr]=0;
-            }
-        }
+        init_ssatpar(rtk,NULL,n,RTK_slip);
 
         /* detect cycle slip by LLI/geometry-free/Melbourne-Wubbena linear combination */
         detslp_ll_ppp(rtk,obs,n);
@@ -1150,17 +1175,11 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
             vel_flag=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
         }
         else {
-
             /* mode=(max_vnv>nx)?Robust_OFF:Robust_RES; */
             nv=outrej_spp(nv,4,thres_ouj,v,H,var,NULL,NULL,NULL,vsat,0);
 
             /* calculate the weight matrix */
-            for (i=0;i<nv;i++) {
-                for (j=0;j<nv;j++) {
-                    P[i+j*nv]=0.0;
-                    if (i==j) P[i+j*nv]=1.0/var[i];
-                }
-            }
+            diag_Cov(nv,var,P,diag_wei);
 
             /* trace(12,"TDCP H=\n");tracemat(12,H,nv,nx,9,4,0);
             trace(12,"TDCP v=\n");tracemat(12,v,nv,1,9,4,0);
@@ -1170,12 +1189,19 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
             if ((info=lsq_roubst(H,v,P,4,nv,dx,Q,mode))) {
                 vel_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
             }
+
+            /* calculate the posterior residuals */
+            matmul("NN",nv,nx,1,H,dx,v,1.0,-1.0);
+
+            /* validate solution */
+            if (valsol(&sol,azel,vsat,n,opt,v,P,nv,nx)==0) {
+                vel_flag=0;trace(7,"validation of tdcp solution failed nv=%d\n",nv);
+            }
             
             if (vel_flag) {
-                for (i=0;i<3;i++) rtk->sol.rr[i+3]=dx[i]/rtk->interval;  
-
-                /* matcpy(rtk->sol.tdcp_vel,rtk->sol.rr+3,3,1);
-                outsolstat(rtk,nav);  */                  
+                for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*dx[i]/rtk->interval;  
+                matcpy(rtk->sol.tdcp_vel,rtk->sol.rr+3,3,1);
+                /* outsolstat(rtk,nav); */                   
             }           
         }      
     }
@@ -1190,7 +1216,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     if (flag&&!vel_flag) {
         vel_flag=1;
         /* calculate the average velocity between epochs */
-        for (i=0;i<3;i++) rtk->sol.rr[i+3]=(rr[i]-rr_old[i])/rtk->interval;
+        for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*(rr[i]-rr_old[i])/rtk->interval;
     }
 
     /* when the vehicle velocity exceeds the threshold, the alignment is considered complete */
@@ -1318,7 +1344,9 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     Mat3mvskew(-1.0,ins->Cvb,ins->lever_nhc,lever_v);
 
     /* H of ZIHR */
-    Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; Ha_bg[1]=0.0; Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;
+    Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; 
+    Ha_bg[1]=0.0; 
+    Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;
 
     /* converts the yaw from clockwise to counterclockwise */
     if (GINS_LC==rtk->opt.GI_mode) for (i=0;i<3;i++) att[i]=rtk->lcgins.sol.att[i];
@@ -1377,12 +1405,12 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 }
 
 /* ins mechanization -----------------------------------------------*/
-extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt) 
+extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt) 
 {
     int i;
     double vel_m[3],pos_m[3],temp1[3],temp2[3],dv_rot[3],dv_pad[3],da_con[3],interval,*I3;
     double rv[3],rs[9],Irs[9],Ce[9],dw[3],dv[3],delta_vb[3],delta_vn[3];
-    double Cnnk[9],Cnkn[9],Cbbk[9],Cnb[9];
+    double Cnnk[9],Cnkn[9],Cbbk[9],Cnb[9],Cbn[9]={0.0};
     double qnb[4],qnkn[4],qbbk[4];
 
     I3=eye(3);
@@ -1402,65 +1430,119 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt)
     vnadd(3,ins->p1vel,3.0/2.0,ins->p2vel,-1.0/2.0,vel_m);
     vnmul(3,vel_m,interval/2.0,temp1);
 
-    Mat3mulv(1.0,ins->eth.Fpv,temp1,temp2);
+    Mat3mulv(1.0,ins->eth.Frp,temp1,temp2);
     vnadd(3,ins->p1pos,1.0,temp2,1.0,pos_m);
 
     /* update earth parameters at k-1/2 */
-    earth_update(pos_m,vel_m,&ins->eth);
+    earth_update(popt,pos_m,vel_m,&ins->eth);
 
     /* coning error, rotation error and paddling error compensation */
     conpad_fedback(ins,dw,dv,da_con,dv_rot,dv_pad);
 
     vnmul(3,dw,1.0/interval,ins->wbib);
     vnmul(3,dv,1.0/interval,ins->fb);
-    if (ATT_DCM==opt->att_type) {
-        Mat3mulv(1.0,Cnb,ins->fb,ins->fn);        
+
+    if (ATT_DCM==popt->att_type) Mat3mulv(1.0,Cnb,ins->fb,ins->fn);        
+    else quatmulv(1.0,qnb,ins->fb,ins->fn);
+
+    /* forward mechanization, sequentially performing velocity update, position update, and attitude update */
+    if (MECH_FORWARD==popt->reverse) {
+
+        /* [I-1/2*(zetax)*Cnb(k-1)] of velocity update */
+        vnmul(3,ins->eth.wnin,interval,rv);
+        vskew(1.0,rv,rs);  
+        Mat3add2(I3,1.0,rs,-1.0/2.0,Irs);
+        if (ATT_QUAT==popt->att_type) qnb2Cnb(qnb,Cnb);  
+        Mat3mul2(1.0,Irs,Cnb,Ce);
+
+        /* rotation and paddling error compensation items of velocity update */
+        for (i=0;i<3;i++)
+        {
+            delta_vb[i]=dv[i]+dv_rot[i]+dv_pad[i];
+        }
+        Mat3mulv(1.0,Ce,delta_vb,delta_vn);
+
+        /* NOTE: velocity update */
+        for (i=0;i<3;i++) {
+            ins->vel[i]=ins->p1vel[i]+(ins->eth.gcc[i]*interval)+delta_vn[i];
+        }
+
+        /* NOTE: position update */
+        Mat3mulv(1.0/2.0*interval,ins->eth.Frp,ins->p1vel,temp1);
+        Mat3mulv(1.0/2.0*interval,ins->eth.Frp,ins->vel,temp2);
+        for (i=0;i<3;i++) {
+            ins->pos[i]=ins->p1pos[i]+(temp1[i]+temp2[i]);
+        }
+
+        /* NOTE: attitude update */
+        if (ATT_DCM==popt->att_type) {
+            rv2DCM(interval,ins->eth.wnin,Cnnk);
+            DCMT(Cnnk,Cnkn);
+            rv2DCM(1.0,da_con,Cbbk);
+            Mat3mul3(Cnkn,Cnb,Cbbk,ins->Cnb);
+            Cnb2att(ins->Cnb,ins->att);  
+            att2qnb(ins->att,ins->qnb);      
+        }
+        else {
+            rv2quat(-1.0*interval,ins->eth.wnin,qnkn);
+            rv2quat(1.0,da_con,qbbk);
+            quatmul3(qnkn,qnb,qbbk,ins->qnb);
+            qnbnorm(ins->qnb);
+            qnb2Cnb(ins->qnb,ins->Cnb);
+            Cnb2att(ins->Cnb,ins->att);
+        }        
     }
-    else {
-        quatmulv(1.0,qnb,ins->fb,ins->fn);
+    /* backward mechanization, sequentially performing attitude update, velocity update, and position update */
+    else if (MECH_BACKWARD==popt->reverse) {
+
+        /* NOTE: attitude update */
+        if (ATT_DCM==popt->att_type) {
+            rv2DCM(interval,ins->eth.wnin,Cnnk);
+            DCMT(Cnnk,Cnkn);
+            rv2DCM(1.0,da_con,Cbbk);
+            Mat3mul3(Cnkn,Cnb,Cbbk,ins->Cnb);
+            Cnb2att(ins->Cnb,ins->att);  
+            att2qnb(ins->att,ins->qnb);      
+        }
+        else {
+            rv2quat(-1.0*interval,ins->eth.wnin,qnkn);
+            rv2quat(1.0,da_con,qbbk);
+            quatmul3(qnkn,qnb,qbbk,ins->qnb);
+            qnbnorm(ins->qnb);
+            qnb2Cnb(ins->qnb,ins->Cnb);
+            Cnb2att(ins->Cnb,ins->att);
+        } 
+
+        /* [I-1/2*(zetax)*Cnb(k-1)] of velocity update */
+        vnmul(3,ins->eth.wnin,interval,rv);
+        vskew(1.0,rv,rs);  
+        Mat3add2(I3,1.0,rs,-1.0/2.0,Irs);
+        if (ATT_QUAT==popt->att_type) qnb2Cnb(qnb,Cnb);  
+        Mat3mul2(1.0,Irs,Cnb,Ce);
+
+        /* rotation and paddling error compensation items of velocity update */
+        for (i=0;i<3;i++)
+        {
+            delta_vb[i]=dv[i]+dv_rot[i]+dv_pad[i];
+        }
+        Mat3mulv(1.0,Ce,delta_vb,delta_vn);
+
+        /* NOTE: velocity update */
+        for (i=0;i<3;i++) {
+            ins->vel[i]=ins->p1vel[i]+(ins->eth.gcc[i]*interval)+delta_vn[i];
+        }
+
+        /* NOTE: position update */
+        Mat3mulv(1.0/2.0*interval,ins->eth.Frp,ins->p1vel,temp1);
+        Mat3mulv(1.0/2.0*interval,ins->eth.Frp,ins->vel,temp2);
+        for (i=0;i<3;i++) {
+            ins->pos[i]=ins->p1pos[i]+(temp1[i]+temp2[i]);
+        }
     }
 
-    vnmul(3,ins->eth.wnin,interval,rv);
-    vskew(1.0,rv,rs);  
-    Mat3add2(I3,1.0,rs,-1.0/2.0,Irs);
-    if (ATT_QUAT==opt->att_type) qnb2Cnb(qnb,Cnb);
-    Mat3mul2(1.0,Irs,Cnb,Ce);
-
-    for (i=0;i<3;i++)
-    {
-        delta_vb[i]=dv[i]+dv_rot[i]+dv_pad[i];
-    }
-    Mat3mulv(1.0,Ce,delta_vb,delta_vn);
-
-    /* NOTE: velocity update */
-    for (i=0;i<3;i++) {
-        ins->vel[i]=ins->p1vel[i]+(ins->eth.gcc[i]*interval)+delta_vn[i];
-    }
-
-    /* NOTE: position update */
-    Mat3mulv(1.0/2.0*interval,ins->eth.Fpv,ins->p1vel,temp1);
-    Mat3mulv(1.0/2.0*interval,ins->eth.Fpv,ins->vel,temp2);
-    for (i=0;i<3;i++) {
-        ins->pos[i]=ins->p1pos[i]+(temp1[i]+temp2[i]);
-    }
-
-    /* NOTE: attitude update */
-    if (ATT_DCM==opt->att_type) {
-        rv2DCM(interval,ins->eth.wnin,Cnnk);
-        DCMT(Cnnk,Cnkn);
-        rv2DCM(1.0,da_con,Cbbk);
-        Mat3mul3(Cnkn,Cnb,Cbbk,ins->Cnb);
-        Cnb2att(ins->Cnb,ins->att);  
-        att2qnb(ins->att,ins->qnb);      
-    }
-    else {
-        rv2quat(-1.0*interval,ins->eth.wnin,qnkn);
-        rv2quat(1.0,da_con,qbbk);
-        quatmul3(qnkn,qnb,qbbk,ins->qnb);
-        qnbnorm(ins->qnb);
-        qnb2Cnb(ins->qnb,ins->Cnb);
-        Cnb2att(ins->Cnb,ins->att);
-    }
+    /* update ins velocty in b frame*/
+    DCMT(ins->Cnb,Cbn);
+    Mat3mulv(1.0,Cbn,ins->vel,ins->body_vel);
 
     /* update INS previous related parameters  */
     update_ins(ins);
@@ -1469,7 +1551,7 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt)
 }
 
 /* update INS state transition matrix F and noise driving matrix G */
-extern void phi_update(ins_t *ins, const prcopt_t *opt)
+extern void phi_update(ins_t *ins, const prcopt_t *popt)
 {
     int i,j,nx,k;
     double Faa[9],Fap[9],Far[9],Fva[9],Fvv[9],Fvp[9],Fvr[9];
@@ -1488,10 +1570,10 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
         }
     }
 
-    earth_update(ins->pos,ins->vel,&ins->eth);
+    earth_update(popt,ins->pos,ins->vel,&ins->eth);
 
     /* NOTE: Phi angle error model */
-    if (ERR_PHI==opt->err_model) {
+    if (ERR_PHI==popt->err_model) {
 
         vskew(-1.0,ins->eth.wnin,Faa);
         Mat3add2(ins->eth.F1,1.0,ins->eth.F2,1.0,Fap);
@@ -1583,7 +1665,7 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
         }        
     }
     /* NOTE: Psi angle error model */
-    else if (ERR_PSI==opt->err_model) {
+    else if (ERR_PSI==popt->err_model) {
 
         vskew(-1.0,ins->eth.wnin,Faa); /* att */
 
@@ -1672,12 +1754,13 @@ extern void phi_update(ins_t *ins, const prcopt_t *opt)
 
 
 /* Convert INS solutions to GNSS center */
-extern void ins2gnss(ins_t *ins, double *pv_g, int n)
+extern void ins2gnss(const prcopt_t *popt, ins_t *ins, double *pv_g, int n)
 {
     int i;
     double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
+    double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); /* in backward mode, GNSS/INS velocities have the opposite sign to the actual velocities */
 
-    Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
+    Mat3mul2(1.0,ins->eth.Frp,ins->Cnb,F1);
     Mat3mulv(1.0,F1,ins->lever,lever_n);
     vnadd(3,ins->pos,1.0,lever_n,1.0,pv);       
 
@@ -1687,7 +1770,7 @@ extern void ins2gnss(ins_t *ins, double *pv_g, int n)
         Mat3add2(ins->wbib,1.0,wbie,-1.0,wbeb);
         vskewmv(1.0,wbeb,ins->lever,temp);
         Mat3mulv(1.0,ins->Cnb,temp,d_v);
-        vnadd(3,ins->vel,1.0,d_v,1.0,pv+3);        
+        vnadd(3,ins->vel,1.0*sgn,d_v,1.0,pv+3);        
     }
 
     for (i=0;i<n;i++)
@@ -1701,7 +1784,7 @@ extern void insfix2gnss(ins_t *ins, double *pv_g, int n)
     int i;
     double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
 
-    Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
+    Mat3mul2(1.0,ins->eth.Frp,ins->Cnb,F1);
     Mat3mulv(1.0,F1,ins->lever,lever_n);
     vnadd(3,ins->xa+6,1.0,lever_n,1.0,pv);       
 
@@ -1730,7 +1813,7 @@ extern void gnss2ins(rtk_t *rtk, double *pv_g, double *pv_i, int mode)
     /* convert GNSS position to INS position */
     if (mode==1) {
         /* r_gnss=r_ins+Fpv*Cnb*lever_b */
-        Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
+        Mat3mul2(1.0,ins->eth.Frp,ins->Cnb,F1);
         Mat3mulv(1.0,F1,ins->lever,lever_n);
 
         vnadd(3,pv_g,1.0,lever_n,-1.0,pv_i);

@@ -195,8 +195,9 @@ EXPORT opt_t sysopts[]={
     {"out-solstatic",   3,  (void *)&solopt_.solstatic,  STAOPT },
     {"out-nmeaintv1",   1,  (void *)&solopt_.nmeaintv[0],"s"    },
     {"out-nmeaintv2",   1,  (void *)&solopt_.nmeaintv[1],"s"    },
-    {"out-outazel",     3,  (void *)&solopt_.azel,       SWTOPT },
     {"out-outstat",     3,  (void *)&solopt_.sstat,      STSOPT },
+    {"out-outazel",     3,  (void *)&solopt_.azel,       SWTOPT },
+    {"out-outsatdop",   3,  (void *)&solopt_.satdop,     SWTOPT },
     {"out-outipos",     3,  (void *)&solopt_.ipos,       SWTOPT },
     {"out-statopt",     2,  (void *)&stat_,              ""     },
 

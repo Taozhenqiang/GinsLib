@@ -244,6 +244,7 @@ const prcopt_t prcopt_default={
     GINS_OFF,
     PMODE_KINEMA,
     SOLTYPE_FORWARD,/* mode,soltype */
+    0,              /* reverse, analysis direction (0:forward,1:backward)*/
     2,              /*nf*/
     {{0,1,2,3,4,5,6},
      {0,1,2,3,4,5,6},
@@ -333,8 +334,9 @@ const solopt_t solopt_default={
     0,
     0,
     0,
+    0,
     {0},
-    0,         /* solstatic,sstat,ipos,azel,statopt,trace */
+    0,         /* solstatic,sstat,ipos,azel,satdop,statopt,trace */
     {0.0,0.0},/* nmeaintv */
     " ",
     "" /* separator/program name */
@@ -578,6 +580,67 @@ extern void init_crosscov(rtk_t *rtk, int ns, int n)
     }
 }
 
+/* set diagonal covariance matrix -------------------------------------------*/
+extern void diag_Cov(int nx, const double *var, double *P, int opt)
+{
+    int i,j;
+
+    for (i=0;i<nx;i++) {
+        for (j=0;j<nx;j++) {
+            P[i+j*nx]=0.0;
+            if (i==j) {
+                if (diag_wei==opt) P[i+j*nx]=1.0/var[i];
+                else if (diag_var==opt) P[i+j*nx]=var[i];
+            }
+        }
+    }
+}
+
+/* calculate GNSS sampling interval -------------------------------------------
+*args  :  rtk_t    *rtk   IO   rtk structure
+*         obs_t    *obss  I   observation data
+*return:none
+*-----------------------------------------------------------------------------*/
+extern int gnss_intervel(rtk_t *rtk, const obs_t *obss)
+{
+    int i,j,k;
+    double t0,t[2]={0.0},dttol=1e-3;
+
+    if (!obss||!rtk) {
+        return 0;  /* Invalid input */
+    }
+
+    for (i=0;i<obss->n;i++) {
+        if (obss->data[i].rcv!=1) continue;  
+        
+        for (j=i+1;j<obss->n;j++) {
+            if (obss->data[j].rcv!= 1) continue;  /* skip no rover station data */
+            
+            t0=fabs(timediff(obss->data[i].time,obss->data[j].time));
+            
+            if (t0>dttol) {  
+                t[k++]=t0;
+                i=j;
+                /* check if intervals are equal */
+                if (k==2) {  
+                    if (fabs(t[0]-t[1])<dttol) {  
+                        rtk->interval=t[0];
+                        return 1;
+                    } else {
+                        k=0; break;
+                    }
+                }
+            }
+        }
+        
+        if (k==2) {  
+            break;
+        }
+    }
+
+    return 1;
+}
+
 /* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
 extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old)
 {   
@@ -609,6 +672,11 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     }
     else {
         rtk->dopsgn=1.0;
+    }
+
+    /* in both forward and backward processing modes, the sign of Doppler observations remains unchanged */
+    if (SOLTYPE_BACKWARD==rtk->opt.soltype) {
+        rtk->dopsgn=-rtk->dopsgn;
     }
 
     return 1;
@@ -694,6 +762,16 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
             }       
         } 
     }   
+    /* reset slip flag for all sats (RTK) */
+    else if (RTK_slip==mode) {     
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<opt->nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].slip[fr]=0;
+            }
+        }
+    }
     /* reset ambiguity fix flag and SNR (PPP) */
     else if (PPP_ssat==mode) {
         if (!obs||!n) {
@@ -2660,8 +2738,8 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
  *
 *  xs=Qs*(Qf^-1*xf+Qb^-1*xb),Qs=(Qf^-1+Qb^-1)^-1)
  *
-*args  :double *xf       I   forward solutions (n x 1)
-*args  :double *Qf       I   forward solutions covariance matrix (n x n)
+*args  :  double *xf       I   forward solutions (n x 1)
+*args  :  double *Qf       I   forward solutions covariance matrix (n x n)
 *         double *xb       I   backward solutions (n x 1)
 *         double *Qb       I   backward solutions covariance matrix (n x n)
 *         int    n         I   number of solutions
@@ -2678,18 +2756,22 @@ extern int smoother(const double *xf,const double *Qf,const double *xb,
 
     matcpy(invQf,Qf,n,n);
     matcpy(invQb,Qb,n,n);
+
     if (!matinv(invQf,n)&&!matinv(invQb,n)) {
-        for (i=0;i<n*n;i++)
+        /* Qs=(Qf^-1+Qb^-1)^-1 */
+        for (i=0;i<n*n;i++) {
             Qs[i]=invQf[i]+invQb[i];
+        }
+        /* xs=Qs*(Qf^-1*xf+Qb^-1*xb) */
         if (!(info=matinv(Qs,n))) {
             matmul("NN",n,n,1,invQf,xf,xx,1.0,0.0);
             matmul("NN",n,n,1,invQb,xb,xx,1.0,1.0);
             matmul("NN",n,n,1,Qs,xx,xs,1.0,0.0);           
         }
     }
-    free(invQf);
-    free(invQb);
-    free(xx);
+
+    free(invQf); free(invQb); free(xx);
+
     return info;
 }
 /* print matrix ----------------------------------------------------------------

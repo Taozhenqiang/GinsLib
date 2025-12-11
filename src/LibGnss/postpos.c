@@ -69,7 +69,6 @@ static int iobsr =0;            /* current reference observation data index */
 static int iimu  =0;            /* current imu data index */
 static int isbs  =0;            /* current sbas message index */
 static int iitm  =0;            /* current invalid time mark index */
-static int reverse=0;           /* analysis direction (0:forward,1:backward) */
 static int aborts=0;            /* abort status */
 static sol_t *solf;             /* forward solutions */
 static sol_t *solb;             /* backward solutions */
@@ -205,6 +204,7 @@ static int nextobsf(const obs_t *obs, int *i, int rcv)
     }
     return n;
 }
+/* search previous observation data index ----------------------------------------*/
 static int nextobsb(const obs_t *obs, int *i, int rcv)
 {
     double tt;
@@ -257,20 +257,22 @@ static void update_rtcm_ssr(gtime_t time)
 static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt_t *popt)
 {
     gtime_t time={0};
-    int i,nu,nr,n=0;
+    ins_t *ins=&rtk->ins;
+    int i,nu,nr,n=0,nn=(SOLTYPE_BACKWARD==popt->reverse?ins->nn:0);
     double dt,dt_next,GI_dt,sec,ndt;
 
-    trace(3,"infunc  : dir=%d iobsu=%d iobsr=%d isbs=%d\n",reverse,iobsu,iobsr,isbs);
+    trace(3,"infunc  : dir=%d iobsu=%d iobsr=%d isbs=%d\n",popt->reverse,iobsu,iobsr,isbs);
 
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
     if (0<=iobsu&&iobsu<obss.n) {
-        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu].time)));
+        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu-nn].time)));
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
         }
     }
-    if (!reverse) { /* input forward data */
+    /* input forward data */
+    if (SOLTYPE_FORWARD==popt->reverse) { 
         if ((nu=nextobsf(&obss,&iobsu,1))<=0) return -1;
         if (popt->intpref) {
             /* for interpolation, find first base timestamp after rover timestamp */
@@ -302,11 +304,11 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             /* calculate the difference between the current time and the nominal measurement update time */
             sec=imus.data[iimu].time.sec;
             rtk->nominal_update=NO;
-            ndt=fabs(sec-round((sec+rtk->ins.interval/2.0)/rtk->interval)*rtk->interval);
+            ndt=fabs(sec-round((sec+ins->interval/2.0)/rtk->interval)*rtk->interval);
 
             /* the second condition is used to process the IMU time on both sides being 0.5 IMU sampling interval away from GNSS time */
-            if ((fabs(ndt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0
-                &&(fabs(timediff(imus.data[iimu].time,rtk->upte_time))>=(rtk->interval-rtk->ins.interval))) {
+            if ((fabs(ndt)-ins->dttol)<=(ins->nn*ins->interval)/2.0
+                &&(fabs(timediff(imus.data[iimu].time,rtk->upte_time))>=(rtk->interval-ins->interval))) {
                 rtk->nominal_update=YES;
                 /* record the synchronization time */
                 rtk->upte_time=imus.data[iimu].time;                
@@ -315,21 +317,21 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             /* calculate the difference between the current IMU and GNSS observation time */
             GI_dt=timediff(imus.data[iimu].time,obss.data[iobsu].time);
             rtk->upte=SYNC_NO;   
-            imucpy(imu,imus,iimu,rtk->ins.nn); 
+            imucpy(popt,imu,imus,iimu,ins->nn); 
 
             /* GNSS/INS matching and synchronization */
-            if ((fabs(GI_dt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0){
+            if ((fabs(GI_dt)-ins->dttol)<=(ins->nn*ins->interval)/2.0){
                 if (NO==rtk->match) rtk->match=YES;
                 rtk->upte=SYNC_YES;
                 /* record the synchronization time */
                 rtk->upte_time=imus.data[iimu].time; 
                 /* if GNSS is available, set the nominal IMU update flag to 0 */
                 rtk->nominal_update=NO;               
-                iimu+=rtk->ins.nn; iobsu+=nu;
+                iimu+=ins->nn; iobsu+=nu;
             }
             else if (GI_dt<0){
-                if (NO==rtk->match) {iimu+=rtk->ins.nn; return 0;}
-                else iimu+=rtk->ins.nn;
+                if (NO==rtk->match) {iimu+=ins->nn; return 0;}
+                else iimu+=ins->nn;
             }
             else if (GI_dt>0){
                 if (NO==rtk->match) {iobsu+=nu; return 0;}   
@@ -353,7 +355,8 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             update_rtcm_ssr(obs[0].time);
         }
     }
-    else { /* input backward data */
+    /* input backward data */
+    else if (SOLTYPE_BACKWARD==popt->reverse) { 
         if ((nu=nextobsb(&obss,&iobsu,1))<=0) return -1;
         if (popt->intpref) {
             /* for interpolation, find first base timestamp before rover timestamp */
@@ -370,9 +373,54 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             }
         }
         nr=nextobsb(&obss,&iobsr,2);
-        for (i=0;i<nu&&n<MAXOBS*2;i++) obs[n++]=obss.data[iobsu-nu+1+i];
-        for (i=0;i<nr&&n<MAXOBS*2;i++) obs[n++]=obss.data[iobsr-nr+1+i];
-        iobsu-=nu;
+
+        /* NOTE: store the observations of rover and base in the obs structure in order */
+        for (i=0;i<nu&&n<MAXOBS*2;i++) obs[n++]=obss.data[(iobsu-nu+1)+i];
+        for (i=0;i<nr&&n<MAXOBS*2;i++) obs[n++]=obss.data[(iobsr-nr+1)+i];
+
+        /* NOTE: GNSS/INS time synchronization */
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
+        {
+            if (iimu<0) return -1;
+
+            /* calculate the difference between the current time and the nominal measurement update time */
+            sec=imus.data[iimu-nn].time.sec;
+            rtk->nominal_update=NO;
+            ndt=fabs(sec-round((sec+rtk->ins.interval/2.0)/rtk->interval)*rtk->interval);
+
+            /* the second condition is used to process the IMU time on both sides being 0.5 IMU sampling interval away from GNSS time */
+            if ((fabs(ndt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0
+                &&(fabs(timediff(imus.data[iimu-nn].time,rtk->upte_time))>=(rtk->interval-rtk->ins.interval))) {
+                rtk->nominal_update=YES;
+                /* record the synchronization time */
+                rtk->upte_time=imus.data[iimu-nn].time;                
+            }  
+
+            /* calculate the difference between the current IMU and GNSS observation time */
+            GI_dt=timediff(imus.data[iimu-nn].time,obss.data[iobsu].time);
+            rtk->upte=SYNC_NO;   
+            imucpy(popt,imu,imus,iimu,rtk->ins.nn); 
+
+            /* GNSS/INS matching and synchronization */
+            if ((fabs(GI_dt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0){
+                if (NO==rtk->match) rtk->match=YES;
+                rtk->upte=SYNC_YES;
+                /* record the synchronization time */
+                rtk->upte_time=imus.data[iimu-nn].time; 
+                /* if GNSS is available, set the nominal IMU update flag to 0 */
+                rtk->nominal_update=NO;               
+                iimu-=rtk->ins.nn; iobsu-=nu;
+            }
+            else if (GI_dt>0){
+                if (NO==rtk->match) {iimu-=rtk->ins.nn; return 0;}
+                else iimu-=rtk->ins.nn;
+            }
+            else if (GI_dt<0){
+                if (NO==rtk->match) {iobsu-=nu; return 0;}   
+                else iobsu-=nu;     
+            }            
+        } 
+        else  iobsu-=nu;
 
         /* update sbas corrections */
         while (isbs>=0) {
@@ -468,30 +516,30 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     obsd_t *obs_old=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2); /* observations at the previous epoch for rover and base */
     imud_t *imu=(imud_t *)malloc(sizeof(imud_t)*MAXINS);
     double rb[3]={0};
-    int i,nobs,solstatic,num=0,pri[]={6,1,2,3,4,5,1,6},align,stat;
+    int i,nobs,solstatic,num=0,pri[]={7,1,2,3,4,5,1,6},align,stat;
     int n=0,n_old=0,nr=0,nr_old=0;
 
-    trace(3,"procpos : mode=%d\n",mode); /* 0=single dir, 1=combined */
+    trace(3,"procpos : mode=%d\n",mode); /* 0=forward or backward, 1=forward and backward smoothing */
 
     obs_old[0].time=time;
-    solstatic=sopt->solstatic&&
-              (popt->mode==PMODE_STATIC||popt->mode==PMODE_STATIC_START||popt->mode==PMODE_PPP_STATIC);
+    solstatic=sopt->solstatic&&(popt->mode==PMODE_STATIC||popt->mode==PMODE_STATIC_START||popt->mode==PMODE_PPP_STATIC);
     
     rtcm_path[0]='\0';
 
+    /* epoch-by-epoch processing */
     while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {
 
         /* DebugGlo initialization */
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,9861,2126); 
+        DebugTime(rtk,Debug_Glo.tNow,437378,2188); 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
 
         /* initialize GNSS sampling interval */
-        if (!rtk->interval) rtk->interval=timediff(obss.data[nobs].time,obss.data[0].time);
+        if (!rtk->interval) gnss_intervel(rtk,&obss);
 
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
@@ -499,6 +547,8 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 obs[n++]=obs[i];
             }
         }
+        
+        /* if no satellites are available in GNSS mode or initial alignment fails in GNSS/INS mode, exit current epoch processing */
         if (GINS_OFF==popt->GI_mode&&n<=0) continue;
         else if (GINS_OFF!=popt->GI_mode&&n<=0&&!rtk->align) continue;
 
@@ -513,11 +563,14 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 rtk->align=ins_align(rtk,obs,obs_old,n,n_old,&navs,imu,popt);
             } 
             if (SYNC_YES==rtk->upte) {
-                /* determine the number of satellites of rover in the current epoch and the previous epoch */
-                for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
-                for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
-                /* multi-strategy velocity estimation (TDCP/Dopple/Position difference) */
-                if (nr_old&&nr) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);
+                /* tdcp for zupt/zihr */
+                if (rtk->align) {
+                    /* determine the number of satellites of rover in the current epoch and the previous epoch */
+                    for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
+                    for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+                    /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
+                    if (nr_old&&nr) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
+                }
                 /* save the GNSS observations of the previous epoch */
                 n_old=n; 
                 for (i=0;i<n;i++) obs_old[i]=obs[i];                 
@@ -567,7 +620,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             if (rtk->sol.eventime.time!=0) {
                 if (mode==SOLMODE_SINGLE_DIR) {
                     outinvalidtm(fptm,sopt,rtk->sol.eventime);
-                } else if (!reverse&&nitm<MAXINVALIDTM) {
+                } else if (!popt->reverse&&nitm<MAXINVALIDTM) {
                     invalidtm[nitm++]=rtk->sol.eventime;
                 }
             }
@@ -580,7 +633,8 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             lc_gins(rtk);            
         }
 
-        if (mode==SOLMODE_SINGLE_DIR) {    /* forward or backward */
+        /* forward or backward mode */
+        if (mode==SOLMODE_SINGLE_DIR) {    
 
             /* save the GNSS observations of the previous epoch */
             n_old=n; 
@@ -601,7 +655,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             /* check time mark */
             if (rtk->sol.eventime.time!=0)
             {
-                newsol = fillsoltm(oldsol,rtk->sol,rtk->sol.eventime);
+                newsol=fillsoltm(oldsol,rtk->sol,rtk->sol.eventime);
                 num++;
                 if (!solstatic&&mode==SOLMODE_SINGLE_DIR) {
                     outsol(fptm,&newsol,rb,popt,sopt);
@@ -609,19 +663,19 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             }
             oldsol=rtk->sol;
         }
-        else if (!reverse) { /* combined-forward */
-            if (isolf >= nepoch) {
-                free(obs);
-                return;
+        /* combined-forward */
+        else if (SOLTYPE_FORWARD==popt->reverse) { 
+            if (isolf>=nepoch) {
+                free(obs); return;
             }
             solf[isolf]=rtk->sol;
             for (i=0;i<3;i++) rbf[i+isolf*3]=rtk->rb[i];
             isolf++;
         }
-        else { /* combined-backward */
+        /* combined-backward */
+        else if (SOLTYPE_BACKWARD==popt->reverse) { 
             if (isolb>=nepoch) {
-                free(obs);
-                return;
+                free(obs); return;
             }
             solb[isolb]=rtk->sol;
             for (i=0;i<3;i++) rbb[i+isolb*3]=rtk->rb[i];
@@ -634,7 +688,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     }
 
     /* obs and obs_old point to the same memory and only need to free once */
-    free(obs); free(imu); /* moved from stack to heap to kill a stack overflow warning */
+    free(obs); free(imu); 
     obs=obs_old=NULL; /* free obs_old to avoid memory leak */
 }
 /* validation of combined solutions ------------------------------------------*/
@@ -650,13 +704,13 @@ static int valcomb(const sol_t *solf, const sol_t *solb, double *rbf, double *rb
     for (i=0;i<3;i++) {
         dr[i]=solf->rr[i]-solb->rr[i];
         if (popt->mode==PMODE_MOVEB) dr[i]-=(rbf[i]-rbb[i]);
-        var[i]=(double)solf->qr[i] + (double)solb->qr[i];
+        var[i]=(double)solf->qr[i]+(double)solb->qr[i];
     }
     for (i=0;i<3;i++) {
         if (dr[i]*dr[i]<=16.0*var[i]) continue; /* ok if in 4-sigma */
 
         time2str(solf->time,tstr,2);
-        trace(2,"degrade fix to float: %s dr=%.3f %.3f %.3f std=%.3f %.3f %.3f\n",
+        trace(7,"Forward and backward smoothing (FBS) quality check failed: %s dr=%.3f %.3f %.3f std=%.3f %.3f %.3f\n",
               tstr+11,dr[0],dr[1],dr[2],SQRT(var[0]),SQRT(var[1]),SQRT(var[2]));
         return 0;
     }
@@ -668,13 +722,15 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     gtime_t time={0};
     sol_t sols={{0}},sol={{0}},oldsol={{0}},newsol={{0}};
     double tt,Qf[9],Qb[9],Qs[9],rbs[3]={0},rb[3]={0},rr_f[3],rr_b[3],rr_s[3];
-    int i,j,k,solstatic,num=0,pri[]={7,1,2,3,4,5,1,6};
+    int i,j,k,solstatic,num=0;
+    int pri[]={7,1,2,3,4,5,1,6}; /* no:0,fix:1,float:2,sbas:3,dgps:4,single:5,ppp:6,ins:7,cons:8 */
 
-    trace(3,"combres : isolf=%d isolb=%d\n",isolf,isolb);
+    trace(3,"Forward and backward smoothing (FBS) : isolf=%d isolb=%d\n",isolf,isolb);
 
-    solstatic=sopt->solstatic&&
-              (popt->mode==PMODE_STATIC||popt->mode==PMODE_STATIC_START||popt->mode==PMODE_PPP_STATIC);
+    /* determine if it is a static solution mode */
+    solstatic=sopt->solstatic&&(popt->mode==PMODE_STATIC||popt->mode==PMODE_STATIC_START||popt->mode==PMODE_PPP_STATIC);
 
+    /* set reference station position */
     for (i=0,j=isolb-1;i<isolf&&j>=0;i++,j--) {
         if ((tt=timediff(solf[i].time,solb[j].time))<-DTTOL) {
             sols=solf[i];
@@ -686,6 +742,7 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             for (k=0;k<3;k++) rbs[k]=rbb[k+j*3];
             i--;
         }
+        /* prioritize using reference station position with high solution quality */
         else if (pri[solf[i].stat]<pri[solb[j].stat]) {
             sols=solf[i];
             for (k=0;k<3;k++) rbs[k]=rbf[k+i*3];
@@ -698,24 +755,18 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             sols=solf[i];
             sols.time=timeadd(sols.time,-tt/2.0);
 
-            if ((popt->mode==PMODE_KINEMA||popt->mode==PMODE_MOVEB)&&
-                sols.stat==SOLQ_FIX) {
-
+            /* forward and backward smoothing (FBS) quality check (only PPK mode)*/
+            if ((popt->mode==PMODE_KINEMA||popt->mode==PMODE_MOVEB)&&sols.stat==SOLQ_FIX) {
                 /* degrade fix to float if validation failed */
                 if (!valcomb(solf+i,solb+j,rbf+i*3,rbb+j*3,popt)) sols.stat=SOLQ_FLOAT;
             }
-            for (k=0;k<3;k++) {
-                Qf[k+k*3]=solf[i].qr[k];
-                Qb[k+k*3]=solb[j].qr[k];
-            }
-            Qf[1]=Qf[3]=solf[i].qr[3];
-            Qf[5]=Qf[7]=solf[i].qr[4];
-            Qf[2]=Qf[6]=solf[i].qr[5];
-            Qb[1]=Qb[3]=solb[j].qr[3];
-            Qb[5]=Qb[7]=solb[j].qr[4];
-            Qb[2]=Qb[6]=solb[j].qr[5];
 
-            if (popt->mode==PMODE_MOVEB) {
+            /* solution to position covariance matrix */
+            soltocov(solf+i,Qf);
+            soltocov(solb+j,Qb);
+
+            /* NOTE: smoother for position solution */
+            if (popt->mode==PMODE_MOVEB) { /* for the moving baseline mode, the baseline length is smoothed */
                 for (k=0;k<3;k++) rr_f[k]=solf[i].rr[k]-rbf[k+i*3];
                 for (k=0;k<3;k++) rr_b[k]=solb[j].rr[k]-rbb[k+j*3];
                 if (smoother(rr_f,Qf,rr_b,Qb,3,rr_s,Qs)) continue;
@@ -724,32 +775,33 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             else {
                 if (smoother(solf[i].rr,Qf,solb[j].rr,Qb,3,sols.rr,Qs)) continue;
             }
-            sols.qr[0]=(float)Qs[0];
-            sols.qr[1]=(float)Qs[4];
-            sols.qr[2]=(float)Qs[8];
-            sols.qr[3]=(float)Qs[1];
-            sols.qr[4]=(float)Qs[5];
-            sols.qr[5]=(float)Qs[2];
+            /* position covariance matrix to solution */
+            covtosol(Qs,&sols);
 
-            /* smoother for velocity solution */
-            if (popt->dynamics) {
-                for (k=0;k<3;k++) {
-                    Qf[k+k*3]=solf[i].qv[k];
-                    Qb[k+k*3]=solb[j].qv[k];
+            /* NOTE: smoother for velocity solution */
+            if (popt->dynamics||GINS_OFF!=popt->GI_mode) {
+                /* solution to velocity covariance matrix */
+                soltocov_vel(solf+i,Qf);
+                soltocov_vel(solb+j,Qb);
+                if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+                    if (smoother(solf[i].vel,Qf,solb[j].vel,Qb,3,sols.vel,Qs)) continue;
                 }
-                Qf[1]=Qf[3]=solf[i].qv[3];
-                Qf[5]=Qf[7]=solf[i].qv[4];
-                Qf[2]=Qf[6]=solf[i].qv[5];
-                Qb[1]=Qb[3]=solb[j].qv[3];
-                Qb[5]=Qb[7]=solb[j].qv[4];
-                Qb[2]=Qb[6]=solb[j].qv[5];
-                if (smoother(solf[i].rr+3,Qf,solb[j].rr+3,Qb,3,sols.rr+3,Qs)) continue;
-                sols.qv[0]=(float)Qs[0];
-                sols.qv[1]=(float)Qs[4];
-                sols.qv[2]=(float)Qs[8];
-                sols.qv[3]=(float)Qs[1];
-                sols.qv[4]=(float)Qs[5];
-                sols.qv[5]=(float)Qs[2];
+                else {
+                    if (smoother(solf[i].rr+3,Qf,solb[j].rr+3,Qb,3,sols.rr+3,Qs)) continue;                    
+                }
+
+                /* velocity covariance matrix to solution */
+                covtosol_vel(Qs,&sols);
+            }
+
+            /* NOTE: smoother for attitude solution */
+            if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||GINS_TC==popt->GI_mode) {
+                /* solution to attitude covariance matrix */
+                soltocov_att(solf+i,Qf);
+                soltocov_att(solb+j,Qb);
+                
+                /* velocity covariance matrix to solution */
+                covtosol_att(Qs,&sols);
             }
         }
         if (!solstatic) {
@@ -762,21 +814,23 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 time=sols.time;
             }
         }
-        if (iitm < nitm && timediff(invalidtm[iitm],sols.time)<0.0)
+        if (iitm<nitm&&timediff(invalidtm[iitm],sols.time)<0.0)
         {
             outinvalidtm(fptm,sopt,invalidtm[iitm]);
             iitm++;
         }
-        if (sols.eventime.time != 0)
+        if (sols.eventime.time!=0)
         {
-            newsol = fillsoltm(oldsol,sols,sols.eventime);
+            newsol=fillsoltm(oldsol,sols,sols.eventime);
             num++;
             if (!solstatic) {
                 outsol(fptm,&newsol,rb,popt,sopt);
             }
         }
-        oldsol = sols;
+        oldsol=sols;
     }
+
+    /* static configuration mode only outputs the result of the last epoch */
     if (solstatic&&time.time!=0.0) {
         sol.time=time;
         outsol(fp,&sol,rb,popt,sopt);
@@ -1291,21 +1345,19 @@ static void namefiletm(char *outfiletm, const char *outfile)
 *
 *          ssr corrections are valid only for forward estimation.
 *-----------------------------------------------------------------------------*/
-extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
-                   const solopt_t *sopt, filopt_t *fopt)
+extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
 {
     /* moved from stack to heap to avoid stack overflow warning */
     rtk_t *rtk_ptr = (rtk_t *)malloc(sizeof(rtk_t)); 
-    prcopt_t popt_=*popt;
-    char tracefile[1024],statfile[1024],iposfile[1024],azelfile[1024],path[1024],outfiletm[1024]={0};
+    char tracefile[1024],statfile[1024],iposfile[1024],azelfile[1024],satdopfile[1024],path[1024],outfiletm[1024]={0};
     const char *ext;
     int i,j,k,week=0;  
 
     /* open debug trace */
-    opentrace(&popt_,sopt,fopt);
+    opentrace(popt,sopt,fopt);
 
     /* read obs and nav data */
-    if (!readobsnav(ts,te,ti,fopt,&popt_,&obss,&navs,stas)) {
+    if (!readobsnav(ts,te,ti,fopt,popt,&obss,&navs,stas)) {
         /* free obs and nav data */
         freeobsnav(&obss, &navs);
         free(rtk_ptr);
@@ -1349,8 +1401,8 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     }   
 
     /* read ocean tide loading parameters */
-    if (popt_.mode>PMODE_SINGLE&&*fopt->blq) {
-        readotl(&popt_,fopt->blq,stas);
+    if (popt->mode>PMODE_SINGLE&&*fopt->blq) {
+        readotl(popt,fopt->blq,stas);
     }
 
     /* open geoid data */
@@ -1363,33 +1415,33 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 
     /* read dcb parameters from DCB, BIA, BSX files */
     if (*fopt->mgex_dcb) {
-        readdcb(&popt_,fopt->mgex_dcb,&navs,stas);  
+        readdcb(popt,fopt->mgex_dcb,&navs,stas);  
     }
 
    /* unify the correction format of TGD and DCB/OBS */
-    tgdarrge(&popt_,&navs);
+    tgdarrge(popt,&navs);
     
     /* set antenna parameters */
-    if (popt_.mode!=PMODE_SINGLE) {
-        setpcv(obss.n>0?obss.data[0].time:timeget(),&popt_,&navs,&pcvss,&pcvsr,
+    if (popt->mode!=PMODE_SINGLE) {
+        setpcv(obss.n>0?obss.data[0].time:timeget(),popt,&navs,&pcvss,&pcvsr,
                stas);
     }
 
     /* rover/reference fixed position */
-    if (popt_.mode==PMODE_FIXED) {
-        if (!antpos(&popt_,1,&obss,&navs,stas,fopt->stapos)) {
+    if (popt->mode==PMODE_FIXED) {
+        if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
             free(rtk_ptr);
             return 0;
         }
-        if (!antpos(&popt_,2,&obss,&navs,stas,fopt->stapos)) {
+        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
             free(rtk_ptr);
             return 0;
         }
     }
-    else if (PMODE_DGPS<=popt_.mode&&popt_.mode<=PMODE_STATIC_START) {
-        if (!antpos(&popt_,2,&obss,&navs,stas,fopt->stapos)) {
+    else if (PMODE_DGPS<=popt->mode&&popt->mode<=PMODE_STATIC_START) {
+        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
             free(rtk_ptr);
             return 0;
@@ -1397,7 +1449,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     }
 
     /* write header to output file */
-    if (!outhead(&popt_,sopt,fopt)) {
+    if (!outhead(popt,sopt,fopt)) {
         freeobsnav(&obss,&navs);
         free(rtk_ptr);
         return 0;
@@ -1411,56 +1463,69 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
         rtkopenstat(statfile,sopt->sstat);
     }
 
-    /* open ipos statistics */
-    if (sopt->ipos>0) {
+    /* output ipos file */
+    if (sopt->ipos) {
         strcpy(iposfile,fopt->sol);
         strcat(iposfile,".ipos");
         rtkcloseoutfile();
-        rtkopenipos(&popt_,iposfile);
+        rtkopenipos(popt,iposfile);
     }
 
-    if (sopt->azel>0) {
+    /* output azel file */
+    if (sopt->azel) {
         strcpy(azelfile,fopt->sol);
         strcat(azelfile,".azel");
         rtkcloseoutfile();
-        rtkopenazel(&popt_,azelfile);
+        rtkopenazel(popt,azelfile);
+    }
+
+    /* output satdop file */
+    if (sopt->satdop) {
+        strcpy(satdopfile,fopt->sol);
+        strcat(satdopfile,".satdop");
+        rtkcloseoutfile();
+        rtkopensatdop(popt,satdopfile);
     }
     /* name time events file */
     /* namefiletm(outfiletm,outfile); */
     /* write header to file with time marks */
     /* outhead(outfiletm,infile,n,&popt_,sopt); */
 
-    iobsu=iobsr=isbs=reverse=aborts=0;
+    iobsu=iobsr=isbs=iimu=aborts=0;
 
-    if (popt_.mode==PMODE_SINGLE||popt_.soltype==SOLTYPE_FORWARD) {
+    /* forward solutions */
+    if ((GINS_OFF==popt->GI_mode&&popt->mode==PMODE_SINGLE)||popt->soltype==SOLTYPE_FORWARD) {
         /* solution file (.pos) pointer */
         FILE *fp=openfile(fopt->sol);
         if (fp) {
             FILE *fptm=openfile(outfiletm);
             if (fptm) {
-                rtkinit(rtk_ptr,&popt_,sopt);
-                procpos(fp,fptm,&popt_,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
+                rtkinit(rtk_ptr,popt,sopt);
+                procpos(fp,fptm,popt,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
                 rtkfree(rtk_ptr);
                 fclose(fptm);
             }
             fclose(fp);
         }
     }
-    else if (popt_.soltype==SOLTYPE_BACKWARD) {
+    /*  backward solutions */
+    else if (popt->soltype==SOLTYPE_BACKWARD) {
         FILE *fp=openfile(fopt->sol);
         if (fp) {
             FILE *fptm=openfile(outfiletm);
             if (fptm) {
-                reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
-                rtkinit(rtk_ptr,&popt_,sopt);
-                procpos(fp,fptm,&popt_,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
+                popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
+                if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
+                rtkinit(rtk_ptr,popt,sopt);
+                procpos(fp,fptm,popt,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
                 rtkfree(rtk_ptr);
                 fclose(fptm);
             }
             fclose(fp);
         }
     }
-    else { /* combined or combined with no phase reset */
+    /* forward and backward smoothing solutions (FBS) */
+    else { 
         solf=(sol_t *)malloc(sizeof(sol_t)*nepoch);
         solb=(sol_t *)malloc(sizeof(sol_t)*nepoch);
         rbf=(double *)malloc(sizeof(double)*nepoch*3);
@@ -1468,24 +1533,26 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 
         if (solf&&solb) {
             isolf=isolb=0;
-            rtkinit(rtk_ptr,&popt_,sopt);
-            procpos(NULL,NULL,&popt_,sopt,rtk_ptr,SOLMODE_COMBINED); /* forward */
-            reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
-            if (popt_.soltype!=SOLTYPE_COMBINED_NORESET) {
+            rtkinit(rtk_ptr,popt,sopt);
+            procpos(NULL,NULL,popt,sopt,rtk_ptr,SOLMODE_COMBINED); /* forward */
+            popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
+            if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
+            /* FBS with no state reset */
+            if (popt->soltype!=SOLTYPE_COMBINED_NORESET) {
                 /* reset */
                 rtkfree(rtk_ptr);
-                rtkinit(rtk_ptr,&popt_,sopt);
+                rtkinit(rtk_ptr,popt,sopt);
             }
-            procpos(NULL,NULL,&popt_,sopt,rtk_ptr,SOLMODE_COMBINED); /* backward */
+            procpos(NULL,NULL,popt,sopt,rtk_ptr,SOLMODE_COMBINED); /* backward */
             rtkfree(rtk_ptr);
 
-            /* combine forward/backward solutions */
             if (!aborts) {
                 FILE *fp=openfile(fopt->sol);
                 if (fp) {
                     FILE *fptm=openfile(outfiletm);
                     if (fptm) {
-                        combres(fp,fptm,&popt_,sopt);
+                        /* forward and backward smoothing */
+                        combres(fp,fptm,popt,sopt);
                         fclose(fptm);
                     }
                     fclose(fp);
@@ -1497,9 +1564,9 @@ extern int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     }
 
     /* free rtk, obs/nav , ant and imu data */
-    free(rtk_ptr);
+    free(rtk_ptr);          
     freeobsnav(&obss,&navs);
-    if (imus.data) freeimu(&imus);
+    if (imus.data)            freeimu(&imus);
     if (pcvss.pcv&&pcvsr.pcv) freeant(&pcvss,&pcvsr);
 
     return aborts?1:0;

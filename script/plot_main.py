@@ -11,13 +11,13 @@ from plot_err    import plot_err
 
 def main():
     # 提供文件路径和结果文件名
-    pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/EG320N_Vehicle_complex_20250419/result'
-    filename = 'EG320N_Vehicle_complex_20250419_PPK_TC.pos'
+    pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/IGM-A1_Vehicle_open_20211217-nsh/result'
+    filename = 'IGM-A1_Vehicle_open_20211217-nsh_PPK_TC_PAR.pos'
     solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
-    pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/EG320N_Vehicle_complex_20250419'
-    filename = 'EG320N_TC.txt'
+    pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/IGM-A1_Vehicle_open_20211217-nsh'
+    filename = 'IGMA1_open_2GNSS.txt'
     refile = os.path.join(pathname, filename)
 
     # 结果文件读取配置
@@ -25,7 +25,7 @@ def main():
     row = 10000
     # GINLIB: gps week, sow, pos[x/y/z], ratio, vel[x/y/z], att[pitch/roll/heading], bg[x/y/z], ba[x/y/z]
     col = 18
-    sample =5e-2
+    sample = 1/200
 
     # 读取结果文件
     data = read_solution(solfile, skip_lines, row, col, sample)
@@ -42,10 +42,13 @@ def main():
     row = 10000
     # gps week, sow, pos[x/y/z], vel[x/y/z], att[pitch/roll/heading]
     col = 11
-    ins_flag=0
-    ins_interval=1/200
-    GNSS_interval=1
-    idx=[0,1,2,3,4,8,9,10,14,15,16]
+    ins_flag = 0
+    ins_interval = 1/200
+    GNSS_interval = 1
+    # IE-tzq
+    idx = [0,1,2,3,4,8,9,10,14,15,16]
+    # IE-zf
+    # idx = [0,1,9,10,11,15,16,17,22,23,21]
 
     # 读取参考文件
     ref_data = read_ref(refile, skip_lines, row, col, ins_flag, ins_interval, GNSS_interval, idx)
@@ -68,7 +71,7 @@ def main():
     # 绘制IMU bias
     # plot_imubias(data)
 
-    plot_err(data, ref_data, "avp")
+    plot_err(data, ref_data, "p")
 
 if __name__ == "__main__":
     main()

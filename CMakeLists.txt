@@ -28,7 +28,7 @@ include(CheckCXXCompilerFlag)#检查指定的C++编译器标志是否可用，�
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
-# 检查编译器是否支持C++11和C++0x标准，并将结果存储在变量COMPILER_SUPPORTS_CXX11和COMPILER_SUPPORTS_CXX0X中
+# 检查编译器是否支持C++11和C++0x标准
 if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,14 +41,11 @@ endif()
 
 #Set the ROOT and subdirectory, you should put the CMakeList.txt in these file directories
 set(ROOT ${PROJECT_SOURCE_DIR}) #将项目路径${PROJECT_SOURCE_DIR}存到变量ROOT中
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT}/build/Bin)
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT}/build/Lib) #设置动态库输出路径
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT}/build/Lib) #设置静态库输出路径
-
-set(CMAKE_DEBUG_POSTFIX "d") #在Debug配置下生成的目标文件名后添加"d"作为后缀
-set(CMAKE_RELEASE_POSTFIX "")
-set(CMAKE_RELWITHDEBINFO_POSTFIX "rd")
-set(CMAKE_MINSIZEREL_POSTFIX "s")
+# set(EXECUTABLE_OUTPUT_PATH ${ROOT}/build/Bin) #设置可执行文件输出路径
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT}/build/Bin) #设置可执行文件输出路径
 
 #Choose different compilation configurations according to VS compilation
 if(CMAKE_BUILD_TYPE MATCHES "Release")
@@ -63,7 +60,13 @@ else()
     set(CMAKE_BUILD_POSTFIX "")
 endif()
 
+set(CMAKE_DEBUG_POSTFIX "d") #在Debug配置下生成的目标文件名后添加"d"作为后缀
+set(CMAKE_RELEASE_POSTFIX "")
+set(CMAKE_RELWITHDEBINFO_POSTFIX "rd")
+set(CMAKE_MINSIZEREL_POSTFIX "s")
+
 include_directories(include) #添加包含路径
+
 # 仅在Windows平台添加WIN32宏定义，其他宏保持不变
 if(WIN32)
     add_definitions(-DWIN32)
@@ -88,14 +91,14 @@ add_subdirectory(${libInsSrc}    ${ROOT}/build/${libIns})
 add_subdirectory(${libFusionSrc} ${ROOT}/build/${libFusion}) 
 
 #CUI APP
-set(App iRTKLIB)
+set(App GINSLIB)
 add_subdirectory(${ROOT}/src/app ${ROOT}/build/${App}) 
 
 # group
-SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON) #启用目标文件分组功能，即将生成的目标文件按照指定的文件夹进行组织
-SET_PROPERTY(TARGET ${libGnss}    PROPERTY FOLDER "LIB") #将名为 ${libGnss} 的目标文件放入名为 "LIB" 的文件夹中
-SET_PROPERTY(TARGET ${libIns}     PROPERTY FOLDER "LIB")
-SET_PROPERTY(TARGET ${libFusion}  PROPERTY FOLDER "LIB")
+# SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON) #启用目标文件分组功能，即将生成的目标文件按照指定的文件夹进行组织
+# SET_PROPERTY(TARGET ${libGnss}    PROPERTY FOLDER "LIB") #将名为 ${libGnss} 的目标文件放入名为 "LIB" 的文件夹中
+# SET_PROPERTY(TARGET ${libIns}     PROPERTY FOLDER "LIB")
+# SET_PROPERTY(TARGET ${libFusion}  PROPERTY FOLDER "LIB")
 
 #Output Messages for debug the Cmake
 message(STATUS "operation system is : ${CMAKE_SYSTEM}") #向控制台打印信息
@@ -103,3 +106,4 @@ message(STATUS "current platform is : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMake version is    : ${CMAKE_SYSTEM_VERSION}")
 message(STATUS "C compiler is : ${CMAKE_C_COMPILER}")
 message(STATUS "The program main directory is : ${ROOT}")
+message(STATUS "The program build type is : ${CMAKE_BUILD_TYPE}")

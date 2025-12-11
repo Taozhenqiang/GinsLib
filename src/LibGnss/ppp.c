@@ -583,7 +583,7 @@ static void udpos_ppp(rtk_t *rtk)
     if (GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
-        ins2gnss(&rtk->ins,p_ins,3);
+        ins2gnss(&rtk->opt,&rtk->ins,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
         if (GINS_STC==rtk->opt.GI_mode) {
@@ -733,14 +733,14 @@ static void udclk_ppp(rtk_t *rtk)
         ic=IC(i,opt);
 
         if (opt->sysisb==GNSISB_CT) {
-            // constant
+            /* constant */
             if (rtk->x[ic]==0.0) {
                 if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
                 initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
             }
         }
         else if (opt->sysisb==GNSISB_RW) {
-            // random walk process
+            /* random walk process */
             if (rtk->x[ic]==0.0) {
                 if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
                 initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
@@ -750,7 +750,7 @@ static void udclk_ppp(rtk_t *rtk)
             }
         }
         else if (opt->sysisb==GNSISB_WN) {
-            //white noise process
+            /* white noise process */
             if (fabs(dtr)<1.0e-16) dtr=1.0e-16;
             initx(rtk,CLIGHT*dtr,VAR_CLK,ic);
         }
@@ -1007,6 +1007,59 @@ static void udstate_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     /* time update of phase-bias */
     udbias_ppp(rtk,obs,n,nav);
 }
+/* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
+static void init_pppos(rtk_t *rtk, const double *xp, const double *dr, double *rr, int post) 
+{
+    prcopt_t *opt=&rtk->opt;
+    ins_t *ins=&rtk->ins;
+    double pos[3],temp[3],dx[3],F1[9],lever[3];
+    int i;
+
+    if (GINS_TC==opt->GI_mode&&!post) {
+        for (i=0;i<3;i++) rr[i]=rtk->ru[i]+dr[i];
+    }
+    else if (GINS_TC==opt->GI_mode&&post) {
+        /* position feedback correction after measurement update */
+        Mat3mulv(1.0,ins->eth.Frp,xp+6,dx);
+        for (i=0;i<3;i++) pos[i]=ins->pos[i]-dx[i];
+
+        /* convert INS position to GNSS position */
+        Mat3mul2(1.0,ins->eth.Frp,ins->Cnb,F1);
+        Mat3mulv(1.0,F1,ins->lever,lever);
+        for (i=0;i<3;i++) pos[i]+=lever[i];
+
+        /* earth tide correction*/
+        pos2ecef(pos,temp);
+        for (i=0;i<3;i++) rr[i]=temp[i]+dr[i];
+    }
+    else {
+       for (i=0;i<3;i++) rr[i]=xp[i]+dr[i]; 
+    }
+}
+/* Jacobian matrix for pos/vel/att */
+static void Jacobi_avp(rtk_t *rtk, int nx, int nv, double *H, const double *e)
+{
+    prcopt_t *opt=&rtk->opt;
+    ins_t *ins=&rtk->ins;
+    double Hpp[3],Hpa[3],lever_n[3],Cne[9],Cen[9];
+    int k;
+
+    if (GINS_TC==opt->GI_mode) {
+
+        xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
+        Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
+
+        vmulMat3(1.0,e,Cen,Hpp);
+        vmvskew(1.0,Hpp,lever_n,Hpa);
+
+        for (k=0;k<3;k++)   H[k+nx*nv]=Hpa[k];
+        for (k=0;k+6<9;k++) H[(k+6)+nx*nv]=Hpp[k];
+    }
+    else {
+        for (k=0;k<3;k++) H[k+nx*nv]=-e[k];  /* translation of innovation to position states */                        
+    }
+}
+
 /* satellite antenna phase center variation ----------------------------------*/
 static void satantpcv(const double *rs, const double *rr, const spcv_t *spcv,
                       double *dant)
@@ -1197,7 +1250,6 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     prcopt_t *opt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     double y,r,cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc,C,fact,DCB[MAXFREQ]={0.0},rss[6]={0.0},danto[3]={0.0};
-    double F1[9],dx[3],temp[3],lever[3],Cne[9],Cen[9],lever_n[3],Hpp[3],Hpa[3]; /* for TC mode */
     double var[MAXOBS*2],dtrp=0.0,dion=0.0,var_tro=0.0,var_ion=0.0,dcb,freq,res=0.0,dantr[NFREQ]={0},dants[NFREQ]={0};
     double ve[MAXOBS*2*NFREQ]={0},vari[MAXOBS*2*NFREQ]={0},vmax=0,varmax=0.0,zupt_time=0.0; /* post residual check */
     char str[32],id[4];
@@ -1212,27 +1264,8 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     /* reset satellite status flags */
     init_ssatpar(rtk,NULL,0,PPP_vsat);
 
-    /* initial or update user position */
-    if (GINS_TC==opt->GI_mode&&!post) {
-        for (i=0;i<3;i++) rr[i]=rtk->ru[i]+dr[i];
-    }
-    else if (GINS_TC==opt->GI_mode&&post) {
-        /* position feedback correction after measurement update */
-        Mat3mulv(1.0,ins->eth.Fpv,x+6,dx);
-        for (i=0;i<3;i++) pos[i]=ins->pos[i]-dx[i];
-
-        /* convert INS position to GNSS position */
-        Mat3mul2(1.0,ins->eth.Fpv,ins->Cnb,F1);
-        Mat3mulv(1.0,F1,ins->lever,lever);
-        for (i=0;i<3;i++) pos[i]+=lever[i];
-
-        /* earth tide correction*/
-        pos2ecef(pos,temp);
-        for (i=0;i<3;i++) rr[i]=temp[i]+dr[i];
-    }
-    else {
-       for (i=0;i<3;i++) rr[i]=x[i]+dr[i]; 
-    }
+    /* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
+    init_pppos(rtk,x,dr,rr,post);
     ecef2pos(rr,pos);
 
     for (i=0;i<n&&i<MAXOBS;i++) {
@@ -1270,8 +1303,8 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
         /* stack phase and code residuals {L1,P1,L2,P2,...} */
         for (j=0;j<2*NF(opt);j++) {
             C=0.0;
-
             dcb=bias=0.0;
+
             code=j%2; /* 0=phase, 1=code */
             frq=j/2;
             fr=sys2freid(sys,frq,opt);
@@ -1299,20 +1332,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             for (k=0;k<nx;k++) H[k+nx*nv]=0.0;             
 
             /* H of pos/vel/att */
-            if (GINS_TC==opt->GI_mode) {
-
-                xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
-                Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
-
-                vmulMat3(1.0,e,Cen,Hpp);
-                vmvskew(1.0,Hpp,lever_n,Hpa);
-        
-                for (k=0;k<3;k++)   H[k+nx*nv]=Hpa[k];
-                for (k=0;k+6<9;k++) H[(k+6)+nx*nv]=Hpp[k];
-            }
-            else {
-                for (k=0;k<3;k++) H[k+nx*nv]=-e[k];  /* translation of innovation to position states */                        
-            }
+            Jacobi_avp(rtk,nx,nv,H,e);
 
             /* H of receiver clock, if only use a system (no GPS) */
             if (sys==SYS_GPS) {

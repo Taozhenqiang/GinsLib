@@ -109,9 +109,12 @@ static int statlevel=0;          /* rtk status output level (0:off) */
 static FILE *fp_stat=NULL;       /* rtk status file pointer */
 static FILE *fp_ipos=NULL;       /* rtk ipos file pointer */
 static FILE *fp_azel=NULL;       /* azel file pointer */
+static FILE *fp_satdop=NULL;     /* satdop file pointer */
+
 static char file_stat[1024]="";  /* rtk status file original path */
 static char file_ipos[1024]="";  /* rtk ipos file original path */
 static char file_azel[1024]="";  /* azel file original path */
+static char file_satdop[1024]="";/* satdop file original path */
 static gtime_t time_stat={0};    /* rtk status file time */
 
 /* open solution status file ---------------------------------------------------
@@ -299,6 +302,32 @@ extern int rtkopenazel(prcopt_t *opt, const char *file)
     return 1;
 }
 
+extern int rtkopensatdop(prcopt_t *opt, const char *file)
+{
+    gtime_t time=utc2gpst(timeget());
+    char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
+    int n,nf=(PMODE_SINGLE==opt->mode)?1:NF(opt);
+
+    trace(3,"rtkopenazel: file=%s\n",file);
+    reppath(file,path,time,"","");
+
+    if (!(fp_satdop=fopen(path,"w"))) {
+        trace(1,"rtkopensatdop: file open error path=%s\n",path);
+        return 0;
+    }
+
+    /* frequency independent term */
+    p+=sprintf(p,"%% TIME (GPST)     NSAT     GDOP     PDOP     HDOP     VDOP\n");
+
+    n=p-buff;
+
+    buff[n]='\0';
+    fputs(buff,fp_satdop);
+
+    strcpy(file_satdop,file);
+    return 1;
+}
+
 /* close solution status file --------------------------------------------------
 * close solution status file
 * args   : none
@@ -311,14 +340,17 @@ extern void rtkcloseoutfile(void)
     if (fp_stat) fclose(fp_stat);
     if (fp_ipos) fclose(fp_ipos);
     if (fp_azel) fclose(fp_azel);
+    if (fp_satdop) fclose(fp_satdop);
 
     fp_stat=NULL;
     fp_ipos=NULL;
     fp_azel=NULL;
+    fp_satdop=NULL;
 
     file_stat[0]='\0';
     file_ipos[0]='\0';
     file_azel[0]='\0';
+    file_satdop[0]='\0';
     statlevel=0;
 }
 
@@ -465,19 +497,23 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }        
 
         /* tdcp velocity */
-        if (rtk->sol.stato[7]) {
+        if (rtk->sol.stato[7]&&GINS_OFF!=rtk->opt.GI_mode) {
             p+=sprintf(p,"$TDCP,%d,%d",week,itow);
             for (i=0;i<3;i++) {
                 p+=sprintf(p,",%12.6f",rtk->sol.tdcp_vel[i]);
-            }
+            }       
+            p+=sprintf(p,",%12.6f",rtk->sol.yaw);
             p+=sprintf(p,"\n");
         }  
         
-        /* nhc velocity */
+        /* nhc velocity and body velocity */
         if (rtk->sol.stato[8]) {
             p+=sprintf(p,"$NHC,%d,%d",week,itow);
             for (i=0;i<3;i++) {
                 p+=sprintf(p,",%12.6f",rtk->ins.nhc_vel[i]);
+            }
+            for (i=0;i<3;i++) {
+                p+=sprintf(p,",%12.6f",rtk->ins.body_vel[i]);
             }
             p+=sprintf(p,"\n");
         }
@@ -587,7 +623,7 @@ static void swapsolstat(void)
     trace(3,"swapsolstat: path=%s\n",path);
 }
 /* output solution status ----------------------------------------------------*/
-extern void outsolstat(rtk_t *rtk,const nav_t *nav)
+extern void outsolstat(rtk_t *rtk, const nav_t *nav)
 {
     if (statlevel<=0||!fp_stat) return;
 
@@ -679,34 +715,52 @@ static void outsolipos(rtk_t *rtk,const nav_t *nav)
     fputs(buff,fp_ipos);
 }
 /* output solution azel ------------------------------------------------------*/
-extern void outsolazel(rtk_t *rtk, const obsd_t *obs, const int nu)
+extern void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode)
 {
     prcopt_t *opt=&rtk->opt;
+    sol_t *sol=&rtk->sol;
     ssat_t *ssat;
     int i,j,week,sat,n;
     double tow;
     char id[4],buff[2*MAXSOLMSG+1],*p=buff;
 
-    if (!fp_azel) return;
-
-    trace(3,"outsolazel:\n");
+    if (OUTFILE_AZEL==mode) {
+        if (!fp_azel) return;
+        trace(3,"outsolazel:\n");        
+    }
+    else if (OUTFILE_SATDOP==mode) {
+        if (!fp_satdop) return;
+        trace(3,"outsolsatdop:\n");
+    }
 
     tow=time2gpst(obs[0].time,&week);
 
-    for (i=0;i<nu;i++) {
-        sat=obs[i].sat;
-        for (j=0;j<NFREQ;j++) { if (obs[i].L[j]!=0.0||obs[i].P[j]!=0.0) break; }
-        if (j>=NFREQ) continue;
-        ssat=rtk->ssat+sat-1;
-        if (ssat->azel[0]<=0.0) continue;
-        satno2id(sat,id);
-        p+=sprintf(p,"%4d %.3f %4s %6.1f %6.1f\n",week,tow,id,ssat->azel[0]*R2D,ssat->azel[1]*R2D);
+    if (OUTFILE_AZEL==mode) {
+        for (i=0;i<nu;i++) {
+            sat=obs[i].sat;
+            for (j=0;j<NFREQ;j++) { if (obs[i].L[j]!=0.0||obs[i].P[j]!=0.0) break; }
+            if (j>=NFREQ) continue;
+            ssat=rtk->ssat+sat-1;
+            if (ssat->azel[0]<=0.0) continue;
+            satno2id(sat,id);
+            p+=sprintf(p,"%4d %.3f %4s %6.1f %6.1f\n",week,tow,id,ssat->azel[0]*R2D,ssat->azel[1]*R2D);
+        }
+
+        n=p-buff;
+        buff[n]='\0';
+
+        fputs(buff,fp_azel);        
+    }
+    else if (OUTFILE_SATDOP==mode) {
+        p+=sprintf(p,"%4d %.3f %6d   %6.2f   %6.2f   %6.2f   %6.2f\n",week,tow,
+            sol->ns,sol->dop[0],sol->dop[1],sol->dop[2],sol->dop[3]);
+        
+        n=p-buff;
+        buff[n]='\0';
+
+        fputs(buff,fp_satdop);
     }
 
-    n=p-buff;
-    buff[n]='\0';
-
-    fputs(buff,fp_azel);
 }
 
 /* save error message --------------------------------------------------------*/
@@ -833,6 +887,47 @@ static double baseline(const double *ru, const double *rb, double *dr)
     for (i=0;i<3;i++) dr[i]=ru[i]-rb[i];
     return norm(dr,3);
 }
+
+/* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
+static double init_rtkpos(rtk_t *rtk, double *rr, const double *rr_, int flag)
+{
+    ins_t *ins=&rtk->ins;
+    prcopt_t *popt=&rtk->opt;
+    double p_ins[3];
+    int i;
+
+    if (flag&&GINS_TC==popt->GI_mode){
+        ins2gnss(popt,ins,p_ins,3);
+        pos2ecef(p_ins,rr);
+    } 
+    else {
+        for (i=0;i<3;i++) rr[i]=rr_[i];
+    }
+}
+/* Jacobian matrix for pos/vel/att */
+static void Jacobi_avp(rtk_t *rtk, int i, int j, double *Hi, const double *e, const int *iu) 
+{
+    prcopt_t *opt=&rtk->opt;
+    ins_t *ins=&rtk->ins;
+    double Hpp[3],Hpa[3],Cne[9],Cen[9],lever_n[3],de[3];
+    int k;
+
+    if (GINS_TC==opt->GI_mode) {
+
+        xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
+        Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
+
+        vnadd(3,&e[iu[i]*3],1.0,&e[iu[j]*3],-1.0,de);
+        vmulMat3(1.0,de,Cen,Hpp);
+        vmvskew(1.0,Hpp,lever_n,Hpa);
+
+        for (k=0;k<3;k++)   Hi[k]=Hpa[k];
+        for (k=0;k+6<9;k++) Hi[k+6]=Hpp[k];
+    }
+    else {
+        for (k=0;k<3;k++) Hi[k]=-e[k+iu[i]*3]+e[k+iu[j]*3];  /* translation of innovation to position states */                        
+    }
+}
 /* initialize state and covariance -------------------------------------------*/
 static void initdisb(rtk_t *rtk, double *x, double *P, double xi, double var, int i)
 {
@@ -888,7 +983,7 @@ static void udpos(rtk_t *rtk, double tt)
     if(GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
 
         /* convert INS solutions to GNSS center */
-        ins2gnss(&rtk->ins,p_ins,3);
+        ins2gnss(&rtk->opt,&rtk->ins,p_ins,3);
         pos2ecef(p_ins,rtk->ru);
 
         if (GINS_STC==rtk->opt.GI_mode) {
@@ -1223,16 +1318,16 @@ static void detslp_mw(rtk_t *rtk, const obsd_t *obs, const int *iu, const int *i
             if ((mw1=mwobs(rtk,obs,iu[i],ir[i],k,nav))==0.0) continue;
 
             fr=sys2freid(sys,k,opt);
-            mw0=rtk->ssat[sat-1].mw[fr-1];    /* retrieve previous gf */
-            rtk->ssat[sat-1].mw[fr-1]=mw1;    /* save current gf for next epoch */
+            mw0=rtk->ssat[sat-1].mw[fr-1];    /* retrieve previous mw */
+            rtk->ssat[sat-1].mw[fr-1]=mw1;    /* save current mw for next epoch */
 
-            trace(5,"%s MW(ppk): slip detected gf_new=%13.3f, gf_old=%13.3f, diff_abs=%13.3f, thres=%13.3f, el=%4.1f\n",rtk->ssat[sat-1].id,mw1,mw0,fabs(mw1-mw0),THRES_MW_JUMP,el);
+            trace(5,"%s MW(ppk): slip detected mw_new=%13.3f, mw_old=%13.3f, diff_abs=%13.3f, thres=%13.3f, el=%4.1f\n",rtk->ssat[sat-1].id,mw1,mw0,fabs(mw1-mw0),THRES_MW_JUMP,el);
 
-            if (mw0!=0.0&&fabs(mw1-mw0)>0.5) {
+            if (mw0!=0.0&&fabs(mw1-mw0)>THRES_MW_JUMP) {
                 rtk->ssat[sat-1].slip[fr1]|=1;
                 rtk->ssat[sat-1].slip[fr]|=1;
-                trace(4,"%s MW(ppk): slip detected gf_new=%13.3f, gf_old=%13.3f, diff_abs=%13.3f, thres=%13.3f, el=%4.1f\n",rtk->ssat[sat-1].id,mw1,mw0,fabs(mw1-mw0),THRES_MW_JUMP,el);
-                errmsg(rtk,"slip detected MW jump (sat=%2d L1-L%d dGF=%.3f)\n",
+                trace(4,"%s MW(ppk): slip detected mw_new=%13.3f, mw_old=%13.3f, diff_abs=%13.3f, thres=%13.3f, el=%4.1f\n",rtk->ssat[sat-1].id,mw1,mw0,fabs(mw1-mw0),THRES_MW_JUMP,el);
+                errmsg(rtk,"slip detected MW jump (sat=%2d L1-L%d dMW=%.3f)\n",
                     sat,k+1,mw0-mw1);
             }
         }        
@@ -1566,21 +1661,13 @@ static int zdres(rtk_t  *rtk, int base, const obsd_t *obs, int n, const double *
     /* init residuals to zero */
     for (i=0;i<n*nf*2;i++) y[i]=0.0;
 
-    /* initial or update user position */
-    if (!base&&GINS_TC==opt->GI_mode) {
-        ins2gnss(&rtk->ins,p_ins,3);
-        pos2ecef(p_ins,rr_);
-    }
-    else {
-        for (i=0;i<3;i++) rr_[i]=rr[i];
-    }
+    /* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
+    init_rtkpos(rtk,rr_,rr,!base);
 
     trace(8,"zdres   : n=%d rr=%.2f %.2f %.2f\n",n,rr[0],rr[1],rr[2]);
 
-    if (norm(rr_,3)<=0.0) {
-        trace(7,"zdres   : no receiver position\n");
-        return 0; /* no receiver position */ 
-     }
+    /* no receiver position */
+    if (norm(rr_,3)<=0.0) { trace(7,"zdres   : no receiver position\n");  return 0;  }
 
     /* adjust rcvr pos for earth tide correction */
     if (opt->tidecorr) {
@@ -2188,21 +2275,16 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
     prcopt_t *opt=&rtk->opt;
     double bl,dr[3],posu[3],posr[3],didxi=0.0,didxj=0.0,*im,threshadj=1.0,zupt_time=0.0;
     double *tropr,*tropu,*dtdxr,*dtdxu,*Ri,*Rj,freqi,freqj,*Hi=NULL,df;
-    double p_ins[3],rr[3],lever_n[3],Cne[9],Cen[9],de[3],Hpa[3],Hpp[3];
+    double rr[3];
     int i,j,k,m,f,nv=0,nb[NFREQ*NSYS*2+2]={0},b=0,sysi,sysj,nf=NF(opt),sys,fr,nv_cons=0;
     int ii,jj,frq,code;
     char id[4],fc[4];
 
     trace(8,"ddres   : dt=%.4f ns=%d\n",dt,ns);
 
-    /* initial or update user position */
-    if (GINS_TC==opt->GI_mode){
-        ins2gnss(ins,p_ins,3);
-        pos2ecef(p_ins,rr);
-    } 
-    else {
-        for (i=0;i<3;i++) rr[i]=x[i];
-    }
+    /* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
+    init_rtkpos(rtk,rr,x,TURE);
+
     /* bl=distance from base to rover, dr=x,y,z components */
     bl=baseline(rr,rtk->rb,dr);
     /* translate ecef pos to blh pos */
@@ -2275,23 +2357,7 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
                       (y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
 
                 /* partial derivatives by rover position, combine unit vectors from two sats */
-                if (H) {
-                    if (GINS_TC==opt->GI_mode) {
-
-                        xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
-                        Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
-
-                        vnadd(3,&e[iu[i]*3],1.0,&e[iu[j]*3],-1.0,de);
-                        vmulMat3(1.0,de,Cen,Hpp);
-                        vmvskew(1.0,Hpp,lever_n,Hpa);
-                
-                        for (k=0;k<3;k++)   Hi[k]=Hpa[k];
-                        for (k=0;k+6<9;k++) Hi[k+6]=Hpp[k];
-                    }
-                    else {
-                        for (k=0;k<3;k++) Hi[k]=-e[k+iu[i]*3]+e[k+iu[j]*3];  /* translation of innovation to position states */                        
-                    }
-                }
+                if (H) Jacobi_avp(rtk,i,j,Hi,e,iu); 
                 if (opt->ionoopt==IONOOPT_EST) {
                     /* adjust double-differenced measurements by double-differenced ionospheric delay term */
                     didxi=(code?-1.0:1.0)*im[i]*SQR(FREQL1/freqi);
@@ -2381,14 +2447,10 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
                 }
 
                 /* single-differenced measurement error variances (m) */
-                Ri[nv]=varerr(rtk,sat[i],sysi,azel[1+iu[i]*2],
-                              SNR_UNIT*rtk->ssat[sat[i]-1].snr_rover[fr],
-                              SNR_UNIT*rtk->ssat[sat[i]-1].snr_base[fr],
-                              bl,dt,f,opt,&obs[iu[i]]);
-                Rj[nv]=varerr(rtk,sat[j],sysj,azel[1+iu[j]*2],
-                              SNR_UNIT*rtk->ssat[sat[j]-1].snr_rover[fr],
-                              SNR_UNIT*rtk->ssat[sat[j]-1].snr_base[fr],
-                              bl,dt,f,opt,&obs[iu[j]]);
+                Ri[nv]=varerr(rtk,sat[i],sysi,azel[1+iu[i]*2],SNR_UNIT*rtk->ssat[sat[i]-1].snr_rover[fr],
+                              SNR_UNIT*rtk->ssat[sat[i]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[i]]);
+                Rj[nv]=varerr(rtk,sat[j],sysj,azel[1+iu[j]*2],SNR_UNIT*rtk->ssat[sat[j]-1].snr_rover[fr],
+                              SNR_UNIT*rtk->ssat[sat[j]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[j]]);
 
                 /* increase variance if half cycle flags set */
                 if (!code&&(obs[iu[i]].LLI[fr]&LLI_HALFC)) Ri[nv]+=0.01;
@@ -2950,7 +3012,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
             /* ADOP */
             if ((det=determinant(Qb,nb))<0) rtk->sol.ADOP=-1.0;
             else rtk->sol.ADOP=sqrt(pow(det,1.0/nb));
-            trace(12,"ADOP=%.3f\n",rtk->sol.ADOP);
+            /* trace(12,"ADOP=%.3f\n",rtk->sol.ADOP); */
 
             /* adjust AR ratio based on # of sats, unless minAR==maxAR */
             if (opt->thresar[5]!=opt->thresar[6]&&opt->thresar[5]<opt->thresar[6]) {
@@ -3017,7 +3079,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                     
                     trace(11,"resamb : validation ok (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)\n",
                         nb,s[0]==0.0?0.0:s[1]/s[0],rtk->sol.thres,s[0],s[1]);
-                    trace(11,"fix=\n"); tracemat(12,b,1,nb,7,2,0);
+                    trace(11,"fix=\n"); tracemat(11,b,1,nb,7,2,0);
 
                     /* translate double diff fixed phase-bias values to single diff fix phase-bias values, result in xa */
                     restamb(rtk,bias,nb,xa);
@@ -3033,7 +3095,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                 }
                 else {
                     /* validation failed */
-                    trace(11,"float=\n"); tracemat(12,y,1,nb,7,2,0);
+                    trace(11,"float=\n"); tracemat(11,y,1,nb,7,2,0);
                     trace(10,"ambiguity validation failed (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)!\n",nb,s[1]/s[0],rtk->sol.thres,s[0],s[1]);
                     nb=0;break;                    
                 }
@@ -3429,6 +3491,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     udstate(rtk,obs,sat,iu,ir,ns,nav);
     /* trace(8,"after udstate x="); tracemat(8,rtk->x,1,NR(opt),13,4,0); */
 
+    /* save snr of common satellites for rover and base receiver */
     for (i=0;i<ns;i++) {
         sys=satsys(sat[i],NULL);
         for (j=0;j<nf;j++) {

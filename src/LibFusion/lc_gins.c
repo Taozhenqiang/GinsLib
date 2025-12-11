@@ -122,9 +122,9 @@ extern int lc_gins(rtk_t *rtk)
 {
     ins_t *ins=&rtk->ins;
     sol_t *sol=&rtk->lcgins.sol;
-    prcopt_t *opt=&rtk->opt;
+    prcopt_t *popt=&rtk->opt;
     int i,j,nx=rtk->lcgins.nx,nv=3,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.filter;
-    double p_ins[3],p_gnss[3],iFpv[9],dp[3],zupt_time;
+    double p_ins[3],p_gnss[3],iFrp[9],dp[3],zupt_time;
     double lever_n[3],lever_nx[9],Re[9],Rn[9];
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
 
@@ -132,7 +132,7 @@ extern int lc_gins(rtk_t *rtk)
     if (SOLQ_INS==rtk->sol.stat) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
-        update_instat(opt,ins,rtk->lcgins.P,sol,nx);
+        update_instat(popt,ins,rtk->lcgins.P,sol,nx);
         return 1;
     }
 
@@ -145,13 +145,13 @@ extern int lc_gins(rtk_t *rtk)
 
     /* initialize states */
     matcpy(P,rtk->lcgins.P,nx,nx);
-    matcpy(iFpv,ins->eth.Fpv,3,3);
+    matcpy(iFrp,ins->eth.Frp,3,3);
     /* trace(12,"P_pre=\n"); tracemat(12,P,nx,nx,9,4,0); */
-    earth_update(ins->pos,ins->vel,&ins->eth);
-    matinv(iFpv,3);
+    earth_update(popt,ins->pos,ins->vel,&ins->eth);
+    matinv(iFrp,3);
 
     /* lever arm correction to convert INS position to GNSS position */
-    ins2gnss(&rtk->ins,p_ins,3);
+    ins2gnss(popt,&rtk->ins,p_ins,3);
     ecef2pos(rtk->sol.rr,p_gnss);
 
     Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
@@ -159,7 +159,7 @@ extern int lc_gins(rtk_t *rtk)
 
     /* measurement vector */
     for (i=0;i<3;i++) dp[i]=p_ins[i]-p_gnss[i];
-    Mat3mulv(1.0,iFpv,dp,v);
+    Mat3mulv(1.0,iFrp,dp,v);
 
     /* measurement matrix H */
     for (i=0;i<nv;i++){
@@ -177,23 +177,19 @@ extern int lc_gins(rtk_t *rtk)
     /* motion constraints */
     /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
+    if (popt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
         nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
-    else if (opt->constraint[0]) { /* nhc */
+    else if (popt->constraint[0]) { /* nhc */
         nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);      
     }
-    if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
+    if (popt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
         nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,nx,CONS_ZIHR);
     }     
 
     /* measurement noise covariance matrix R*/
-    for (i=0;i<(nv+nv_cons);i++) {
-        for (j=0;j<(nv+nv_cons);j++) {
-            if (i==j) R[j+i*(nv+nv_cons)]=var[i];
-        }
-    }
+    diag_Cov(nv+nv_cons,var,R,diag_var);
     /* trace(12,"H=\n"); tracemat(12,H,nv,nx,15,10,0); */
     /* trace(12,"Rn=\n"); tracemat(12,Rn,3,3,9,4,0); */
 
@@ -298,7 +294,7 @@ extern void  psi2phi_corr(ins_t *ins, const double *dr, double *dx)
 /* INS error feedback correction */
 extern void ins_fedback(rtk_t *rtk, double *dx)
 {
-    prcopt_t *opt=&rtk->opt;
+    prcopt_t *popt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     int i;
     double dr[3],phi[9],Cnn_[9];
@@ -306,11 +302,11 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     double qnn_[4],qn_b[4],phi_nn_[3];
 
     /* convert dxyz to dblh */
-    earth_update(ins->pos,ins->vel,&ins->eth);
-    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
+    earth_update(popt,ins->pos,ins->vel,&ins->eth);
+    Mat3mulv(1.0,ins->eth.Frp,dx+6,dr);
 
     /* NOTE: convert psi error state to phi error state */
-    if (ERR_PSI==opt->err_model) psi2phi_corr(ins,dr,dx);
+    if (ERR_PSI==popt->err_model) psi2phi_corr(ins,dr,dx);
 
     /* qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
@@ -350,7 +346,7 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
 /* INS error feedback correction*/
 extern void ins_fedback_fix(rtk_t *rtk, double *dx)
 {
-    prcopt_t *opt=&rtk->opt;
+    prcopt_t *popt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     int i;
     double dr[3],phi[9],Cnn_[9];
@@ -358,11 +354,11 @@ extern void ins_fedback_fix(rtk_t *rtk, double *dx)
     double qnn_[4],qn_b[4],qnb[4],phi_nn_[3];
 
     /* convert dxyz to dblh */
-    earth_update(ins->pos,ins->vel,&ins->eth);
-    Mat3mulv(1.0,ins->eth.Fpv,dx+6,dr);
+    earth_update(popt,ins->pos,ins->vel,&ins->eth);
+    Mat3mulv(1.0,ins->eth.Frp,dx+6,dr);
 
     /* NOTE: convert psi error state to phi error state */
-    if (ERR_PSI==opt->err_model) psi2phi_corr(ins,dr,dx);
+    if (ERR_PSI==popt->err_model) psi2phi_corr(ins,dr,dx);
 
     /* qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
@@ -393,18 +389,20 @@ extern void ins_fedback_fix(rtk_t *rtk, double *dx)
 }
 
 /* update INS solution state */
-extern void update_instat(const prcopt_t *opt, ins_t *ins, double *P, sol_t *sol, int nx)
+extern void update_instat(const prcopt_t *popt, ins_t *ins, double *P, sol_t *sol, int nx)
 {
     int i,j;
     double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qbg[9],Qba[9],Qr[9],Cne[9],Cen[9];
     double p_gnss[6];
+    double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); 
 
     /* solution status */
     sol->time=ins->time;
     
     /* convert ins pos/vel to GNSS pos/vel */
-    if (OUTPOS_GNSS==opt->outpos) {
-        ins2gnss(ins,p_gnss,6);
+    /* NOTE: in backward mode, the GNSS/INS velocity and gyroscope bias have opposite signs to the actual values */
+    if (OUTPOS_GNSS==popt->outpos) {
+        ins2gnss(popt,ins,p_gnss,6);
 
         pos2ecef(p_gnss,re);
         xyz2enu(p_gnss,Cne);
@@ -415,14 +413,14 @@ extern void update_instat(const prcopt_t *opt, ins_t *ins, double *P, sol_t *sol
         pos2ecef(ins->pos,re);
         xyz2enu(ins->pos,Cne);
         DCMT(Cne,Cen);
-        Mat3mulv(1.0,Cen,ins->vel,ve);
+        Mat3mulv(1.0*sgn,Cen,ins->vel,ve);
     }
 
     for (i=0;i<3;i++){
         sol->rr [i]=re[i];
         sol->vel[i]=ve[i];
         sol->att[i]=ins->att[i]*R2D;
-        sol->bg [i]=ins->bg [i]*R2D*3600;
+        sol->bg [i]=ins->bg [i]*R2D*3600*sgn;
         sol->ba [i]=ins->ba [i]*1E5; 
     }
 

@@ -804,10 +804,10 @@ extern int readdcb(const prcopt_t *prcopt, const char *file, nav_t *nav, const s
     init_bias_ix();  
 
     /* init code biases (DCB/OSB, BDS broadcast ephemeris DCB correction is handled separately ) */
-    for (i=0;i<MAXSAT;i++) for (j=0;j<MAX_CODE_BIAS_FREQS;j++) {
+    for (i=0;i<MAXRCV;i++) for (j=0;j<MAX_CODE_BIAS_FREQS;j++) {
         nav->cbias[i][j]=0.0;
         for (k=0;k<MAX_CODE_BIASES;k++) {
-            nav->rbias[j][k][i]=0.0;
+            nav->rbias[i][j][k]=0.0;
         }  
     }
     for (i=0;i<MAXSTA;i++) {

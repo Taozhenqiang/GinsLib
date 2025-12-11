@@ -108,9 +108,10 @@ def plot_err(solution, reference, flag):
         fig, axes = plt.subplots(3, 1)
         Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
 
-        # 清除异常值
-        idx = np.linalg.norm(delta1, axis=1) / np.linalg.norm(np.mean(np.abs(delta1), axis=0)) > 100
-        delta11 = delta1[~idx, :]
+        # 剔除异常值
+        # idx = np.linalg.norm(delta1, axis=1) / np.linalg.norm(np.mean(np.abs(delta1), axis=0)) > 100
+        # delta11 = delta1[~idx, :]
+        delta11 = delta1
         
         # 绘制位置误差
         axes[0].plot(t, delta1[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
@@ -201,8 +202,9 @@ def plot_err(solution, reference, flag):
             ax.ticklabel_format(style='plain', axis='x')
             ax.ticklabel_format(style='plain', axis='y')            
 
-        # Adjust spacing
-        plt.tight_layout()
 
-        # Show the plot
-        plt.show()
+    # Adjust spacing
+    plt.tight_layout()
+
+    # Show the plot
+    plt.show()

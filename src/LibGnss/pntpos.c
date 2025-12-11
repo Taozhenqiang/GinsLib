@@ -622,7 +622,7 @@ extern int outrej_spp(int nv, int nx, double thres, double *v, double *H, double
 
 
 /* validate solution ---------------------------------------------------------*/
-static int valsol(const double *azel, const int *vsat, int n,
+extern int valsol(sol_t *sol, const double *azel, const int *vsat, int n,
                   const prcopt_t *opt, const double *v, double *P, int nv, int nx)
 {
     double azels[MAXOBS*2],dop[4],vv,*vP;
@@ -631,6 +631,16 @@ static int valsol(const double *azel, const int *vsat, int n,
     trace(3,"valsol  : n=%d nv=%d\n",n,nv);
     
     vP=mat(1,nv);
+
+    /* large GDOP check */
+    for (i=ns=0;i<n;i++) {
+        if (!vsat[i]) continue;
+        azels[  ns*2]=azel[  i*2];
+        azels[1+ns*2]=azel[1+i*2];
+        ns++;
+    }
+    dops(ns,azels,opt->elmin,dop);
+    matcpy(sol->dop,dop,4,1);
 
     /* chi-square validation of residuals */
     matmul("TN",1,nv,nv,v,P,vP,1.0,0.0);
@@ -642,14 +652,6 @@ static int valsol(const double *azel, const int *vsat, int n,
         return 0; /* threshold too strict for all use cases, report error but continue on */
     }
 
-    /* large GDOP check */
-    for (i=ns=0;i<n;i++) {
-        if (!vsat[i]) continue;
-        azels[  ns*2]=azel[  i*2];
-        azels[1+ns*2]=azel[1+i*2];
-        ns++;
-    }
-    dops(ns,azels,opt->elmin,dop);
     if (dop[0]<=0.0||dop[0]>MAX_GDOP) {
         trace(7,"gdop error nv=%d gdop=%.1f\n",nv,dop[0]);
         free(vP);
@@ -668,7 +670,7 @@ static void udpos_spp(rtk_t *rtk)
     ins_t *ins=&rtk->ins;
 
     /* convert INS solutions (pos and vel) to GNSS antenna center */
-    ins2gnss(ins,p_ins,6);
+    ins2gnss(&rtk->opt,ins,p_ins,6);
     pos2ecef(p_ins,rtk->ru);
 
     xyz2enu(p_ins,Cne);
@@ -805,8 +807,8 @@ static int resdop_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs,
     ecef2pos(rr,pos); xyz2enu(pos,Cne);
     DCMT(Cne,Cen);
     
-    for (i=0;i<n&&i<MAXOBS;i++) {
-        
+    for (i=0;i<n&&i<MAXOBS;i++) 
+    {    
         sys=satsys(obs[i].sat,NULL);
         fr=sys2freid(sys,0,&rtk->opt);
         freq=sat2freq(obs[i].sat,obs[i].code[fr],nav);
@@ -830,7 +832,7 @@ static int resdop_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs,
                                      rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);                                    
         
         /* range rate residual (m/s) */
-        v[nv]=(factor*obs[i].D[fr]*CLIGHT/freq-(rate+x[3]-CLIGHT*dts[1+i*2]));
+        v[nv]=(factor*obs[i].D[fr]*CLIGHT/freq-(rate-CLIGHT*dts[1+i*2]+x[3]));
         
         /* design matrix */
         if (flag&&(GINS_TC==rtk->opt.GI_mode)){
@@ -879,11 +881,11 @@ extern int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         }
 
         /* weight by variance (lsq uses sqrt of weight) */
-        /* for (j=0;j<nv;j++) {
+        for (j=0;j<nv;j++) {
             sig=sqrt(var[j]);
             v[j]/=sig;
             for (k=0;k<4;k++) H[k+j*4]/=sig;
-        } */
+        }
 
         /* least square estimation */
         if (lsq(H,v,4,nv,dx,Q)) break;
@@ -948,12 +950,13 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0); */
 
         /* weight by variance */
-        for (j=0;j<nv;j++) {  
+        diag_Cov(nv,var,P,diag_wei);
+        /* for (j=0;j<nv;j++) {  
             for (k=0;k<nv;k++) {
                 P[k+j*nv]=0.0;  
                 if (k==j) P[k+j*nv]=1.0/var[j];
             }        
-        }
+        } */
         /* trace(12,"P=\n"); tracemat(12,P,nv,nv,9,4,0); */
 
         /* least square estimation */
@@ -986,7 +989,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             sol->age=sol->ratio=sol->ADOP=0.0;
             
             /* validate solution */
-            if ((stat=valsol(azel,vsat,n,opt,v,P,nv,NX))) {
+            if ((stat=valsol(sol,azel,vsat,n,opt,v,P,nv,NX))) {
                 sol->stat=opt->sateph==EPHOPT_SBAS?SOLQ_SBAS:SOLQ_SINGLE;
                 /* save receiver clock (m) */
                 for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr=x[3];
@@ -1056,12 +1059,8 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
                 nv_cons+=motion_update(rtk,H,v,var,nv+nv_dop+nv_cons,rtk->nx,CONS_ZIHR);
             }            
 
-            /* measurement noise covariance matrix */
-            for (i=0;i<(nv+nv_dop+nv_cons);i++) {
-                for (j=0;j<(nv+nv_dop+nv_cons);j++) { 
-                    if (i==j) R[j+i*(nv+nv_dop+nv_cons)]=var[i]; 
-                }                
-            }
+            /* measurement noise covariance matrix R */
+            diag_Cov(nv+nv_dop+nv_cons,var,R,diag_var);
 
             /* trace(12,"v=\n"); tracemat(12,v,nv+nv_dop+nv_cons,1,9,4,0);
             trace(12,"H=\n"); tracemat(12,H,nv+nv_dop+nv_cons,rtk->nx,9,4,0);
@@ -1092,7 +1091,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
             return stat;
         }
-        /* motion constraints (nhc/zupt) */
+        /* motion constraints (nhc/zupt/zihr) */
         else if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
             motion_constraints(rtk,opt);
             return SOLQ_CONS;
@@ -1236,8 +1235,9 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     /* estimate receiver position and time with pseudorange */
     stat=estpos(rtk,obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp);
 
-    /* output solution azel */
-    outsolazel(rtk,obs,n);
+    /* output azel/satdop solution */
+    outsolfile(rtk,obs,n,OUTFILE_AZEL);
+    outsolfile(rtk,obs,n,OUTFILE_SATDOP);
 
     /* TC mode and GNSS unavailable, output INS solution */
     if (!stat&&GINS_TC==opt->GI_mode) {
