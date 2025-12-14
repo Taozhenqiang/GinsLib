@@ -675,7 +675,7 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     }
 
     /* in both forward and backward processing modes, the sign of Doppler observations remains unchanged */
-    if (SOLTYPE_BACKWARD==rtk->opt.soltype) {
+    if (SOLTYPE_BACKWARD==rtk->opt.reverse) {
         rtk->dopsgn=-rtk->dopsgn;
     }
 
@@ -2747,7 +2747,6 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
 *         double *Qs       O   smoothed solutions covariance matrix (n x n)
 *return:status (0:ok,0>:error)
 *notes :see reference [4] 5.2
-*         matrix stored by column-major order (fortran convention)
  *-----------------------------------------------------------------------------*/
 extern int smoother(const double *xf,const double *Qf,const double *xb,
                     const double *Qb,int n,double *xs,double *Qs) {
@@ -2771,6 +2770,57 @@ extern int smoother(const double *xf,const double *Qf,const double *xb,
     }
 
     free(invQf); free(invQb); free(xx);
+
+    return info;
+}
+
+/* smoother for attitude solutions  --------------------------
+*notes :see reference psins attfusion.m
+-------------------------------------------------------------*/
+extern int smoother_att(const double *qnb_f,const double *Qf,const double *qnb_b,
+                        const double *Qb,int n,double *xs,double *Qs) 
+{
+    double *invQf=mat(n,n),*invQb=mat(n,n),*dQf=mat(n,1),*dQb=mat(n,1),*dQfb=mat(n,1);
+    double qbn_b[4]={0.0},qnfnb[4]={0.0},phi[3]={0.0},dq[4]={0.0},qnb[4]={0.0},Cnb[9]={0.0},att[3]={0.0};
+    int i,info=-1;
+
+    matcpy(invQf,Qf,n,n);
+    matcpy(invQb,Qb,n,n);
+
+    for (i=0;i<n;i++) {
+        dQf[i]=Qf[i+i*n];
+        dQb[i]=Qb[i+i*n];
+        dQfb[i]=dQf[i]/(dQf[i]+dQb[i]);
+    }
+
+    /* calculate attitude quaternions */
+    quatconj(qnb_b,qbn_b);
+    quatmul(qnb_f,qbn_b,qnfnb);
+    quat2rv(qnfnb,phi);
+    for (i=0;i<3;i++) phi[i]*=dQfb[i];
+    rv2quat(-1.0,phi,dq);
+    quatmul(dq,qnb_f,qnb);
+    qnb2Cnb(qnb,Cnb);
+    Cnb2att(Cnb,att);
+
+    /* attitude unit conversion */
+    for (i=0;i<3;i++) att[i]*=R2D;
+    /* change the yaw from counter-clockwise to clockwise */
+    if (att[2]<0.0) att[2]=-att[2];
+    else att[2]=360-att[2];
+
+    matcpy(xs,att,3,1);
+
+    if (!matinv(invQf,n)&&!matinv(invQb,n)) {
+        /* Qs=(Qf^-1+Qb^-1)^-1 */
+        for (i=0;i<n*n;i++) {
+            Qs[i]=invQf[i]+invQb[i];
+        }
+        /* xs=Qs*(Qf^-1*xf+Qb^-1*xb) */
+        info=matinv(Qs,n);
+    }
+
+    free(invQf); free(invQb); free(dQf); free(dQb); free(dQfb); 
 
     return info;
 }

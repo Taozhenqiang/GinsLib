@@ -76,6 +76,7 @@ static double *rbf;             /* forward base positions */
 static double *rbb;             /* backward base positions */
 static int isolf=0;             /* current forward solutions index */
 static int isolb=0;             /* current backward solutions index */
+static int reverse_flag=0;      /* reverse flag for GNSS/INS forward and backward smoothing */
 static char proc_rov [64]="";   /* rover for current processing */
 static char proc_base[64]="";   /* base station for current processing */
 static char rtcm_file[1024]=""; /* rtcm data file */
@@ -258,7 +259,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
 {
     gtime_t time={0};
     ins_t *ins=&rtk->ins;
-    int i,nu,nr,n=0,nn=(SOLTYPE_BACKWARD==popt->reverse?ins->nn:0);
+    int i,nu,nr,n=0,nn=ins->nn;
     double dt,dt_next,GI_dt,sec,ndt;
 
     trace(3,"infunc  : dir=%d iobsu=%d iobsr=%d isbs=%d\n",popt->reverse,iobsu,iobsr,isbs);
@@ -266,7 +267,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
     if (0<=iobsu&&iobsu<obss.n) {
-        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu-nn].time)));
+        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu].time)));
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
         }
@@ -302,20 +303,22 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             if (iimu>=imus.n) return -1;
 
             /* calculate the difference between the current time and the nominal measurement update time */
-            sec=imus.data[iimu].time.sec;
+            sec=imus.data[iimu+(nn-1)].time.sec;
             rtk->nominal_update=NO;
             ndt=fabs(sec-round((sec+ins->interval/2.0)/rtk->interval)*rtk->interval);
+            /* INS navigation time */
+            ins->time=imus.data[iimu+(nn-1)].time;
 
             /* the second condition is used to process the IMU time on both sides being 0.5 IMU sampling interval away from GNSS time */
             if ((fabs(ndt)-ins->dttol)<=(ins->nn*ins->interval)/2.0
-                &&(fabs(timediff(imus.data[iimu].time,rtk->upte_time))>=(rtk->interval-ins->interval))) {
+                &&(fabs(timediff(imus.data[iimu+(nn-1)].time,rtk->upte_time))>=(rtk->interval-ins->interval))) {
                 rtk->nominal_update=YES;
                 /* record the synchronization time */
-                rtk->upte_time=imus.data[iimu].time;                
+                rtk->upte_time=imus.data[iimu+(nn-1)].time;                
             }  
 
             /* calculate the difference between the current IMU and GNSS observation time */
-            GI_dt=timediff(imus.data[iimu].time,obss.data[iobsu].time);
+            GI_dt=timediff(imus.data[iimu+(nn-1)].time,obss.data[iobsu].time);
             rtk->upte=SYNC_NO;   
             imucpy(popt,imu,imus,iimu,ins->nn); 
 
@@ -324,14 +327,14 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
                 if (NO==rtk->match) rtk->match=YES;
                 rtk->upte=SYNC_YES;
                 /* record the synchronization time */
-                rtk->upte_time=imus.data[iimu].time; 
+                rtk->upte_time=imus.data[iimu+(nn-1)].time; 
                 /* if GNSS is available, set the nominal IMU update flag to 0 */
                 rtk->nominal_update=NO;               
-                iimu+=ins->nn; iobsu+=nu;
+                iimu+=nn; iobsu+=nu;
             }
             else if (GI_dt<0){
-                if (NO==rtk->match) {iimu+=ins->nn; return 0;}
-                else iimu+=ins->nn;
+                if (NO==rtk->match) {iimu+=nn; return 0;}
+                else iimu+=nn;
             }
             else if (GI_dt>0){
                 if (NO==rtk->match) {iobsu+=nu; return 0;}   
@@ -386,11 +389,13 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             /* calculate the difference between the current time and the nominal measurement update time */
             sec=imus.data[iimu-nn].time.sec;
             rtk->nominal_update=NO;
-            ndt=fabs(sec-round((sec+rtk->ins.interval/2.0)/rtk->interval)*rtk->interval);
+            ndt=fabs(sec-round((sec+ins->interval/2.0)/rtk->interval)*rtk->interval);
+            /* INS navigation time */
+            ins->time=imus.data[iimu-nn].time;            
 
             /* the second condition is used to process the IMU time on both sides being 0.5 IMU sampling interval away from GNSS time */
-            if ((fabs(ndt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0
-                &&(fabs(timediff(imus.data[iimu-nn].time,rtk->upte_time))>=(rtk->interval-rtk->ins.interval))) {
+            if ((fabs(ndt)-ins->dttol)<=(ins->nn*ins->interval)/2.0
+                &&(fabs(timediff(imus.data[iimu-nn].time,rtk->upte_time))>=(rtk->interval-ins->interval))) {
                 rtk->nominal_update=YES;
                 /* record the synchronization time */
                 rtk->upte_time=imus.data[iimu-nn].time;                
@@ -399,21 +404,23 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             /* calculate the difference between the current IMU and GNSS observation time */
             GI_dt=timediff(imus.data[iimu-nn].time,obss.data[iobsu].time);
             rtk->upte=SYNC_NO;   
-            imucpy(popt,imu,imus,iimu,rtk->ins.nn); 
+            /* for backward processing mode, the sign of the INS velocity and gyroscope bias is inverted */
+            if (!reverse_flag) pos_reverse(popt,ins,&reverse_flag);
+            imucpy(popt,imu,imus,iimu,ins->nn); 
 
             /* GNSS/INS matching and synchronization */
-            if ((fabs(GI_dt)-rtk->ins.dttol)<=(rtk->ins.nn*rtk->ins.interval)/2.0){
+            if ((fabs(GI_dt)-ins->dttol)<=(ins->nn*ins->interval)/2.0){
                 if (NO==rtk->match) rtk->match=YES;
                 rtk->upte=SYNC_YES;
                 /* record the synchronization time */
                 rtk->upte_time=imus.data[iimu-nn].time; 
                 /* if GNSS is available, set the nominal IMU update flag to 0 */
                 rtk->nominal_update=NO;               
-                iimu-=rtk->ins.nn; iobsu-=nu;
+                iimu-=nn; iobsu-=nu;
             }
             else if (GI_dt>0){
-                if (NO==rtk->match) {iimu-=rtk->ins.nn; return 0;}
-                else iimu-=rtk->ins.nn;
+                if (NO==rtk->match) {iimu-=nn; return 0;}
+                else iimu-=nn;
             }
             else if (GI_dt<0){
                 if (NO==rtk->match) {iobsu-=nu; return 0;}   
@@ -526,20 +533,20 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     
     rtcm_path[0]='\0';
 
+    /* initialize GNSS sampling interval */
+    if (!rtk->interval) gnss_intervel(rtk,&obss);
+
     /* epoch-by-epoch processing */
     while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {
 
         /* DebugGlo initialization */
-        if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=imu[0].time; 
+        if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,437378,2188); 
+       /*  DebugTime(rtk,Debug_Glo.tNow,437378,2188); */ 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
-
-        /* initialize GNSS sampling interval */
-        if (!rtk->interval) gnss_intervel(rtk,&obss);
 
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
@@ -717,11 +724,11 @@ static int valcomb(const sol_t *solf, const sol_t *solb, double *rbf, double *rb
     return 1;
 }
 /* combine forward/backward solutions and save results ---------------------*/
-static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt)
+static void combres(FILE *fp, FILE *fptm, rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
 {
     gtime_t time={0};
     sol_t sols={{0}},sol={{0}},oldsol={{0}},newsol={{0}};
-    double tt,Qf[9],Qb[9],Qs[9],rbs[3]={0},rb[3]={0},rr_f[3],rr_b[3],rr_s[3];
+    double tt,Qf[9],Qf2[9],Qb[9],Qb2[9],Qs[9],Qs2[9],rbs[3]={0},rb[3]={0},rr_f[3],rr_b[3],rr_s[3];
     int i,j,k,solstatic,num=0;
     int pri[]={7,1,2,3,4,5,1,6}; /* no:0,fix:1,float:2,sbas:3,dgps:4,single:5,ppp:6,ins:7,cons:8 */
 
@@ -732,6 +739,11 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
 
     /* set reference station position */
     for (i=0,j=isolb-1;i<isolf&&j>=0;i++,j--) {
+        /* time debug */
+        Debug_Glo.tNow=solf[i].time;           
+        Debug_Glo=DebugGlo_init(Debug_Glo);
+        DebugTime(rtk,solf[i].time,440976,2188);
+
         if ((tt=timediff(solf[i].time,solb[j].time))<-DTTOL) {
             sols=solf[i];
             for (k=0;k<3;k++) rbs[k]=rbf[k+i*3];
@@ -794,14 +806,41 @@ static void combres(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 covtosol_vel(Qs,&sols);
             }
 
-            /* NOTE: smoother for attitude solution */
+            /* NOTE: smoother for attitude and bias solution */
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||GINS_TC==popt->GI_mode) {
                 /* solution to attitude covariance matrix */
                 soltocov_att(solf+i,Qf);
                 soltocov_att(solb+j,Qb);
                 
+                if (smoother_att(solf[i].qnb,Qf,solb[j].qnb,Qb,3,sols.att,Qs)) continue;
+
                 /* velocity covariance matrix to solution */
                 covtosol_att(Qs,&sols);
+
+                /* solution to bias covariance matrix */
+                soltocov_bga(solf+i,Qf,Qf2);
+                soltocov_bga(solb+j,Qb,Qb2);
+
+                /* convert bias unit from deg/h and ug to rad/s and g */
+                for (k=0;k<3;k++) {
+                    solf[i].bg[k]/=R2D*3600;
+                    solb[j].bg[k]/=R2D*3600;
+                    solf[i].ba[k]/=1E5;
+                    solb[j].ba[k]/=1E5;
+                }
+
+                /* smoother for gyroscope and accelerometer bias solution */
+                if (smoother(solf[i].bg,Qf ,solb[j].bg,Qb ,3,sols.bg,Qs)) continue;
+                if (smoother(solf[i].ba,Qf2,solb[j].ba,Qb2,3,sols.ba,Qs2)) continue;
+
+                /* convert bias unit from rad/s and g to deg/h and ug */
+                for (k=0;k<3;k++) {
+                    sols.bg[k]*=R2D*3600;
+                    sols.ba[k]*=1E5;
+                }
+
+                /* bias covariance matrix to solution */
+                covtosol_bga(Qs,Qs2,&sols);
             }
         }
         if (!solstatic) {
@@ -1348,7 +1387,7 @@ static void namefiletm(char *outfiletm, const char *outfile)
 extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
 {
     /* moved from stack to heap to avoid stack overflow warning */
-    rtk_t *rtk_ptr = (rtk_t *)malloc(sizeof(rtk_t)); 
+    rtk_t *rtk = (rtk_t *)malloc(sizeof(rtk_t)); 
     char tracefile[1024],statfile[1024],iposfile[1024],azelfile[1024],satdopfile[1024],path[1024],outfiletm[1024]={0};
     const char *ext;
     int i,j,k,week=0;  
@@ -1360,7 +1399,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     if (!readobsnav(ts,te,ti,fopt,popt,&obss,&navs,stas)) {
         /* free obs and nav data */
         freeobsnav(&obss, &navs);
-        free(rtk_ptr);
+        free(rtk);
         return 0;
     } 
 
@@ -1431,19 +1470,19 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     if (popt->mode==PMODE_FIXED) {
         if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
-            free(rtk_ptr);
+            free(rtk);
             return 0;
         }
         if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
-            free(rtk_ptr);
+            free(rtk);
             return 0;
         }
     }
     else if (PMODE_DGPS<=popt->mode&&popt->mode<=PMODE_STATIC_START) {
         if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
-            free(rtk_ptr);
+            free(rtk);
             return 0;
         }
     }
@@ -1451,7 +1490,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     /* write header to output file */
     if (!outhead(popt,sopt,fopt)) {
         freeobsnav(&obss,&navs);
-        free(rtk_ptr);
+        free(rtk);
         return 0;
     }
 
@@ -1491,7 +1530,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     /* write header to file with time marks */
     /* outhead(outfiletm,infile,n,&popt_,sopt); */
 
-    iobsu=iobsr=isbs=iimu=aborts=0;
+    iobsu=iobsr=isbs=iimu=aborts=reverse_flag=0;
 
     /* forward solutions */
     if ((GINS_OFF==popt->GI_mode&&popt->mode==PMODE_SINGLE)||popt->soltype==SOLTYPE_FORWARD) {
@@ -1500,9 +1539,9 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         if (fp) {
             FILE *fptm=openfile(outfiletm);
             if (fptm) {
-                rtkinit(rtk_ptr,popt,sopt);
-                procpos(fp,fptm,popt,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
-                rtkfree(rtk_ptr);
+                rtkinit(rtk,popt,sopt);
+                procpos(fp,fptm,popt,sopt,rtk,SOLMODE_SINGLE_DIR);
+                rtkfree(rtk);
                 fclose(fptm);
             }
             fclose(fp);
@@ -1514,11 +1553,11 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         if (fp) {
             FILE *fptm=openfile(outfiletm);
             if (fptm) {
-                popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
+                rtk->opt.reverse=popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
                 if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
-                rtkinit(rtk_ptr,popt,sopt);
-                procpos(fp,fptm,popt,sopt,rtk_ptr,SOLMODE_SINGLE_DIR);
-                rtkfree(rtk_ptr);
+                rtkinit(rtk,popt,sopt);
+                procpos(fp,fptm,popt,sopt,rtk,SOLMODE_SINGLE_DIR);
+                rtkfree(rtk);
                 fclose(fptm);
             }
             fclose(fp);
@@ -1533,18 +1572,18 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
 
         if (solf&&solb) {
             isolf=isolb=0;
-            rtkinit(rtk_ptr,popt,sopt);
-            procpos(NULL,NULL,popt,sopt,rtk_ptr,SOLMODE_COMBINED); /* forward */
-            popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
+            rtkinit(rtk,popt,sopt);
+            procpos(NULL,NULL,popt,sopt,rtk,SOLMODE_COMBINED); /* forward */
+            rtk->opt.reverse=popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
             if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
             /* FBS with no state reset */
             if (popt->soltype!=SOLTYPE_COMBINED_NORESET) {
                 /* reset */
-                rtkfree(rtk_ptr);
-                rtkinit(rtk_ptr,popt,sopt);
+                rtkfree(rtk);
+                rtkinit(rtk,popt,sopt);
             }
-            procpos(NULL,NULL,popt,sopt,rtk_ptr,SOLMODE_COMBINED); /* backward */
-            rtkfree(rtk_ptr);
+            procpos(NULL,NULL,popt,sopt,rtk,SOLMODE_COMBINED); /* backward */
+            rtkfree(rtk);
 
             if (!aborts) {
                 FILE *fp=openfile(fopt->sol);
@@ -1552,7 +1591,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
                     FILE *fptm=openfile(outfiletm);
                     if (fptm) {
                         /* forward and backward smoothing */
-                        combres(fp,fptm,popt,sopt);
+                        combres(fp,fptm,rtk,popt,sopt);
                         fclose(fptm);
                     }
                     fclose(fp);
@@ -1564,7 +1603,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     /* free rtk, obs/nav , ant and imu data */
-    free(rtk_ptr);          
+    free(rtk);          
     freeobsnav(&obss,&navs);
     if (imus.data)            freeimu(&imus);
     if (pcvss.pcv&&pcvsr.pcv) freeant(&pcvss,&pcvsr);

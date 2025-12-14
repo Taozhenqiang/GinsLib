@@ -3270,15 +3270,16 @@ static int valpos(rtk_t *rtk, const double *v, const double *R, const int *vflg,
 *-----------------------------------------------------------------------------*/
 static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, int stat)
 {  
-    const prcopt_t *opt=&rtk->opt;
+    const prcopt_t *popt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9],p_gnss[6]={0.0};
+    double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); /* in backward mode, GNSS/INS velocities have the opposite sign to the actual velocities */
     int nf=rtk->opt.ionoopt==IONOOPT_IFLC?1:rtk->opt.nf,i,j,k,sys,fr;
 
     if (stat!=SOLQ_NONE) rtk->sol.stat=stat;
     else return 0;
 
-    if (GINS_TC==opt->GI_mode) 
+    if (GINS_TC==popt->GI_mode) 
     {
         /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
         if (stat!=SOLQ_INS&&rtk->outage<=MAX_OUTIME) rtk->outage=0;
@@ -3287,7 +3288,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         if (SOLQ_FIX==stat) 
         {
             /* convert INS solution to GNSS center */
-            if (OUTPOS_GNSS==opt->outpos) {
+            if (OUTPOS_GNSS==popt->outpos) {
                 insfix2gnss(ins,p_gnss,6);
 
                 pos2ecef(p_gnss,re);
@@ -3304,9 +3305,9 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
     
             for (i=0;i<3;i++) {
                 rtk->sol.rr [i]=re[i];
-                rtk->sol.vel[i]=ve[i];
+                rtk->sol.vel[i]=ve[i]*sgn;
                 rtk->sol.att[i]=ins->xa[i]*R2D;
-                rtk->sol.bg [i]=ins->xa[i+9]*R2D*3600;
+                rtk->sol.bg [i]=ins->xa[i+9]*R2D*3600*sgn;
                 rtk->sol.ba [i]=ins->xa[i+12]*1E5; 
             }
 
@@ -3316,23 +3317,23 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
 
             for (i=0;i<3;i++){
                 for (j=0;j<3;j++){
-                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na]*R2D*R2D;    /* deg^2 */
+                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na];    /* rad^2 */
                     Qvn[j+i*3]=rtk->Pa[(j+3)+(i+3)*rtk->na];   /* m^2/s^2 */
                     Qrn[j+i*3]=rtk->Pa[(j+6)+(i+6)*rtk->na];   /* m^2 */
-                    Qbg[j+i*3]=rtk->Pa[(j+9)+(j+9)*rtk->na]*(R2D*3600)*(R2D*3600);  /* deg^2/h^2*/
-                    Qba[j+i*3]=rtk->Pa[(j+12)+(j+12)*rtk->na]*1E5*1E5;              /* ug^2*/
+                    Qbg[j+i*3]=rtk->Pa[(j+9)+(i+9)*rtk->na];  /* rad^2/s^2*/
+                    Qba[j+i*3]=rtk->Pa[(j+12)+(i+12)*rtk->na];              /* g^2*/
                 }
             }  
             /* cov of local frame to ecef frame */
             covecef(ins->pos,Qvn,Qv);        
             covecef(ins->pos,Qrn,Qr);
+            covtosol(Qr,&rtk->sol);
             covtosol_att(Qa,&rtk->sol);
             covtosol_vel(Qv,&rtk->sol);
-            covtosol(Qr,&rtk->sol);
             covtosol_bga(Qbg,Qba,&rtk->sol);
         }
         else {
-            update_instat(opt,ins,rtk->P,&rtk->sol,rtk->nx);
+            update_instat(popt,ins,rtk->P,&rtk->sol,rtk->nx);
             /* if the ambiguity resolution of the current epoch fails, reset the hold ambiguity count */
             rtk->nfix=0;                       
         }

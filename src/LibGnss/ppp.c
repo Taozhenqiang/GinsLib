@@ -1456,17 +1456,18 @@ extern int pppnx(const prcopt_t *opt)
 /* update solution result ----------------------------------------------------*/
 static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
 {
-    const prcopt_t *opt=&rtk->opt;
+    const prcopt_t *popt=&rtk->opt;
     ins_t *ins=&rtk->ins;
     double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9],p_gnss[6];    
+    double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); /* in backward mode, GNSS/INS velocities have the opposite sign to the actual velocities */
     int i,j,sys,fr;
 
     /* test # of valid satellites */
     rtk->sol.ns=0;
     for (i=0;i<n&&i<MAXOBS;i++) {
         sys=satsys(obs[i].sat,NULL);
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
+        for (j=0;j<popt->nf;j++) {
+            fr=sys2freid(sys,j,popt);
 
             if (!rtk->ssat[obs[i].sat-1].vsat[fr]) continue;
             rtk->ssat[obs[i].sat-1].lock[fr]++;
@@ -1475,7 +1476,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
         }
     }
     /* posterior result check */
-    if ((GINS_TC==opt->GI_mode&&!stat)||(GINS_TC==opt->GI_mode&&rtk->sol.ns<MIN_NSAT_SOL)) {
+    if ((GINS_TC==popt->GI_mode&&!stat)||(GINS_TC==popt->GI_mode&&rtk->sol.ns<MIN_NSAT_SOL)) {
         rtk->sol.stat=SOLQ_INS; 
         rtk->sol.ns=0;
     }
@@ -1485,13 +1486,13 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
         rtk->sol.stat=rtk->sol.ns<MIN_NSAT_SOL?SOLQ_NONE:stat; 
     }
 
-    if (GINS_TC==opt->GI_mode) 
+    if (GINS_TC==popt->GI_mode) 
     {
         /* update solution status */
         if (SOLQ_FIX==stat) 
         {
             /* convert INS solution to GNSS center */
-            if (OUTPOS_GNSS==opt->outpos) {
+            if (OUTPOS_GNSS==popt->outpos) {
                 insfix2gnss(ins,p_gnss,6);
 
                 pos2ecef(p_gnss,re);
@@ -1508,9 +1509,9 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     
             for (i=0;i<3;i++) {
                 rtk->sol.rr [i]=re[i];
-                rtk->sol.vel[i]=ve[i];
+                rtk->sol.vel[i]=ve[i]*sgn;
                 rtk->sol.att[i]=ins->xa[i]*R2D;
-                rtk->sol.bg [i]=ins->xa[i+9]*R2D*3600;
+                rtk->sol.bg [i]=ins->xa[i+9]*R2D*3600*sgn;
                 rtk->sol.ba [i]=ins->xa[i+12]*1E5; 
             }
 
@@ -1520,25 +1521,25 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
 
             for (i=0;i<3;i++){
                 for (j=0;j<3;j++){
-                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na]*R2D*R2D;    /* deg^2 */
+                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na];            /* rad^2 */
                     Qvn[j+i*3]=rtk->Pa[(j+3)+(i+3)*rtk->na];   /* m^2/s^2 */
                     Qrn[j+i*3]=rtk->Pa[(j+6)+(i+6)*rtk->na];   /* m^2 */
-                    Qbg[j+i*3]=rtk->Pa[(j+9)+(j+9)*rtk->na]*(R2D*3600)*(R2D*3600);  /* deg^2/h^2*/
-                    Qba[j+i*3]=rtk->Pa[(j+12)+(j+12)*rtk->na]*1E5*1E5;              /* ug^2*/
+                    Qbg[j+i*3]=rtk->Pa[(j+9)+(i+9)*rtk->na];   /* rad^2/s^2*/
+                    Qba[j+i*3]=rtk->Pa[(j+12)+(i+12)*rtk->na]; /* g^2*/
                 }
             }  
             
             /* cov of local frame to ecef frame */
             covecef(ins->pos,Qvn,Qv);        
             covecef(ins->pos,Qrn,Qr);
+            covtosol(Qr,&rtk->sol);
             covtosol_att(Qa,&rtk->sol);
             covtosol_vel(Qv,&rtk->sol);
-            covtosol(Qr,&rtk->sol);
             covtosol_bga(Qbg,Qba,&rtk->sol);
         }
         else {
             /* update ins state */
-            update_instat(opt,ins,rtk->P,&rtk->sol,rtk->nx);
+            update_instat(popt,ins,rtk->P,&rtk->sol,rtk->nx);
         }
     } 
     else if (rtk->sol.stat==SOLQ_FIX) {
@@ -1571,16 +1572,16 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     }
 
     /* update GPS receiver clock and ISB */
-    rtk->sol.dtr[0]=rtk->x[IC(0,opt)]/CLIGHT; /* GPS */
-    rtk->sol.dtr[1]=rtk->x[IC(1,opt)]/CLIGHT; /* GLO-GPS */
-    rtk->sol.dtr[2]=rtk->x[IC(2,opt)]/CLIGHT; /* GAL-GPS */
-    rtk->sol.dtr[3]=rtk->x[IC(3,opt)]/CLIGHT; /* BDS-GPS */
+    rtk->sol.dtr[0]=rtk->x[IC(0,popt)]/CLIGHT; /* GPS */
+    rtk->sol.dtr[1]=rtk->x[IC(1,popt)]/CLIGHT; /* GLO-GPS */
+    rtk->sol.dtr[2]=rtk->x[IC(2,popt)]/CLIGHT; /* GAL-GPS */
+    rtk->sol.dtr[3]=rtk->x[IC(3,popt)]/CLIGHT; /* BDS-GPS */
 
     for (i=0;i<n&&i<MAXOBS;i++) {
         sys=satsys(obs[i].sat,NULL);
 
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
+        for (j=0;j<popt->nf;j++) {
+            fr=sys2freid(sys,j,popt);
             rtk->ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
             rtk->ssat[obs[i].sat-1].snr_base[fr] =0;
         }
@@ -1588,8 +1589,8 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     for (i=0;i<MAXSAT;i++) {
         sys=satsys(i+1,NULL);
 
-        for (j=0;j<opt->nf;j++) {
-            fr=sys2freid(sys,j,opt);
+        for (j=0;j<popt->nf;j++) {
+            fr=sys2freid(sys,j,popt);
             if (rtk->ssat[i].slip[fr]&3) rtk->ssat[i].slipc[fr]++;
             if (rtk->ssat[i].fix[fr]==2&&stat!=SOLQ_FIX) rtk->ssat[i].fix[fr]=1;
     }

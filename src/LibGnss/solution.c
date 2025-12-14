@@ -186,35 +186,59 @@ extern void covtosol_vel(const double *P, sol_t *sol)
     sol->qv[4]=(float)P[5]; /* yz */
     sol->qv[5]=(float)P[2]; /* zx */
 }
-/* solution to attitude covariance -------------------------------------------*/
+/* solution to attitude covariance (rad^2) -------------------------------------------*/
 extern void soltocov_att(const sol_t *sol, double *P)
 {
-    P[0]     =sol->qa[0]; /* xx */
-    P[4]     =sol->qa[1]; /* yy */
-    P[8]     =sol->qa[2]; /* zz */
-    P[1]=P[3]=sol->qa[3]; /* xy */
-    P[5]=P[7]=sol->qa[4]; /* yz */
-    P[2]=P[6]=sol->qa[5]; /* zx */
+    P[0]     =sol->qa[0]*D2R*D2R; /* xx */
+    P[4]     =sol->qa[1]*D2R*D2R; /* yy */
+    P[8]     =sol->qa[2]*D2R*D2R; /* zz */
+    P[1]=P[3]=sol->qa[3]*D2R*D2R; /* xy */
+    P[5]=P[7]=sol->qa[4]*D2R*D2R; /* yz */
+    P[2]=P[6]=sol->qa[5]*D2R*D2R; /* zx */
 }
-/* attitude covariance to solution -------------------------------------------*/
+/* attitude covariance to solution (deg^2) -------------------------------------------*/
 extern void covtosol_att(const double *P, sol_t *sol)
 {
-    sol->qa[0]=(float)P[0]; /* xx */
-    sol->qa[1]=(float)P[4]; /* yy */
-    sol->qa[2]=(float)P[8]; /* zz */
-    sol->qa[3]=(float)P[1]; /* xy */
-    sol->qa[4]=(float)P[5]; /* yz */
-    sol->qa[5]=(float)P[2]; /* zx */
+    sol->qa[0]=(float)P[0]*R2D*R2D; /* xx */
+    sol->qa[1]=(float)P[4]*R2D*R2D; /* yy */
+    sol->qa[2]=(float)P[8]*R2D*R2D; /* zz */
+    sol->qa[3]=(float)P[1]*R2D*R2D; /* xy */
+    sol->qa[4]=(float)P[5]*R2D*R2D; /* yz */
+    sol->qa[5]=(float)P[2]*R2D*R2D; /* zx */
 }
-/* bg/ba covariance to solution -------------------------------------------*/
+/* bg/ba covariance to solution (deg^2/h^2, ug^2) -------------------------------------------*/
 extern void covtosol_bga(const double *Pbg, const double *Pba, sol_t *sol)
 {
-    sol->qb[0]=(float)Pbg[0]; /* bgx */
-    sol->qb[1]=(float)Pbg[4]; /* bgy */
-    sol->qb[2]=(float)Pbg[8]; /* bgz */
-    sol->qb[3]=(float)Pba[0]; /* bax */
-    sol->qb[4]=(float)Pba[4]; /* bay */
-    sol->qb[5]=(float)Pba[8]; /* baz */
+    sol->qb[0]=(float)Pbg[0]*(R2D*3600.0)*(R2D*3600.0); /* bgx */
+    sol->qb[1]=(float)Pbg[4]*(R2D*3600.0)*(R2D*3600.0); /* bgy */
+    sol->qb[2]=(float)Pbg[8]*(R2D*3600.0)*(R2D*3600.0); /* bgz */
+    sol->qb[6]=(float)Pbg[1]*(R2D*3600.0)*(R2D*3600.0); /* bgxy */
+    sol->qb[7]=(float)Pbg[5]*(R2D*3600.0)*(R2D*3600.0); /* bgyz */
+    sol->qb[8]=(float)Pbg[2]*(R2D*3600.0)*(R2D*3600.0); /* bgxz */
+
+    sol->qb[3]=(float)Pba[0]*1E5*1E5; /* bax */
+    sol->qb[4]=(float)Pba[4]*1E5*1E5; /* bay */
+    sol->qb[5]=(float)Pba[8]*1E5*1E5; /* baz */
+    sol->qb[9]=(float)Pba[1]*1E5*1E5; /* baxy */
+    sol->qb[10]=(float)Pba[5]*1E5*1E5; /* bayz */
+    sol->qb[11]=(float)Pba[2]*1E5*1E5; /* baxz */
+}
+/* esolution to bg/ba covarianc (rad^2/s^2, g^2) -------------------------------------------*/
+extern void soltocov_bga(const sol_t *sol, double *Pbg, double *Pba)
+{   
+    Pbg[0]     =sol->qb[0]/(R2D*3600.0)/(R2D*3600.0); /* bgx */
+    Pbg[4]     =sol->qb[1]/(R2D*3600.0)/(R2D*3600.0); /* bgy */
+    Pbg[8]     =sol->qb[2]/(R2D*3600.0)/(R2D*3600.0); /* bgz */
+    Pbg[1]=Pbg[3]=sol->qb[6]/(R2D*3600.0)/(R2D*3600.0); /* bgxy */
+    Pbg[5]=Pbg[7]=sol->qb[7]/(R2D*3600.0)/(R2D*3600.0); /* bgyz */
+    Pbg[2]=Pbg[6]=sol->qb[8]/(R2D*3600.0)/(R2D*3600.0); /* bgxz */        
+
+    Pba[0]     =sol->qb[3]/1E5/1E5; /* bax */
+    Pba[4]     =sol->qb[4]/1E5/1E5; /* bay */
+    Pba[8]     =sol->qb[5]/1E5/1E5; /* baz */
+    Pba[1]=Pba[3]=sol->qb[9]/1E5/1E5; /* baxy */
+    Pba[5]=Pba[7]=sol->qb[10]/1E5/1E5; /* bayz */
+    Pba[2]=Pba[6]=sol->qb[11]/1E5/1E5; /* baxz */        
 }
 /* decode NMEA RMC (Recommended Minimum Specific GNSS Data) sentence ---------*/
 static int decode_nmearmc(char **val, int n, sol_t *sol)
@@ -1571,7 +1595,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     };
     char s2[4];
     const char *s3[]={
-        "Forward","Backward","Combined-Phase Reset","Combined-No Phase Reset","",""
+        "Forward","Backward","Combined","Combined-No Reset","",""
     };
     const char *s4[]={
         "OFF","Broadcast","SBAS","Iono-Free LC","Estimate TEC","IONEX TEC",
@@ -1653,7 +1677,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         }
         p+=sprintf(p,"\r\n");
     }
-    if (opt->mode>PMODE_SINGLE) {
+    if (opt->mode>PMODE_SINGLE||GINS_OFF!=opt->GI_mode) {
         p+=sprintf(p,"%s solution  : %s\r\n",COMMENTH,s3[opt->soltype]);
     }
     p+=sprintf(p,"%s elev mask : %.1f deg\r\n",COMMENTH,opt->elmin*R2D);

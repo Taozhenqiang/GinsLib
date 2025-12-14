@@ -1169,6 +1169,7 @@ extern "C"
                            /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
         double vel[3];     /* ins velocity (m/s) */
         double att[3];     /* attitude [pitch,roll,yaw] (deg) */
+        double qnb[4];     /* attitude quaternion (qnb) */
         double bg[3];      /* gyroscope bias (deg/h) */
         double ba[3];      /* accelerometer bias (ug) */ 
         double qr[6];      /* position variance/covariance (m^2) */
@@ -1176,8 +1177,8 @@ extern "C"
                             /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
         double qv[6];      /* velocity variance/covariance (m^2/s^2) */
         double qa[6];      /* attitude variance/covariance (deg^2) */
-        double qb[6];      /* bg/ba variance/covariance (deg^2/h^2,ug^2)*/
-                           /* {bgx,bgy,bgz,bax,bay,baz} */
+        double qb[12];     /* bg/ba variance/covariance (deg^2/h^2,ug^2)*/
+                           /* {bgx,bgy,bgz,bax,bay,baz,bgxy,bgyz,bgxz,baxy,bayz,baxz} */
         double tdcp_vel[3];/* tdcp velocity in e frame (m/s) */
         double yaw;        /* yaw based TDCP velocity (deg) */
         double dtr[7];     /* receiver clock bias to time systems (s) */ /* clock for GPS and isb for others (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
@@ -1874,6 +1875,8 @@ extern "C"
                     const double *R, int n, int m, int flag, int mode);
     EXPORT int smoother(const double *xf, const double *Qf, const double *xb,
                         const double *Qb, int n, double *xs, double *Qs);
+    EXPORT int smoother_att(const double *qnb_f,const double *Qf,const double *qnb_b,
+                        const double *Qb,int n,double *xs,double *Qs);                    
     EXPORT void matprint(const double *A, int n, int m, int p, int q);
     EXPORT void matfprint(const double *A, int n, int m, int p, int q, FILE *fp, int flag);
 
@@ -1931,6 +1934,7 @@ extern "C"
     EXPORT void soltocov(const sol_t *sol, double *P);
     EXPORT void soltocov_vel(const sol_t *sol, double *P);
     EXPORT void soltocov_att(const sol_t *sol, double *P);
+    EXPORT void soltocov_bga(const sol_t *sol, double *Pbg, double *Pba);
     EXPORT void xyz2enu(const double *pos, double *E);
     EXPORT void eci2ecef(gtime_t tutc, const double *erpv, double *U, double *gmst);
     EXPORT void deg2dms(double deg, double *dms, int ndec);
@@ -2401,7 +2405,8 @@ extern "C"
                       const nav_t *nav, const double *azel, double *x, double *P);
 
     /* post-processing positioning -----------------------------------------------*/
-    EXPORT int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt);              
+    EXPORT int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt);        
+          
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
     EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
@@ -2414,8 +2419,9 @@ extern "C"
     EXPORT int  tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
-    EXPORT int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);
+    EXPORT int  motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
+    EXPORT void pos_reverse(const prcopt_t *popt, ins_t *ins, int *reverse_flag);
     EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);
     EXPORT void phi_update(ins_t *ins, const prcopt_t *popt);
     EXPORT int  ins_update(rtk_t *rtk);
@@ -2428,7 +2434,7 @@ extern "C"
     EXPORT void psi2phi_corr(ins_t *ins, const double *dr, double *dx);
     EXPORT void ins_fedback(rtk_t *rtk, double *dx);
     EXPORT void ins_fedback_fix(rtk_t *rtk, double *dx);
-    EXPORT int lc_gins(rtk_t *rtk);
+    EXPORT int  lc_gins(rtk_t *rtk);
     EXPORT void update_lcstat(rtk_t *rtk, int stat);
     EXPORT void update_instat(const prcopt_t *opt, ins_t *ins, double *P, sol_t *sol, int nx);
     EXPORT void update_ins(ins_t *ins);
@@ -2440,6 +2446,7 @@ extern "C"
     EXPORT void Cnb2att(const double *Cnb, double *att);
     EXPORT void qnb2Cnb(const double *qnb, double *Cnb);
     EXPORT void qnbnorm(double *qnb_);
+    EXPORT void quatconj(const double *q1, double *q2);
     EXPORT void quatmul(const double *q1, const double *q2, double *q);
     EXPORT void quatmul3(const double *q1, const double *q2, const double *q3, double *q);
     EXPORT void quatmulv(const double f, const double *q, const double *vi, double *vo);
@@ -2447,6 +2454,7 @@ extern "C"
     EXPORT void vskew(double f, const double *v, double *vx);
     EXPORT void Mat3mul2(double f, const double *mat1, const double *mat2, double *mat);
     EXPORT void rv2DCM(double f, const double *rv, double *dcm);
+    EXPORT void quat2rv(const double *q, double *rv);
     EXPORT void rv2quat(double f, const double *rv, double *q);
     EXPORT void vnmul(const int n, const double *v1, double f1, double *vo);
     EXPORT void vnadd(const int n, const double *v1, double f1, const double *v2, double f2, double *vo);

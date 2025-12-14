@@ -951,12 +951,6 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 
         /* weight by variance */
         diag_Cov(nv,var,P,diag_wei);
-        /* for (j=0;j<nv;j++) {  
-            for (k=0;k<nv;k++) {
-                P[k+j*nv]=0.0;  
-                if (k==j) P[k+j*nv]=1.0/var[j];
-            }        
-        } */
         /* trace(12,"P=\n"); tracemat(12,P,nv,nv,9,4,0); */
 
         /* least square estimation */
@@ -1017,6 +1011,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     /* spp/ins TC mode */
     if (tc_flag) {
 
+        /* fusion filter mode */
         mode=rtk->opt.filter;
         /* detected vehicle stationary time (s)*/
         zupt_time=rtk->ins.zupt.count*rtk->ins.interval*rtk->ins.nn;

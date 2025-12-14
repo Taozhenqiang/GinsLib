@@ -308,7 +308,7 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     /* NOTE: convert psi error state to phi error state */
     if (ERR_PSI==popt->err_model) psi2phi_corr(ins,dr,dx);
 
-    /* qnb=qnn_°qn_b */
+    /* Quaternion-based attitude feedback correction, qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
     for (i=0;i<3;i++) phi_nn_[i]=dx[i];
     
@@ -318,7 +318,7 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     qnb2Cnb(ins->qnb,ins->Cnb);
     Cnb2att(ins->Cnb,ins->att);
 
-    /* Cnb=(I+[phi x])Cn'b */
+    /* DCM-based attitude feedback correction, Cnb=(I+[phi x])Cn'b */
     /* for (i=0;i<9;i++) Cnb[i]=ins->Cnb[i];
 
     vskew(1.0,dx,phi);
@@ -413,16 +413,18 @@ extern void update_instat(const prcopt_t *popt, ins_t *ins, double *P, sol_t *so
         pos2ecef(ins->pos,re);
         xyz2enu(ins->pos,Cne);
         DCMT(Cne,Cen);
-        Mat3mulv(1.0*sgn,Cen,ins->vel,ve);
+        Mat3mulv(1.0,Cen,ins->vel,ve);
     }
 
+    /* save GNSS/INS pos/vel/att/bg/ba */
     for (i=0;i<3;i++){
         sol->rr [i]=re[i];
-        sol->vel[i]=ve[i];
+        sol->vel[i]=ve[i]*sgn;
         sol->att[i]=ins->att[i]*R2D;
         sol->bg [i]=ins->bg [i]*R2D*3600*sgn;
         sol->ba [i]=ins->ba [i]*1E5; 
     }
+    for (i=0;i<4;i++) sol->qnb[i]=ins->qnb[i];
 
     /* converts the yaw from counterclockwise to clockwise */
     if (sol->att[2]<=0) sol->att[2]=-sol->att[2];
@@ -430,20 +432,20 @@ extern void update_instat(const prcopt_t *popt, ins_t *ins, double *P, sol_t *so
 
     for (i=0;i<3;i++){
         for (j=0;j<3;j++){
-            Qa[j+i*3]=P[j+i*nx]*R2D*R2D;    /* deg^2 */
+            Qa[j+i*3]=P[j+i*nx];            /* rad^2 */
             Qvn[j+i*3]=P[(j+3)+(i+3)*nx];   /* m^2/s^2 */
             Qrn[j+i*3]=P[(j+6)+(i+6)*nx];   /* m^2 */
-            Qbg[j+i*3]=P[(j+9)+(j+9)*nx]*(R2D*3600)*(R2D*3600);  /* deg^2/h^2*/
-            Qba[j+i*3]=P[(j+12)+(j+12)*nx]*1E5*1E5;              /* ug^2*/
+            Qbg[j+i*3]=P[(j+9)+(i+9)*nx];   /* rad^2/s^2*/
+            Qba[j+i*3]=P[(j+12)+(i+12)*nx]; /* g^2*/
         }
     }
     
     /* cov of local frame to ecef frame */
     covecef(ins->pos,Qrn,Qr);
     covecef(ins->pos,Qvn,Qv);
+    covtosol(Qr,sol);
     covtosol_att(Qa,sol);
     covtosol_vel(Qv,sol);
-    covtosol(Qr,sol);
     covtosol_bga(Qbg,Qba,sol);
 }
 

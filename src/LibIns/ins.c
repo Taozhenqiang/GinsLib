@@ -116,6 +116,17 @@ extern void qnbnorm(double *qnb_)
     }
 }
 
+/* quaternion conjugation --------------------------
+*
+*args   : double *q1      I   quaternion 1
+*         double *q2      O   quaternion q2=q1*
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void quatconj(const double *q1, double *q2)
+{
+    q2[0]=q1[0]; q2[1]=-q1[1]; q2[2]=-q1[2]; q2[3]=-q1[3];
+}
+
 /* two quaternion multiplication --------------------------
 *
 *args   : double *q1      I   quaternion 1
@@ -290,6 +301,25 @@ extern void rv2quat(double f, const double *rv, double *q)
     q[3]=sin(rv_m/2.0)*n_rv[2];
 }
 
+/* transform quaternion to rotation vector --------------------------
+*
+*args   : double *q       I   quaternion (4x1)
+*         double *rv      O   rotation vector (3x1)
+*return : none
+*-------------------------------------------------------------------------------*/
+extern void quat2rv(const double *q, double *rv)
+{
+    int i;
+    double rv_2=0.0,srv_2=0.0;
+
+    rv_2=acos(q[0]);
+    srv_2=2.0*rv_2/sin(rv_2);
+
+    for (i=0;i<3;i++) {
+        rv[i]=srv_2*q[i+1];
+    }
+
+}
 /* nx1 vector multiply the number --------------------------
 *
 *args   : int     n        I   size of the vector (3x3)
@@ -980,7 +1010,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
             gnss2ins(rtk,pos,ins->pos,1);
             /* reverse the velocity vector if the solution type is backward */
-            if (SOLTYPE_BACKWARD==popt->soltype) {
+            if (SOLTYPE_BACKWARD==popt->reverse) {
                 for (i=0;i<3;i++) vn[i]=-vn[i];
             }
             gnss2ins(rtk,vn,ins->vel,2);
@@ -1047,7 +1077,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     sol_t sol={0},sol_old={0};
     double *rs,*rs_old,*dts,*dts_old,*vare,*vare_old,*resp,*resp_old,*azel,*azel_old;
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
-    double sgn=(SOLTYPE_BACKWARD==opt->soltype?-1.0:1.0);
+    double sgn=(SOLTYPE_BACKWARD==opt->reverse?-1.0:1.0);
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
     int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,flag=1,vel_flag=1,mode=Robust_RES;
@@ -1404,6 +1434,20 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     return inv;
 }
 
+/* for backward processing mode, the sign of the INS velocity and gyroscope bias is inverted */
+extern void pos_reverse(const prcopt_t *popt, ins_t *ins, int *reverse_flag)
+{
+    int i;
+
+    if (SOLTYPE_COMBINED<=popt->soltype&&SOLTYPE_BACKWARD==popt->reverse) {
+        for (i=0;i<3;i++) {
+            ins->vel[i]=-ins->vel[i];
+            ins->bg[i]=-ins->bg[i];
+        }
+        *reverse_flag=1;
+    }
+}
+
 /* ins mechanization -----------------------------------------------*/
 extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt) 
 {
@@ -1417,7 +1461,6 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt)
 
     /* sample interval of imu */
     interval=ins->interval*ins->nn;
-    ins->time=imu[0].time;
 
     /* bias correction for gyroscopes and accelerometers */
     imu_fedback(ins,imu);
@@ -1758,7 +1801,6 @@ extern void ins2gnss(const prcopt_t *popt, ins_t *ins, double *pv_g, int n)
 {
     int i;
     double F1[9],lever_n[3],Cbn[9],wbie[3],wbeb[3],temp[3],d_v[3],pv[6];
-    double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); /* in backward mode, GNSS/INS velocities have the opposite sign to the actual velocities */
 
     Mat3mul2(1.0,ins->eth.Frp,ins->Cnb,F1);
     Mat3mulv(1.0,F1,ins->lever,lever_n);
@@ -1770,7 +1812,7 @@ extern void ins2gnss(const prcopt_t *popt, ins_t *ins, double *pv_g, int n)
         Mat3add2(ins->wbib,1.0,wbie,-1.0,wbeb);
         vskewmv(1.0,wbeb,ins->lever,temp);
         Mat3mulv(1.0,ins->Cnb,temp,d_v);
-        vnadd(3,ins->vel,1.0*sgn,d_v,1.0,pv+3);        
+        vnadd(3,ins->vel,1.0,d_v,1.0,pv+3);        
     }
 
     for (i=0;i<n;i++)
