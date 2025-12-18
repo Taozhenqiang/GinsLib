@@ -942,8 +942,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         }
 
         if (nv<NX) {
-            trace(7,"spp lack of valid sats ns=%d\n",nv);
-            break;
+            trace(7,"spp lack of valid sats ns=%d\n",nv); break;
         }
 
         /* trace(12,"H=\n"); tracemat(12,H,nv,NX,9,4,0);
@@ -955,8 +954,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 
         /* least square estimation */
         if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_OFF))) {
-            trace(7,"spp lsq error info=%d\n!",info);
-            break;
+            trace(7,"spp lsq error info=%d\n!",info); break;
         }
         for (j=0;j<NX;j++) {
             x[j]+=dx[j];
@@ -1194,8 +1192,8 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
     
     /* NOTE: for GNSS/INS integration, the INS solution is set to the initial state. */
-    if (GINS_OFF==opt_.GI_mode) sol->stat=SOLQ_NONE;
-    else sol->stat=SOLQ_INS; 
+    if (GINS_TC==opt_.GI_mode) sol->stat=SOLQ_INS;
+    else sol->stat=SOLQ_NONE; 
     
     if (n<=0) {
         /* if the number of available satellites is 0, output INS solution */

@@ -28,8 +28,8 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
-            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
+            else if (i>=9&&i<12)  P[i]=(ins->psd_bg*1E2)*(ins->psd_bg*1E2);
+            else                  P[i]=(ins->psd_ba*1E2)*(ins->psd_ba*1E2);
         }
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4,0); */
@@ -129,7 +129,7 @@ extern int lc_gins(rtk_t *rtk)
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
 
     /* check GNSS status and output INS navigation information if GNSS is unavailable */
-    if (SOLQ_INS==rtk->sol.stat) {
+    if (SOLQ_NONE==rtk->sol.stat) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(popt,ins,rtk->lcgins.P,sol,nx);
@@ -171,6 +171,7 @@ extern int lc_gins(rtk_t *rtk)
     
     /* initialize measurement variance */
     soltocov(&rtk->sol,Re);
+    covtodiag(Re,3);
     covenu(ins->pos,Re,Rn);
     for (i=0;i<nv;i++) var[i]=Rn[i+i*nv];
 

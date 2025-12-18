@@ -132,6 +132,10 @@ extern "C"
 #define BODYF_RFU 0     /* body frame direction: RFU */
 #define BODYF_FRD 1     /* body frame direction: FRD */
 
+#define POSF_XYZ 0      /* pos file with ecef_pos and ecef_std */
+#define POSF_NED 1      /* pos file with llh and ned_std */
+#define POSF_ENU 2      /* pos file with llh and enu_std */
+
 #define INSALI_MANUAL 0 /* manual alignment */
 #define INSALI_VELTOR 1 /* velocity vector alignment */
 
@@ -164,6 +168,7 @@ extern "C"
 
 /* ins constants/macros ----------------------------------------------------------*/
 #define NINCIMU     100000              /* incremental number of imu data */
+#define NMAXPOS     10000               /* max number of pos data */
 #define MAXINS      2                   /* maximum number of samples */
 
 #define THRES_MW_JUMP 10.0
@@ -485,7 +490,8 @@ extern "C"
 #define PMODE_PPP_KINEMA 8   /* positioning mode: PPP-kinemaric */
 #define PMODE_PPP_STATIC 9   /* positioning mode: PPP-static */
 #define PMODE_PPP_FIXED 10   /* positioning mode: PPP-fixed */
-#define PMODE_INSPURE 11     /* positioning mode: pure ins */  
+#define PMODE_LC_POS  11     /* GNSS/INS LC position based on .pos file */
+#define PMODE_INSPURE 12     /* positioning mode: pure ins */  
 
 #define SOLF_LLH 0  /* solution format: lat/lon/height */
 #define SOLF_XYZ 1  /* solution format: x/y/z-ecef */
@@ -710,6 +716,24 @@ extern "C"
 
     } obsd_t;
     
+    typedef struct 
+    {                                 /* pos result record */
+        gtime_t time;                 /* receiver sampling time (GPST) */
+        double pos[3];                /* rec position in LLH (rad,m) */
+        double vel[3];                /* rec velocity in ENU (m/s) */
+        double qr[3];                 /* position variance/covariance (m^2) */
+                                      /* {c_ee,c_nn,c_uu} */
+        double qv[3];                 /* velocity variance/covariance (m^2) */
+        
+    } posd_t;
+
+    typedef struct
+    {                                 /* pos result */
+        int n,nmax;                   /* number of pos result/allocated */       
+        posd_t *data;                 /* pos result record */
+    } pos_t;
+    
+
     typedef struct 
     {                               /* earth related record  */
         double wie;
@@ -1167,7 +1191,7 @@ extern "C"
         gtime_t eventime;  /* time of event (GPST) */
         double rr[6];      /* position/velocity (m|m/s) */
                            /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
-        double vel[3];     /* ins velocity (m/s) */
+        double vel[3];     /* ins velocity in ecef frame (m/s) */
         double att[3];     /* attitude [pitch,roll,yaw] (deg) */
         double qnb[4];     /* attitude quaternion (qnb) */
         double bg[3];      /* gyroscope bias (deg/h) */
@@ -1317,8 +1341,8 @@ extern "C"
                                  GLONASS: 0-G1/G1a;1-G2/G2a;2-G3
                                  Galileo: 0-E1;1-E5b;2-E5a;3-E6;4-E5a+E5b;
                                  BeiDou: 0-B1I;1-B2I;2-B3I;3-B1C;4-B2a,5-B2b,6-B2ab;
-                                 QZSS: 0-L1;1-L2;2-L5;3-LEX;*/ 
-        int bdsflag[2];          /* exclude flag of BSD2 and BDS3 [0] BDS2 flag,[1] BSD3 flag*/      
+                                 QZSS: 0-L1;1-L2;2-L5;3-LEX; */ 
+        int bdsflag[2];          /* exclude flag of BSD2 and BDS3 [0] BDS2 flag,[1] BSD3 flag */      
         int navsys;              /* navigation system */       
         int filter;              /* filter method (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST) */
         int M_robust;            /* M-estimation robust weight function (0:IGG3,1:Huber,2:MCKF) */
@@ -1386,6 +1410,8 @@ extern "C"
         int freqopt;             /* disable L2-AR */
         char pppopt[256];        /* ppp option */
 
+        int week;                /* GPS week for GNSS/INS LC with pos file */
+        int postype;             /* pos file type (POSF_???) */
         int imudatype;           /* imu data type (IMUT_???) */
         char imu_order[10];      /* imu data order (AgGd, AgGr, GdAg, GrAg) */
         int bodyframe;           /* body frame direction(0:RFU,1:FRD) */
@@ -1466,6 +1492,7 @@ extern "C"
         char sp3[MAXSTRPATH];     /* precise ephemeris file */
         char clk[MAXSTRPATH];     /* precise clock file */
         char imu[MAXSTRPATH];     /* imu data file */
+        char pos[MAXSTRPATH];     /* position file for GNSS/INS LC */
         char mgex_dcb[MAXSTRPATH];/* mgex DCB/OSB files */
         char antp[MAXSTRPATH];    /* receiver and satellite antenna parameters file */
         char stapos[MAXSTRPATH];  /* station positions file */
@@ -1630,7 +1657,7 @@ extern "C"
         int match;              /* GNSS/INS observation matching (for initialization only) */
         int upte;               /* GNSS/INS time synchronization */
         gtime_t upte_time;      /* time of last GNSS/INS measureemnt update */
-        int nominal_update;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
+        int nominal_upte;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
         int align;
         int outage;             /* GNSS outage count, if GNSS is available, outage is reset to 0 */
         ins_t ins;
@@ -1941,7 +1968,7 @@ extern "C"
     EXPORT double dms2deg(const double *dms);
 
     /* input and output functions ------------------------------------------------*/
-    EXPORT void readpos(const char *file, const char *rcv, double *pos);
+    EXPORT void readposf(const char *file, const char *rcv, double *pos);
     EXPORT int sortobs(obs_t *obs);
     EXPORT void uniqnav(nav_t *nav);
     EXPORT int screent(gtime_t time, gtime_t ts, gtime_t te, double tint);
@@ -1950,6 +1977,7 @@ extern "C"
     EXPORT void freeobs(obs_t *obs);
     EXPORT void freenav(nav_t *nav, int opt);
     EXPORT void freeant(spcvs_t *pcvss, rpcvs_t *pcvsr);
+    EXPORT void freepos(pos_t *pos);    
     EXPORT void freeimu(imu_t *imu);
     EXPORT int readblq(const char *file, const char *sta, double *odisp);
     EXPORT int readerp(const char *file, erp_t *erp);
@@ -2377,13 +2405,14 @@ extern "C"
     EXPORT void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode);                 
 
     /* precise positioning -------------------------------------------------------*/
-    EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss);
+    EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss);
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
+    EXPORT void covtodiag(double *P, int n);
     EXPORT void diag_Cov(int nx, const double *var, double *P, int opt);
     EXPORT int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode);
     EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
-    EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt);
+    EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt);
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);
     EXPORT int rtkopenstat(const char *file, int level);
@@ -2409,10 +2438,12 @@ extern "C"
           
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
+    EXPORT void pos2sol(pos_t pos, sol_t *sol, int ipos);
     EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
     EXPORT int  ins_init(ins_t *ins, const prcopt_t *prcopt);
     EXPORT void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att);
     EXPORT int  readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week);
+    EXPORT int  readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_week);
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt);

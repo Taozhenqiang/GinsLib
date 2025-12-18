@@ -53,7 +53,8 @@ static char stat_[statopt];
 /* system options table ------------------------------------------------------*/
 #define SWTOPT  "0:off,1:on"
 #define GIOPT   "0:off,1:LC,2:TC,3:STC"
-#define MODOPT  "0:single,1:dgps,2:kinematic,3:static,4:tight,5:static-start,6:movingbase,7:fixed,8:ppp-kine,9:ppp-static,10:ppp-fixed"
+#define POSDOPT "0:ECEF,1:NED,2:ENU"
+#define MODOPT  "0:single,1:dgps,2:kinematic,3:static,4:tight,5:static-start,6:movingbase,7:fixed,8:ppp-kine,9:ppp-static,10:ppp-fixed,11:LC-pos,12:PINS"
 #define FILOPT  "0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST"
 #define MESOPT  "0:IGG3,1:Huber,2:MCKF"
 #define TYPOPT  "0:forward,1:backward,2:combined,3:combined-nophasereset"
@@ -78,6 +79,8 @@ static char stat_[statopt];
 
 EXPORT opt_t sysopts[]={
     {"pos1-GINS",       3,  (void *)&prcopt_.GI_mode,    GIOPT  },
+    {"pos1-postype",    3,  (void *)&prcopt_.postype,    POSDOPT},
+    {"pos1-week",       0,  (void *)&prcopt_.week,       ""     },
     {"pos1-posmode",    3,  (void *)&prcopt_.mode,       MODOPT },
     {"pos1-frequency",  0,  (void *)&prcopt_.nf,         ""     },    
     {"pos1-ts",         2,  (void *)&time_[0],           ""     },
@@ -254,7 +257,8 @@ EXPORT opt_t sysopts[]={
     {"file-navfile",    2,  (void *)&filopt_.nav,        ""     },
     {"file-sp3file",    2,  (void *)&filopt_.sp3,        ""     },
     {"file-clkfile",    2,  (void *)&filopt_.clk,        ""     },
-    {"file-imufile",    2,  (void *)&filopt_.imu,        ""     },    
+    {"file-imufile",    2,  (void *)&filopt_.imu,        ""     }, 
+    {"file-posfile",    2,  (void *)&filopt_.pos,        ""     },    
     {"file-antfile",    2,  (void *)&filopt_.antp,       ""     },
     {"file-mgexdcbfile",2,  (void *)&filopt_.mgex_dcb,   ""     },
     {"file-staposfile", 2,  (void *)&filopt_.stapos,     ""     },
@@ -576,13 +580,20 @@ static void buff2sysopts(void)
         prcopt_.rotation_angle[j++]=atof(p)*D2R;
     }
 
-    /* init ins position (ecef [X,Y,Z] (m) )*/
+    /* init ins position (ecef frame[X,Y,Z] (m)/local frame [lat,lon,h] (deg,m) )*/
     for (j=0;j<3;j++) prcopt_.initpos[j]=0.0;
     strcpy(buff,initpose_[0]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         pos[j++]=atof(p);
     }
-    ecef2pos(pos,prcopt_.initpos);
+    /* local frame [lat,lon,h] (deg,m) */
+    if (fabs(pos[0])<=90&&fabs(pos[1])<=180) {
+        for (j=0;j<2;j++) pos[j]*=D2R;
+        matcpy(prcopt_.initpos,pos,3,1);
+    }
+    else { /* ecef frame[X,Y,Z] (m) */
+        ecef2pos(pos,prcopt_.initpos);        
+    }
 
     /* init ins velocity (n [E,N,U] (m/s) )*/
     for (j=0;j<3;j++) prcopt_.initvel[j]=0.0;

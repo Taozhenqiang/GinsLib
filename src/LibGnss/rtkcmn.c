@@ -524,7 +524,7 @@ extern void DebugTime(rtk_t *rtk, gtime_t t, int t1, int t2)
     if (GINS_OFF==rtk->opt.GI_mode&&(int) floor(sec+0.5)==t1&&week==t2) {
         flag=1;
     }
-    else if ((int) floor(sec+rtk->ins.interval/2.0)==t1&&week==t2) {
+    else if ((int) round(sec+rtk->ins.interval/2.0)==t1&&week==t2) {
         flag=1;
     }
 }
@@ -580,6 +580,17 @@ extern void init_crosscov(rtk_t *rtk, int ns, int n)
     }
 }
 
+/* convert covariance matrix to diagonal matrix --------------------------------*/
+extern void covtodiag(double *P, int n)
+{
+    int i,j;
+    for (i=0;i<n;i++) {
+        for (j=0;j<n;j++) {
+            if (i!=j) P[i*n+j]=0.0;
+        }
+    }
+}
+
 /* set diagonal covariance matrix -------------------------------------------*/
 extern void diag_Cov(int nx, const double *var, double *P, int opt)
 {
@@ -601,40 +612,63 @@ extern void diag_Cov(int nx, const double *var, double *P, int opt)
 *         obs_t    *obss  I   observation data
 *return:none
 *-----------------------------------------------------------------------------*/
-extern int gnss_intervel(rtk_t *rtk, const obs_t *obss)
+extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
 {
     int i,j,k;
     double t0,t[2]={0.0},dttol=1e-3;
 
-    if (!obss||!rtk) {
-        return 0;  /* Invalid input */
+    if ((!obss&&!poss)||!rtk) {
+        return 0;  /* invalid input */
     }
 
-    for (i=0;i<obss->n;i++) {
-        if (obss->data[i].rcv!=1) continue;  
-        
-        for (j=i+1;j<obss->n;j++) {
-            if (obss->data[j].rcv!= 1) continue;  /* skip no rover station data */
+    /* calculate interval from observation file */
+    if (PMODE_LC_POS!=rtk->opt.mode) 
+    {
+        for (i=0;i<obss->n;i++) {
+            if (obss->data[i].rcv!=1) continue;  
             
-            t0=fabs(timediff(obss->data[i].time,obss->data[j].time));
-            
-            if (t0>dttol) {  
-                t[k++]=t0;
-                i=j;
-                /* check if intervals are equal */
-                if (k==2) {  
-                    if (fabs(t[0]-t[1])<dttol) {  
-                        rtk->interval=t[0];
-                        return 1;
-                    } else {
-                        k=0; break;
+            for (j=i+1;j<obss->n;j++) {
+                if (obss->data[j].rcv!= 1) continue;  /* skip no rover station data */
+                
+                t0=fabs(timediff(obss->data[i].time,obss->data[j].time));
+                
+                if (t0>dttol) {  
+                    t[k++]=t0;
+                    i=j;
+                    /* check if intervals are equal */
+                    if (k==2) {  
+                        if (fabs(t[0]-t[1])<dttol) {  
+                            rtk->interval=t[0];
+                            return 1;
+                        } else {
+                            k=0; break;
+                        }
                     }
                 }
             }
-        }
-        
-        if (k==2) {  
-            break;
+        }        
+    }
+    else { /* calculate interval from pos file */
+        for (i=0;i<poss->n;i++) {  
+
+            for (j=i+1;j<poss->n;j++) {  
+
+                t0=fabs(timediff(poss->data[i].time,poss->data[j].time));  
+
+                if (t0>dttol) {  
+                    t[k++]=t0;
+                    i=j;
+                    /* check if intervals are equal */
+                    if (k==2) {  
+                        if (fabs(t[0]-t[1])<dttol) {  
+                            rtk->interval=t[0];
+                            return 1;
+                        } else {
+                            k=0; break;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -2392,18 +2426,20 @@ extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const doub
         matmul("TN",1,m,m,v,Q_,vP,1.0,0.0); /* vP=v'/Q_ */
         matmul("NN",1,m,1,vP,v,&dv,1.0,0.0); /* dv=v'/Q_*v */
 
-        if (dv<=chisqr_[m-1]) {
+        if (dv<=chisqr[m-1]) {
             ak=1.0; /* no robust weight */
         }
         else {
-            ak=dv/chisqr_[m-1]; /* robust weight */
+            ak=dv/chisqr[m-1]; /* robust weight */
+
+            trace(12,"Chi_KF: dv=%7.2f thres=%.2f alpha=%.2f\n",dv,chisqr[m-1],ak);
         }
 
         /* Pv=ak*Pv */
         for (i=0;i<m;i++) for (j=0;j<m;j++) Pv[j+i*m]*=ak;
 
         /* save robust filtering solution information */
-        out_robust_info(rtk,m,0,chisqr_[m-1],0.0,dv,NULL,NULL);
+        out_robust_info(rtk,m,0,chisqr[m-1],0.0,dv,NULL,NULL);
     }
     /* robust filter based on M-estimation */
     else if (IGG3==mode||Huber==mode||MCKF==mode)
@@ -4248,14 +4284,14 @@ extern rpcv_t *searchrpcv(const char *type, gtime_t time, const rpcvs_t *pcvr)
 *                              (all 0 if search error)
 *return:none
  *-----------------------------------------------------------------------------*/
-extern void readpos(const char *file,const char *rcv,double *pos) {
+extern void readposf(const char *file,const char *rcv,double *pos) {
     static double poss[2048][3];
     static char stas[2048][16];
     FILE *fp;
     int i,j,len,np=0;
     char buff[256],str[256];
 
-    trace(3,"readpos: file=%s\n",file);
+    trace(3,"readposf: file=%s\n",file);
 
     if (!(fp=fopen(file,"r"))) {
         fprintf(stderr,"reference position file open error:%s\n",file);

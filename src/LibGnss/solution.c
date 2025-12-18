@@ -146,6 +146,7 @@ static void septime(double t, double *t1, double *t2, double *t3)
     *t2=floor(t/100.0);
     *t3=t-*t2*100.0;
 }
+
 /* solution to covariance ----------------------------------------------------*/
 extern void soltocov(const sol_t *sol, double *P)
 {
@@ -1591,7 +1592,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     };
     const char *s1[]={
         "SPP","PPD","PPK","PPS","GNSS-TC","Static-Start","Moving-Base","Fixed",
-        "PPP","PPP Static","PPP Fixed","","",""
+        "PPP","PPP Static","PPP Fixed","GNSS","",""
     };
     char s2[4];
     const char *s3[]={
@@ -1655,12 +1656,14 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]) p+=sprintf(p," %s",s13[i]);
     }
     if (motion_flag) p+=sprintf(p,"\r\n");
- 
-    p+=sprintf(p,"%s system    :",COMMENTH);
-    for (i=0;sys[i];i++) {
-        if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
+    
+    if (PMODE_LC_POS!=opt->mode) {
+        p+=sprintf(p,"%s system    :",COMMENTH);
+        for (i=0;sys[i];i++) {
+            if (opt->navsys&sys[i]) p+=sprintf(p," %s",s7[i]);
+        }
+        p+=sprintf(p,"\r\n");        
     }
-    p+=sprintf(p,"\r\n");
 
     if (PMODE_DGPS<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
         p+=sprintf(p,"%s freqs     : ",COMMENTH);
@@ -1680,15 +1683,20 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     if (opt->mode>PMODE_SINGLE||GINS_OFF!=opt->GI_mode) {
         p+=sprintf(p,"%s solution  : %s\r\n",COMMENTH,s3[opt->soltype]);
     }
-    p+=sprintf(p,"%s elev mask : %.1f deg\r\n",COMMENTH,opt->elmin*R2D);
-    if (opt->mode>PMODE_SINGLE) {
-        p+=sprintf(p,"%s dynamics  : %s\r\n",COMMENTH,opt->dynamics?"on":"off");
-        p+=sprintf(p,"%s tidecorr  : %s\r\n",COMMENTH,opt->tidecorr?"on":"off");
-    }
 
-    p+=sprintf(p,"%s ionos opt : %s\r\n",COMMENTH,s4[opt->ionoopt]);
-    p+=sprintf(p,"%s tropo opt : %s\r\n",COMMENTH,s5[opt->tropopt]);
-    p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);
+    if (PMODE_LC_POS!=opt->mode) 
+    {
+        p+=sprintf(p,"%s elev mask : %.1f deg\r\n",COMMENTH,opt->elmin*R2D);
+        if (opt->mode>PMODE_SINGLE) 
+        {
+            p+=sprintf(p,"%s dynamics  : %s\r\n",COMMENTH,opt->dynamics?"on":"off");
+            p+=sprintf(p,"%s tidecorr  : %s\r\n",COMMENTH,opt->tidecorr?"on":"off");
+        }
+
+        p+=sprintf(p,"%s ionos opt : %s\r\n",COMMENTH,s4[opt->ionoopt]);
+        p+=sprintf(p,"%s tropo opt : %s\r\n",COMMENTH,s5[opt->tropopt]);
+        p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);        
+    }
 
     if (opt->mode>PMODE_SINGLE||opt->GI_mode>GINS_OFF) {
         p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
@@ -1708,14 +1716,17 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     }
     if (opt->mode==PMODE_MOVEB&&opt->baseline[0]>0.0) {
         p+=sprintf(p,"%s baseline  : %.4f %.4f m\r\n",COMMENTH,
-                   opt->baseline[0],opt->baseline[1]);
+                opt->baseline[0],opt->baseline[1]);
     }
-    for (i=0;i<2;i++) {
-        if (opt->mode==PMODE_SINGLE||(i>=1&&opt->mode>PMODE_FIXED)) continue;
-        p+=sprintf(p,"%s antenna%d  : %-21s (%7.4f %7.4f %7.4f)\r\n",COMMENTH,
-                   i+1,opt->anttype[i],opt->antdel[i][0],opt->antdel[i][1],
-                   opt->antdel[i][2]);
+    if (PMODE_LC_POS!=opt->mode) {
+        for (i=0;i<2;i++) {
+            if (opt->mode==PMODE_SINGLE||(i>=1&&opt->mode>PMODE_FIXED)) continue;
+            p+=sprintf(p,"%s antenna%d  : %-21s (%7.4f %7.4f %7.4f)\r\n",COMMENTH,
+                    i+1,opt->anttype[i],opt->antdel[i][0],opt->antdel[i][1],
+                    opt->antdel[i][2]);
+        }        
     }
+
     return (int)(p-(char *)buff);
 }
 /* output solution header ------------------------------------------------------

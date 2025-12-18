@@ -3271,12 +3271,13 @@ static int valpos(rtk_t *rtk, const double *v, const double *R, const int *vflg,
 static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, int stat)
 {  
     const prcopt_t *popt=&rtk->opt;
+    sol_t *sol=&rtk->sol;
     ins_t *ins=&rtk->ins;
     double re[3],ve[3],Qa[9],Qvn[9],Qv[9],Qrn[9],Qr[9],Qbg[9],Qba[9],Cne[9],Cen[9],p_gnss[6]={0.0};
     double sgn=(SOLTYPE_BACKWARD==popt->reverse?-1.0:1.0); /* in backward mode, GNSS/INS velocities have the opposite sign to the actual velocities */
     int nf=rtk->opt.ionoopt==IONOOPT_IFLC?1:rtk->opt.nf,i,j,k,sys,fr;
 
-    if (stat!=SOLQ_NONE) rtk->sol.stat=stat;
+    if (stat!=SOLQ_NONE) sol->stat=stat;
     else return 0;
 
     if (GINS_TC==popt->GI_mode) 
@@ -3304,46 +3305,47 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
             }
     
             for (i=0;i<3;i++) {
-                rtk->sol.rr [i]=re[i];
-                rtk->sol.vel[i]=ve[i]*sgn;
-                rtk->sol.att[i]=ins->xa[i]*R2D;
-                rtk->sol.bg [i]=ins->xa[i+9]*R2D*3600*sgn;
-                rtk->sol.ba [i]=ins->xa[i+12]*1E5; 
+                sol->rr [i]=re[i];
+                sol->vel[i]=ve[i]*sgn;
+                sol->att[i]=ins->xa[i]*R2D;
+                sol->bg [i]=ins->xa[i+9]*R2D*3600*sgn;
+                sol->ba [i]=ins->xa[i+12]*1E5; 
             }
+            for (i=0;i<4;i++) sol->qnb[i]=ins->qnb[i];
 
             /* converts the yaw from counterclockwise to clockwise */
-            if (rtk->sol.att[2]<=0) rtk->sol.att[2]=-rtk->sol.att[2];
-            else rtk->sol.att[2]=360.0-rtk->sol.att[2];
+            if (sol->att[2]<=0) sol->att[2]=-sol->att[2];
+            else sol->att[2]=360.0-sol->att[2];
 
             for (i=0;i<3;i++){
                 for (j=0;j<3;j++){
-                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na];    /* rad^2 */
+                    Qa[j+i*3]=rtk->Pa[j+i*rtk->na];            /* rad^2 */
                     Qvn[j+i*3]=rtk->Pa[(j+3)+(i+3)*rtk->na];   /* m^2/s^2 */
                     Qrn[j+i*3]=rtk->Pa[(j+6)+(i+6)*rtk->na];   /* m^2 */
-                    Qbg[j+i*3]=rtk->Pa[(j+9)+(i+9)*rtk->na];  /* rad^2/s^2*/
-                    Qba[j+i*3]=rtk->Pa[(j+12)+(i+12)*rtk->na];              /* g^2*/
+                    Qbg[j+i*3]=rtk->Pa[(j+9)+(i+9)*rtk->na];   /* rad^2/s^2 */
+                    Qba[j+i*3]=rtk->Pa[(j+12)+(i+12)*rtk->na]; /* g^2 */
                 }
             }  
             /* cov of local frame to ecef frame */
             covecef(ins->pos,Qvn,Qv);        
             covecef(ins->pos,Qrn,Qr);
-            covtosol(Qr,&rtk->sol);
-            covtosol_att(Qa,&rtk->sol);
-            covtosol_vel(Qv,&rtk->sol);
-            covtosol_bga(Qbg,Qba,&rtk->sol);
+            covtosol(Qr,sol);
+            covtosol_att(Qa,sol);
+            covtosol_vel(Qv,sol);
+            covtosol_bga(Qbg,Qba,sol);
         }
         else {
-            update_instat(popt,ins,rtk->P,&rtk->sol,rtk->nx);
+            update_instat(popt,ins,rtk->P,sol,rtk->nx);
             /* if the ambiguity resolution of the current epoch fails, reset the hold ambiguity count */
             rtk->nfix=0;                       
         }
     } 
-    else if (stat==SOLQ_FIX) { /* save solution status (fixed or float) */
+    /* fixed solution */
+    else if (stat==SOLQ_FIX) { 
         for (i=0;i<3;i++) {
             rtk->sol.rr[i]=rtk->xa[i];
             rtk->sol.qr[i]=(float)rtk->Pa[i+i*rtk->na];
         }
-
         rtk->sol.qr[3]=(float)rtk->Pa[1];
         rtk->sol.qr[4]=(float)rtk->Pa[1+2*rtk->na];
         rtk->sol.qr[5]=(float)rtk->Pa[2];
@@ -3368,12 +3370,12 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
             }
         }
     }
-    else {  /* float solution */
+    /* float solution */
+    else {  
         for (i=0;i<3;i++) {
             rtk->sol.rr[i]=rtk->x[i];
             rtk->sol.qr[i]=(float)rtk->P[i+i*rtk->nx];
         }
-
         /* if the ambiguity resolution of the current epoch fails, reset the hold ambiguity count */
         rtk->nfix=0;        
 
@@ -3392,7 +3394,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         }
 
     }
-    trace(8,"sol_rr= ");tracemat(8,rtk->sol.rr,1,6,15,3,0);
+    trace(8,"sol_rr= ");tracemat(8,sol->rr,1,6,15,3,0);
 
     /* save phase measurements */
     for (i=0;i<n;i++) {
@@ -3422,9 +3424,9 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         rtk->tightc.parfsat[i]=rtk->tightc.arfsat[i];
     }
 
-    rtk->sol.cns=ns;
+    sol->cns=ns;
     for (i=0;i<ns;i++) {
-        rtk->sol.csat[i]=sat[i];
+        sol->csat[i]=sat[i];
     }
 }
 /* relpos()relative positioning ------------------------------------------------------
@@ -3643,7 +3645,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
            solopt_t *sopt   I   solution options (see rtklib.h)
 * return : none
 *-----------------------------------------------------------------------------*/
-extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
+extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
 {
     gtime_t time0={0};
     sol_t sol0={0};
@@ -3666,8 +3668,8 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
         rtk->rb[i]=0.0;  
         rtk->ru[i]=0.0;
     }
-    rtk->nx=opt->mode<=PMODE_FIXED?NX(opt):pppnx(opt);
-    rtk->na=opt->mode<=PMODE_FIXED?NR(opt):pppnx(opt);
+    rtk->nx=popt->mode<=PMODE_FIXED?NX(popt):pppnx(popt);
+    rtk->na=popt->mode<=PMODE_FIXED?NR(popt):pppnx(popt);
     rtk->tt=0.0;
     rtk->interval=0.0;
     rtk->dopsgn=0.0;    
@@ -3685,9 +3687,9 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     rtk->excsat=0;
     rtk->nb_ar=0;
     for (i=0;i<MAXERRMSG;i++) rtk->errbuf[i]=0;
-    rtk->opt=*opt;
+    rtk->opt=*popt;
     rtk->initial_mode=rtk->opt.mode;
-    rtk->sol.thres=(float)opt->thresar[0];
+    rtk->sol.thres=(float)popt->thresar[0];
     rtk->tightc=tightc0;
     rtk->robust_info=robust_info0;
 
@@ -3695,13 +3697,13 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt, const solopt_t *sopt)
     rtk->match=NO;
     rtk->upte=SYNC_NO;
     rtk->upte_time=time0;
-    rtk->nominal_update=NO;
+    rtk->nominal_upte=NO;
     rtk->align=NO;
     rtk->outage=0;
 
-    if (GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode)
+    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
     {
-        gins_init(rtk,opt);
+        gins_init(rtk,popt);
     }
 }
 /* free rtk control ------------------------------------------------------------

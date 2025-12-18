@@ -6,6 +6,31 @@
 
 static imu_t imus={0};          /* imu data */
 
+extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
+{
+    posd_t *posd=&pos.data[ipos];
+    int i;
+
+    sol->stat=SOLQ_FLOAT;
+    sol->time=posd->time;
+    for (i=0;i<3;i++){
+        sol->rr [i]=posd->pos[i];
+        sol->vel[i]=posd->vel[i];
+        sol->qr [i]=posd->qr[i];
+        sol->qv [i]=posd->qv[i];
+    }
+}
+
+/* copy imu data --------------------------------------------------------------
+* copy imu data to imu[] from imus.data[iimu]
+*
+*args   : const prcopt_t *popt  I   processing options
+*         imud_t *imu            O   imu data
+*         imu_t imus             I   imu data
+*         int iimu               I   index of imu data
+*         const int nn           I   number of imu data to copy
+*return : none
+*-----------------------------------------------------------------------------*/
 extern void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn)
 {
     int i,j;
@@ -589,6 +614,24 @@ static void ioutsol(FILE *fp, ins_t *ins, const prcopt_t *popt, const solopt_t *
                sep,ins->att[0]*R2D,sep,ins->att[1]*R2D,sep,ins->att[2]*R2D);
 }
 
+/* add pos data ------------------------------------------------------*/
+static int addposdata(pos_t *pos, const posd_t *data)
+{
+    posd_t *pos_data;
+    
+    if (pos->nmax<=pos->n) {
+        if (pos->nmax<=0) pos->nmax=NMAXPOS; else pos->nmax*=2;
+        if (!(pos_data=(posd_t *)realloc(pos->data,sizeof(posd_t)*pos->nmax))) {
+            trace(1,"addposdata: malloc error n=%dx%d\n",sizeof(posd_t),pos->nmax);
+            free(pos->data); pos->data=NULL; pos->n=pos->nmax=0;
+            return -1;
+        }
+        pos->data=pos_data;
+    }
+    pos->data[pos->n++]=*data;
+    return 1;
+}
+
 /* add imu data ------------------------------------------------------*/
 static int addimudata(imu_t *imu, const imud_t *data)
 {
@@ -607,8 +650,91 @@ static int addimudata(imu_t *imu, const imud_t *data)
     return 1;
 }
 
+/* read pos result data -----------------------------------------------*/
+extern int readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_week)
+{
+    FILE *fp;
+    posd_t posd={0};
+    char buff[1024];
+    double week,sec,data[12]={0.0},pos[3]={0.0},vel[3]={0.0},Qr[9]={0.0},Qr2[9]={0.0},Qv[9]={0.0},Qv2[9]={0.0},temp;
+    int i,vel_flag=0,pos_flag=0,stat=0;
+
+    if (!(fp=fopen(file,"r"))) {
+        trace(7,"Error : pos file open failed %s",file);
+        showerr("Error : pos file open failed %s",file);
+        return 0;
+    }
+
+    poss->nmax=poss->n=0;
+
+    while (fgets(buff,sizeof(buff),fp)) 
+    {
+        if (strchr(buff,'%')) continue;
+
+        /* replace spaces with commas */
+        repspace(buff);
+        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)<7) continue;
+        /* week,sec,pos(llh/xyz),Q,ns,var_pos(xyz) for GINSLIB/RTKLIB */
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7)==10&&data[3]<10) pos_flag=1; 
+        /* week,sec,pos(llh/xyz),vel(xyz),var_pos(xyz),var_vel(xyz) */
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+                &week,&sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7,data+8,data+9,data+10,data+11)==14) vel_flag=1;
+        /* week,sec,pos(llh/xyz),vel(xyz),var_pos(xyz),var_vel(xyz) */
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+                &sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7,data+8,data+9,data+10,data+11)==13) { week=gps_week; vel_flag=1; }       
+        /* week,sec,pos(llh/xyz),var_pos(xyz) */
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5)==8) {}
+        /* sec,pos(llh/xyz),var_pos(xyz) */
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)==7) week=gps_week;
+        else continue; 
+
+        posd.time=gpst2time(week,sec);
+        
+        for (i=0;i<3;i++) {
+            if (vel_flag) {
+                pos[i]=data[i];
+                vel[i]=data[i+3];
+                Qr [i+i*3]=data[i+6]*data[i+6];
+                Qv [i+i*3]=data[i+9]*data[i+9];
+            }
+            else {
+                pos[i]=data[i];
+                if (pos_flag) Qr[i+i*3]=data[i+5]*data[i+5];
+                else Qr[i+i*3]=data[i+3]*data[i+3];
+            }
+        }
+
+        if (POSF_XYZ==popt->postype) {
+            for (i=0;i<3;i++) {
+                posd.pos[i]=pos[i];
+                posd.qr [i]=Qr[i+i*3];
+            }
+        }
+        else if (POSF_NED==popt->postype) {
+            for (i=0;i<2;i++) pos[i]*=D2R;
+            pos2ecef(pos,posd.pos);
+            /* convert covariance matrix from ned to enu */
+            temp=Qr[0]; Qr[0]=Qr[4]; Qr[4]=temp;
+            covecef(posd.pos,Qr,Qr2);
+            for (i=0;i<3;i++) posd.qr[i]=Qr2[i+i*3];
+        }
+        else if (POSF_ENU==popt->postype) {
+            for (i=0;i<2;i++) pos[i]*=D2R;
+            pos2ecef(pos,posd.pos); 
+            covecef(posd.pos,Qr,Qr2);
+            for (i=0;i<3;i++) posd.qr[i]=Qr2[i+i*3];
+        }
+
+        stat=addposdata(poss,&posd);
+    }
+
+    fclose(fp);
+
+    return stat;
+}
+
 /* read imu data -----------------------------------------------*/
-extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week)
+extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *popt, imu_t *imu, int gps_week)
 {
     FILE *fp;
     imud_t imud;
@@ -617,24 +743,24 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
     char buff[256];
     double week,sec,data[6]={0.0},factor=1.0,dw[3],dv[3],Cvb[9]={0.0};
 
-    if (GINS_OFF==prcopt->GI_mode) return 0;
     if (ts.time!=0) ts.time-=1;
 
     /* calculate the rotation matrix from b' frame to v frame */
-    att2Cnb(prcopt->rotation_angle,Cvb);
+    att2Cnb(popt->rotation_angle,Cvb);
 
     if (!(fp=fopen(file,"r")))
     {
-        trace(7,"IMU file open error: %s!\n",file);
+        trace(7,"Error: IMU file open failed: %s!\n",file);
+        showerr("Error: IMU file open failed: %s!\n",file);
         return 0;
     }
 
     imu->data=NULL; imu->n=imu->nmax=0;
 
     /* convert rate to incremental measurement */
-    if (IMUT_RATE==prcopt->imudatype)
+    if (IMUT_RATE==popt->imudatype)
     {
-        factor=1.0/prcopt->insample;
+        factor=1.0/popt->insample;
     }
 
     while (fgets(buff,sizeof(buff),fp))
@@ -642,15 +768,15 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
         /* replace spaces with commas */
         repspace(buff);
         if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)<7) continue;
-        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5)==8) week=gps_week;
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5)==8) {}
         else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)==7) week=gps_week;
         else continue; 
         imud.time=gpst2time(week,sec);
 
         /* screen data by time */
-        if ((ts.time!=0&&timediff(imud.time,ts)<0.0)||(te.time!=0&&timediff(imud.time,te)>0.5/prcopt->insample)) continue;
+        if ((ts.time!=0&&timediff(imud.time,ts)<0.0)||(te.time!=0&&timediff(imud.time,te)>0.5/popt->insample)) continue;
 
-        if (strstr(prcopt->imu_order,"AgGd")!=NULL) {
+        if (strstr(popt->imu_order,"AgGd")!=NULL) {
             for (i=0;i<6;i++)
             {
                 if (i<3) {
@@ -663,7 +789,7 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
                 }
             }            
         }
-        else if (strstr(prcopt->imu_order,"AgGr")!=NULL) {
+        else if (strstr(popt->imu_order,"AgGr")!=NULL) {
             for (i=0;i<6;i++)
             {
                 if (i<3) {
@@ -676,7 +802,7 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
                 }
             }            
         }
-        else if (strstr(prcopt->imu_order,"GdAg")!=NULL) {
+        else if (strstr(popt->imu_order,"GdAg")!=NULL) {
             for (i=0;i<6;i++)
             {
                 if (i<3) {
@@ -689,7 +815,7 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
                 }
             }            
         }
-        else if (strstr(prcopt->imu_order,"GrAg")!=NULL) {
+        else if (strstr(popt->imu_order,"GrAg")!=NULL) {
             for (i=0;i<6;i++)
             {
                 if (i<3) {
@@ -704,7 +830,7 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
         } 
 
         /* Body frame adjustment, normalized to FRU frame */
-        if (BODYF_FRD==prcopt->bodyframe) {
+        if (BODYF_FRD==popt->bodyframe) {
             /* gyroscope data */
             for (i=0;i<3;i++) data[i]=dw[i];
             dw[0]=data[1];
@@ -729,8 +855,18 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prc
         stat=addimudata(imu,&imud);
     }
 
+    fclose(fp);
+
     return stat;
 }
+/* free pos data -----------------------------------------------------*/
+extern void freepos(pos_t *pos)
+{
+    trace(3,"freepos:\n");
+
+    free(pos->data); pos->data=NULL; pos->n =pos->nmax =0;
+}
+
 /* free imu data -----------------------------------------------------*/
 extern void freeimu(imu_t *imu)
 {
@@ -856,7 +992,7 @@ extern void earth_update(const prcopt_t *popt, const double *pos, const double *
 }
 
 /* initialize ins related parameters -----------------------------------------------*/
-extern int ins_init(ins_t *ins, const prcopt_t *opt)
+extern int ins_init(ins_t *ins, const prcopt_t *popt)
 {
     double install_angle[3]={0.0};
     int i,nx;
@@ -866,21 +1002,21 @@ extern int ins_init(ins_t *ins, const prcopt_t *opt)
     ins->G=zeros(nx,nx); ins->Q=zeros(nx,nx);
 
     ins->time.sec=0.0; ins->time.time=0.0;
-    ins->interval=1.0/opt->insample;
-    ins->nn=opt->nn;
+    ins->interval=1.0/popt->insample;
+    ins->nn=popt->nn;
     ins->dttol=ins->interval/1e3;
-    ins->discretime=(opt->insample%10)==0?1e-1:((opt->insample%25)==0?25*ins->interval:ins->interval);
+    ins->discretime=(popt->insample%10)==0?1e-1:((popt->insample%25)==0?25*ins->interval:ins->interval);
     
     /* accelerometer and gyroscope velocity random walk and angle random walk and bias drive noise */
-    ins->corr_time=opt->corr_time; 
-    ins->psd_gyro=opt->psd_gyro;
-    ins->psd_acce=opt->psd_acce;
-    ins->psd_bg=opt->psd_bg;
-    ins->psd_ba=opt->psd_ba;
+    ins->corr_time=popt->corr_time; 
+    ins->psd_gyro=popt->psd_gyro;
+    ins->psd_acce=popt->psd_acce;
+    ins->psd_bg=popt->psd_bg;
+    ins->psd_ba=popt->psd_ba;
 
     /* initialize zupt configuration options (sliding window length and detection threshold) */
-    ins->zupt.window=opt->insample;
-    ins->zupt.gthres=opt->zupt_gthres;
+    ins->zupt.window=popt->insample;
+    ins->zupt.gthres=popt->zupt_gthres;
 
     for (i=0;i<15;i++)
     {
@@ -896,9 +1032,9 @@ extern int ins_init(ins_t *ins, const prcopt_t *opt)
     for (i=0;i<3;i++)
     {
         /* initialize the lever and motion constraint information */
-        install_angle[i]=opt->install_angle[i];
-        ins->lever_nhc[i]=opt->lever_nhc[i];
-        ins->lever[i]=opt->lever[i];
+        install_angle[i]=popt->install_angle[i];
+        ins->lever_nhc[i]=popt->lever_nhc[i];
+        ins->lever[i]=popt->lever[i];
 
         /* INS basic parameters */
         ins->dw[i]=0.0;
@@ -950,9 +1086,10 @@ extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const 
 }
 
 /* ins initial alignment -------------------------------------------*/
-extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *popt)
+extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt)
 {
     /* NOTE: The structure copy is a shallow copy! */
+    prcopt_t popt=*opt;
     rtk_t rtk_=*rtk;
     ins_t *ins=&rtk->ins;
     int i,j,vel_flag,nr=0,nr_old=0;
@@ -965,30 +1102,33 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     rtk_.opt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
     if (!rtk->align) rtk_.opt.mode=PMODE_SINGLE; /* set to spp mode */
 
+    /* for GNSS/INS LC with pos file ,set alignment type to manual */
+    if (PMODE_LC_POS==popt.mode) popt.alingetype=INSALI_MANUAL;
+
     /* determine the number of satellites of rover in the current epoch and the previous epoch */
     for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
     for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
 
     /* manual alignment */
-    if (!rtk->align&&INSALI_MANUAL==popt->alingetype&&popt->ts.time)
+    if (!rtk->align&&INSALI_MANUAL==popt.alingetype&&popt.ts.time)
     {   
-        if ((fabs(timediff(imu[0].time,popt->ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
+        if ((fabs(timediff(imu[0].time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
-            init_inspva(ins,popt->initpos,popt->initvel,popt->initatt); 
+            init_inspva(ins,popt.initpos,popt.initvel,popt.initatt); 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
 
             return 1;            
         }
-        else if (timediff(imu[0].time,popt->ts)>0) {
+        else if (timediff(imu[0].time,popt.ts)>0) {
             showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); return 0;
         }
     }
 
     /* velocity vector assisted yaw initialization based on tdcp */
-    if (!rtk->align&&INSALI_VELTOR==popt->alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
+    if (!rtk->align&&INSALI_VELTOR==popt.alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
 
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,popt)) {
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) {
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
@@ -1010,7 +1150,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
             gnss2ins(rtk,pos,ins->pos,1);
             /* reverse the velocity vector if the solution type is backward */
-            if (SOLTYPE_BACKWARD==popt->reverse) {
+            if (SOLTYPE_BACKWARD==popt.reverse) {
                 for (i=0;i<3;i++) vn[i]=-vn[i];
             }
             gnss2ins(rtk,vn,ins->vel,2);
@@ -1025,7 +1165,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* reinitialize INS in the event of a long-term GNSS outage */
     if (rtk->align&&rtk->outage>MAX_OUTIME&&SYNC_YES==rtk->upte) {
 
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,popt)) 
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) 
         {
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
