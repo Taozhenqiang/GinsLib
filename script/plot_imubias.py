@@ -71,5 +71,6 @@ def plot_imubias(solution):
         ax.ticklabel_format(style='plain', axis='y')
 
     plt.tight_layout()
-    # 调用一次 show() 即可显示所有图像
-    plt.show()
+    
+    # 返回图形对象
+    return fig

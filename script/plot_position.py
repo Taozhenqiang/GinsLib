@@ -72,5 +72,5 @@ def plot_position(solution):
     # Adjust spacing
     plt.tight_layout()
 
-    # Show the plot
-    plt.show()
+    # 返回图形对象
+    return fig

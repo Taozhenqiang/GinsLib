@@ -147,15 +147,16 @@ int main(int argc, char **argv)
         }
         else if (!strcmp(argv[i],"-ti")&&i+1<argc) tint=atof(argv[++i]);
         else if (!strcmp(argv[i],"-k")&&i+1<argc)  {++i; continue;}
-        else if (!strcmp(argv[i],"-p")&&i+1<argc) prcopt.mode=atoi(argv[++i]);
-        else if (!strcmp(argv[i],"-f")&&i+1<argc) prcopt.nf=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-p")&&i+1<argc)    prcopt.mode=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-f")&&i+1<argc)    prcopt.nf=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-gins")&&i+1<argc) prcopt.GI_mode=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-ion")&&i+1<argc)  prcopt.ionoopt=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-tro")&&i+1<argc)  prcopt.tropopt=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-eph")&&i+1<argc)  prcopt.sateph=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-flt")&&i+1<argc)  prcopt.filter=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-amb")&&i+1<argc)  prcopt.modear=atoi(argv[++i]);
-        else if (!strcmp(argv[i],"-sys")&&i+1<argc) {
+        else if (!strcmp(argv[i],"-sys")&&i+1<argc) 
+        {
             prcopt.navsys=0;
             for (p=argv[++i];*p;p++) {
                 switch (*p) {

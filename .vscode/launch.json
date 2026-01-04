@@ -23,7 +23,7 @@
                 // "EG320N_Vehicle_open_20250418_campus2-CHC.conf",
                 // "EG320N_Vehicle_open_20250418-CHC.conf",
                 // "KVH1750_Vehicle_complex_20210715.conf",
-                // "STIM300_Vehicle_complex_20230102.conf",
+                "STIM300_Vehicle_complex_20230102.conf",
                 // "FSAS_Vehicle_open_20150722.conf",
                 // "FSAS_Vehicle_complex_20220315.conf",
                 // "HG4930_Vehicle_open_20201128.conf", 
@@ -32,11 +32,12 @@
                 // "ISA-100C_Vehicle_complex_20220309.conf",
                 // "INS_Railway_open_20201004.conf",
                 // "CPT_Vehicle_open_20190328.conf",
-                "ADIS16465_Vehicle_open_20210114.conf",
+                // "ADIS16465_Vehicle_open_20210114.conf",
+                // "ADIS16488_Vehicle_complex_20210728.conf",
                 
                 "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\ADIS16465_Vehicle_open_20210114" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\STIM300_Vehicle_complex_20230102" ,//配置文件
             
         },        
         {
@@ -93,7 +94,8 @@
             
             // for Windows
             "program": "${workspaceFolder}\\script\\plot_main.py",
-            // "cwd": "${workspaceFolder}\\data\\HG4930_Uav_open_20220125", //工作路径,
+            // "program": "${workspaceFolder}\\script\\excute.py",
+            // "cwd": "${workspaceFolder}\\data\\GNSS_INS", //工作路径,
 
             // for Linux
             // "program": "${workspaceFolder}/script/excute.py",

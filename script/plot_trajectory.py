@@ -42,15 +42,18 @@ def plot_trajectory(solution):
     x = (H[0] - w) / 2
     y = (H[1] - h) / 2
 
-    plt.plot(pos0[:, 0] - pos0[0, 0], pos0[:, 1] - pos0[0, 1], ':', linewidth=0.1, color=[0.5, 0.5, 0.5])
-    plt.plot(pos0[:, 0] - pos0[0, 0], pos0[:, 1] - pos0[0, 1], '.b')
+    # plt.plot(pos0[:, 0] - pos0[0, 0], pos0[:, 1] - pos0[0, 1], ':', linewidth=0.1, color=[0.5, 0.5, 0.5])
+    plt.plot(pos0[:, 0] - pos0[0, 0], pos0[:, 1] - pos0[0, 1], '.b', markersize=3)
 
-    plt.grid(True, linestyle='--', color='k', alpha=0.3)
+    plt.grid(True, linestyle='--', linewidth=1.0, color='k', alpha=0.3)
     plt.xlabel('E [m]', fontsize=12, family='Times New Roman')
     plt.ylabel('N [m]', fontsize=12, family='Times New Roman')
     plt.title('Trajectory', fontsize=12, family='Times New Roman')
     plt.axis('equal')
     plt.gca().ticklabel_format(style='plain', axis='x')  # Disable scientific notation for x-axis
 
-    plt.show()
+    # 调用plt.show()时会阻塞程序执行，直到用户关闭当前图形窗口后才继续执行后续代码
+    # plt.show()
+    # 返回图形对象
+    return plt.gcf()
 

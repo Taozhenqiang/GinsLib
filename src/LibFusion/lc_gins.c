@@ -28,8 +28,10 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
-            else if (i>=9&&i<12)  P[i]=(ins->psd_bg*1E2)*(ins->psd_bg*1E2);
-            else                  P[i]=(ins->psd_ba*1E2)*(ins->psd_ba*1E2);
+            else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
+            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2);            
+            /* else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
+            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc; */
         }
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4,0); */
@@ -42,8 +44,10 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
-            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
+            else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
+            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2);
+            /* else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
+            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc; */
         }
         for (i=0;i<nx;i++) rtk->P[i+i*rtk->nx]=P[i];
     }     
@@ -117,49 +121,17 @@ extern int ins_update(rtk_t *rtk)
     free(FP); free(GQ); free(P);
 }
 
-/* GNSS/INS loosely coupled integration */
-extern int lc_gins(rtk_t *rtk)
+/* Jacobian matrix for pos/vel/att */
+static void Jacobi_avp(rtk_t *rtk, int nx, int nv, double *H)
 {
     ins_t *ins=&rtk->ins;
-    sol_t *sol=&rtk->lcgins.sol;
-    prcopt_t *popt=&rtk->opt;
-    int i,j,nx=rtk->lcgins.nx,nv=3,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.filter;
-    double p_ins[3],p_gnss[3],iFrp[9],dp[3],zupt_time;
-    double lever_n[3],lever_nx[9],Re[9],Rn[9];
-    double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
+    int i,j;
+    double lever_n[3],lever_nx[9],*I3;
 
-    /* check GNSS status and output INS navigation information if GNSS is unavailable */
-    if (SOLQ_NONE==rtk->sol.stat) {
-        rtk->outage++;
-        sol->stat=SOLQ_INS;
-        update_instat(popt,ins,rtk->lcgins.P,sol,nx);
-        return 1;
-    }
-
-    /* detected vehicle stationary time span (s)*/
-    zupt_time=ins->zupt.count*ins->interval*ins->nn;
-
-    /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints */
-    I3=eye(3); x=zeros(nx,1); P=zeros(nx,nx); xp=zeros(nx,1); Pp=zeros(nx,nx);
-    v=zeros(nv+4,1); H=zeros(nv+4,nx); var=mat(nv+4,1); R=zeros(nv+4,nv+4);
-
-    /* initialize states */
-    matcpy(P,rtk->lcgins.P,nx,nx);
-    matcpy(iFrp,ins->eth.Frp,3,3);
-    /* trace(12,"P_pre=\n"); tracemat(12,P,nx,nx,9,4,0); */
-    earth_update(popt,ins->pos,ins->vel,&ins->eth);
-    matinv(iFrp,3);
-
-    /* lever arm correction to convert INS position to GNSS position */
-    ins2gnss(popt,&rtk->ins,p_ins,3);
-    ecef2pos(rtk->sol.rr,p_gnss);
+    I3=eye(3);
 
     Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
     vskew(1.0,lever_n,lever_nx);
-
-    /* measurement vector */
-    for (i=0;i<3;i++) dp[i]=p_ins[i]-p_gnss[i];
-    Mat3mulv(1.0,iFrp,dp,v);
 
     /* measurement matrix H */
     for (i=0;i<nv;i++){
@@ -168,54 +140,10 @@ extern int lc_gins(rtk_t *rtk)
             if (j>=6&&j<9)  H[j+i*nx]=I3[(j-6)+i*3];
         }
     }
-    
-    /* initialize measurement variance */
-    soltocov(&rtk->sol,Re);
-    covtodiag(Re,3);
-    covenu(ins->pos,Re,Rn);
-    for (i=0;i<nv;i++) var[i]=Rn[i+i*nv];
 
-    /* motion constraints */
-    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
-    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (popt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
-        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
-        sol->iFlag=SOLF_ZUPT; /* zupt flag */
-    }
-    else if (popt->constraint[0]) { /* nhc */
-        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);      
-    }
-    if (popt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-        nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,nx,CONS_ZIHR);
-    }     
-
-    /* measurement noise covariance matrix R*/
-    diag_Cov(nv+nv_cons,var,R,diag_var);
-    /* trace(12,"H=\n"); tracemat(12,H,nv,nx,15,10,0); */
-    /* trace(12,"Rn=\n"); tracemat(12,Rn,3,3,9,4,0); */
-
-    /* measurement update of ekf states */
-    if ((info=filter_(rtk,x,P,H,v,R,nx,nv+nv_cons,xp,Pp,mode))) {
-        trace(2,"lc_gins (%d) filter error info=%d\n",i+1,info);
-        stat=SOLQ_NONE;
-    }   
-    /* trace(12,"Pk=\n"); tracemat(12,Pp,nx,nx,9,4,0); */
-
-    /* update state covariance matrix */
-    matcpy(rtk->lcgins.P,Pp,nx,nx);
-
-    /* INS feedback correction */
-    ins_fedback(rtk,xp);
-
-    /* save solution status */
-    update_lcstat(rtk,stat);
-
-    /* free heap memory */
-    free(I3);free(x); free(P); free(xp); free(Pp);
-    free(v); free(H); free(var); free(R);
-
-    return 1;
+    free(I3);
 }
+
 
 extern void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, double *dv_rot, double *dv_pad)
 {
@@ -444,9 +372,9 @@ extern void update_instat(const prcopt_t *popt, ins_t *ins, double *P, sol_t *so
     /* cov of local frame to ecef frame */
     covecef(ins->pos,Qrn,Qr);
     covecef(ins->pos,Qvn,Qv);
-    covtosol(Qr,sol);
     covtosol_att(Qa,sol);
     covtosol_vel(Qv,sol);
+    covtosol(Qr,sol);
     covtosol_bga(Qbg,Qba,sol);
 }
 
@@ -474,4 +402,100 @@ extern void update_lcstat(rtk_t *rtk, int stat){
         sol->ns=rtk->sol.ns;      
     }
 
+}
+
+/* GNSS/INS loosely coupled integration */
+extern int lc_gins(rtk_t *rtk)
+{
+    ins_t *ins=&rtk->ins;
+    sol_t *sol=&rtk->lcgins.sol;
+    prcopt_t *popt=&rtk->opt;
+    int i,j,nx=rtk->lcgins.nx,nv,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.filter;
+    double p_ins[3],p_gnss[3],iFrp[9],dp[3],zupt_time;
+    double Re[9],Rn[9];
+    double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
+
+    /* check GNSS status and output INS navigation information if GNSS is unavailable */
+    if (SOLQ_NONE==rtk->sol.stat&&!popt->constraint[0]) {
+        rtk->outage++;
+        sol->stat=SOLQ_INS;
+        update_instat(popt,ins,rtk->lcgins.P,sol,nx);
+        return 1;
+    }
+
+    /* number of GNSS pos measurements */
+    nv=(SOLQ_NONE<rtk->sol.stat)?3:0;
+
+    /* detected vehicle stationary time span (s)*/
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;
+
+    /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints */
+    x=zeros(nx,1); P=zeros(nx,nx); xp=zeros(nx,1); Pp=zeros(nx,nx);
+    v=zeros(nv+4,1); H=zeros(nv+4,nx); var=mat(nv+4,1); R=zeros(nv+4,nv+4);
+
+    /* initialize states */
+    matcpy(P,rtk->lcgins.P,nx,nx);
+
+    /* if GNSS is available, using GNSS/INS LC */
+    if (SOLQ_NONE<rtk->sol.stat) {
+        earth_update(popt,ins->pos,ins->vel,&ins->eth);
+        matcpy(iFrp,ins->eth.Frp,3,3);
+        matinv(iFrp,3);
+
+        /* lever arm correction to convert INS position to GNSS position */
+        ins2gnss(popt,ins,p_ins,3);
+        ecef2pos(rtk->sol.rr,p_gnss);
+
+        /* measurement vector */
+        for (i=0;i<3;i++) dp[i]=p_ins[i]-p_gnss[i];
+        Mat3mulv(1.0,iFrp,dp,v);
+
+        /* measurement matrix H */
+        Jacobi_avp(rtk,nx,nv,H);
+        
+        /* initialize measurement variance */
+        soltocov(&rtk->sol,Re); 
+        covenu(ins->pos,Re,Rn); covtodiag(Rn,3);
+        for (i=0;i<nv;i++) var[i]=Rn[i+i*nv];        
+    }
+
+    /* motion constraints */
+    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
+    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
+    if (popt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
+        sol->iFlag=SOLF_ZUPT; /* zupt flag */
+    }
+    else if (popt->constraint[0]) { /* nhc */
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);      
+    }
+    if (popt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
+        nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,nx,CONS_ZIHR);
+    }     
+
+    /* measurement noise covariance matrix R*/
+    diag_Cov(nv+nv_cons,var,R,diag_var);
+    /* trace(12,"R=\n"); tracemat(12,R,nv+nv_cons,nv+nv_cons,9,4,0); */
+
+    /* measurement update of ekf states */
+    if ((info=filter_(rtk,x,P,H,v,R,nx,nv+nv_cons,xp,Pp,mode))) {
+        trace(2,"lc_gins (%d) filter error info=%d\n",i+1,info);
+        stat=SOLQ_NONE;
+    }   
+    /* trace(12,"Pk=\n"); tracemat(12,Pp,nx,nx,9,4,0); */
+
+    /* update state covariance matrix */
+    matcpy(rtk->lcgins.P,Pp,nx,nx);
+
+    /* INS feedback correction */
+    ins_fedback(rtk,xp);
+
+    /* save solution status */
+    update_lcstat(rtk,stat);
+
+    /* free heap memory */
+    free(x); free(P); free(xp); free(Pp);
+    free(v); free(H); free(var); free(R);
+
+    return 1;
 }

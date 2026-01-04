@@ -480,7 +480,7 @@ extern int saveopts(const char *file, const char *mode, const char *comment,
 static void buff2sysopts(void)
 {
     double es[6],pos[3],*rr;
-    char buff[1024],*p,*q,*id;
+    char buff[1024],*p,*q,*id,*sep=NULL,sol_path[1024]={};
     int i,j,sat,ps;
 
     /* start time */
@@ -645,6 +645,29 @@ static void buff2sysopts(void)
     for (p=strtok_r(buff,",",&q),j=0;p&&j<statopt;p=strtok_r(NULL,",",&q)) {
         solopt_.stato[j++]=atoi(p);
     }   
+
+    /* path splicing */
+    if (*filopt_.sol_path) {
+        strcpy(sol_path,filopt_.sol_path);
+        /* separator */
+        sep=(strrchr(sol_path,'/'))?"/":"\\";
+        strcat(sol_path,sep);
+
+        /* path splicing */
+        if (*filopt_.obs_u)    { strcpy(buff,sol_path); strcat(buff,filopt_.obs_u);    strcpy(filopt_.obs_u,buff); buff[0]='\0'; }
+        if (*filopt_.obs_b)    { strcpy(buff,sol_path); strcat(buff,filopt_.obs_b);    strcpy(filopt_.obs_b,buff); buff[0]='\0'; }
+        if (*filopt_.nav)      { strcpy(buff,sol_path); strcat(buff,filopt_.nav);      strcpy(filopt_.nav,buff); buff[0]='\0'; }
+        if (*filopt_.sp3)      { strcpy(buff,sol_path); strcat(buff,filopt_.sp3);      strcpy(filopt_.sp3,buff); buff[0]='\0'; }
+        if (*filopt_.clk)      { strcpy(buff,sol_path); strcat(buff,filopt_.clk);      strcpy(filopt_.clk,buff); buff[0]='\0'; }
+        if (*filopt_.imu)      { strcpy(buff,sol_path); strcat(buff,filopt_.imu);      strcpy(filopt_.imu,buff); buff[0]='\0'; }
+        if (*filopt_.pos)      { strcpy(buff,sol_path); strcat(buff,filopt_.pos);      strcpy(filopt_.pos,buff); buff[0]='\0'; }
+        if (*filopt_.antp)     { strcpy(buff,sol_path); strcat(buff,filopt_.antp);     strcpy(filopt_.antp,buff); buff[0]='\0'; }
+        if (*filopt_.mgex_dcb) { strcpy(buff,sol_path); strcat(buff,filopt_.mgex_dcb); strcpy(filopt_.mgex_dcb,buff); buff[0]='\0'; }
+        if (*filopt_.stapos)   { strcpy(buff,sol_path); strcat(buff,filopt_.stapos);   strcpy(filopt_.stapos,buff); buff[0]='\0'; }
+        if (*filopt_.blq)      { strcpy(buff,sol_path); strcat(buff,filopt_.blq);      strcpy(filopt_.blq,buff); buff[0]='\0'; }
+        if (*filopt_.trace)    { strcpy(buff,sol_path); strcat(buff,filopt_.trace);    strcpy(filopt_.trace,buff); buff[0]='\0'; }
+    }
+
     /* Guard number of frequencies */
     if (prcopt_.nf>NFREQ) {
         fprintf(stderr,"Number of frequencies %d limited to %d, rebuild with NFREQ=%d\n",prcopt_.nf, NFREQ, prcopt_.nf);

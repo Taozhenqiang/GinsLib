@@ -19,6 +19,7 @@ extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
         sol->qr [i]=posd->qr[i];
         sol->qv [i]=posd->qv[i];
     }
+    for (i=3;i<6;i++) sol->qr[i]=posd->qr[i];
 }
 
 /* copy imu data --------------------------------------------------------------
@@ -675,7 +676,8 @@ extern int readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_
         repspace(buff);
         if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf",&sec,data,data+1,data+2,data+3,data+4,data+5)<7) continue;
         /* week,sec,pos(llh/xyz),Q,ns,var_pos(xyz) for GINSLIB/RTKLIB */
-        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7)==10&&data[3]<10) pos_flag=1; 
+        else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+                &week,&sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7,data+8,data+9,data+10)==13&&data[3]<10) pos_flag=1; 
         /* week,sec,pos(llh/xyz),vel(xyz),var_pos(xyz),var_vel(xyz) */
         else if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
                 &week,&sec,data,data+1,data+2,data+3,data+4,data+5,data+6,data+7,data+8,data+9,data+10,data+11)==14) vel_flag=1;
@@ -690,18 +692,29 @@ extern int readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_
 
         posd.time=gpst2time(week,sec);
         
-        for (i=0;i<3;i++) {
-            if (vel_flag) {
+        /* GINSLIB/RTKLIB format */
+        if (pos_flag) {
+            for (i=0;i<3;i++) {
                 pos[i]=data[i];
-                vel[i]=data[i+3];
-                Qr [i+i*3]=data[i+6]*data[i+6];
-                Qv [i+i*3]=data[i+9]*data[i+9];
-            }
-            else {
-                pos[i]=data[i];
-                if (pos_flag) Qr[i+i*3]=data[i+5]*data[i+5];
-                else Qr[i+i*3]=data[i+3]*data[i+3];
-            }
+                Qr[i+i*3]=data[i+5]*data[i+5]; 
+            }  
+            Qr[1]=Qr[3]=powstd(data[8]);
+            Qr[5]=Qr[7]=powstd(data[9]);
+            Qr[2]=Qr[6]=powstd(data[10]);
+        }
+        else { /* other format */
+            for (i=0;i<3;i++) {
+                if (vel_flag) {
+                    pos[i]=data[i];
+                    vel[i]=data[i+3];
+                    Qr [i+i*3]=data[i+6]*data[i+6];
+                    Qv [i+i*3]=data[i+9]*data[i+9];
+                }
+                else {
+                    pos[i]=data[i];
+                    Qr[i+i*3]=data[i+3]*data[i+3];
+                }
+            }            
         }
 
         if (POSF_XYZ==popt->postype) {
@@ -709,6 +722,7 @@ extern int readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_
                 posd.pos[i]=pos[i];
                 posd.qr [i]=Qr[i+i*3];
             }
+            posd.qr[3]=Qr[1]; posd.qr[4]=Qr[5]; posd.qr[5]=Qr[2];
         }
         else if (POSF_NED==popt->postype) {
             for (i=0;i<2;i++) pos[i]*=D2R;
@@ -1112,7 +1126,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* manual alignment */
     if (!rtk->align&&INSALI_MANUAL==popt.alingetype&&popt.ts.time)
     {   
-        if ((fabs(timediff(imu[0].time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
+        if ((fabs(timediff(ins->time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
             init_inspva(ins,popt.initpos,popt.initvel,popt.initatt); 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
@@ -1120,7 +1134,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
 
             return 1;            
         }
-        else if (timediff(imu[0].time,popt.ts)>0) {
+        else if (timediff(ins->time,popt.ts)>0) {
             showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); return 0;
         }
     }
@@ -1173,7 +1187,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             }
             /* if GNSS becomes available after a long interruption, set the GNSS interruption count to zero */
             rtk->outage=0;
-            /* reinitialize ins position and velocity,consider lever arm correction */
+            /* reinitialize ins position and velocity, consider lever arm correction */
             ecef2pos(rtk_.sol.rr,pos);        
             ecef2enu(pos,rtk->sol.rr+3,vn);
             gnss2ins(rtk,pos,ins->pos,1);
@@ -1269,7 +1283,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     /* epoch-to-epoch average velocity estimation based on tdcp */
     if (flag) {
         /* check whether a cycle slip occurs in the current epoch observation */
-        init_ssatpar(rtk,NULL,n,RTK_slip);
+        init_ssatpar(rtk,NULL,n,RTK_slip,SOLQ_NONE);
 
         /* detect cycle slip by LLI/geometry-free/Melbourne-Wubbena linear combination */
         detslp_ll_ppp(rtk,obs,n);
@@ -1437,50 +1451,47 @@ extern void zerovel_detect(rtk_t *rtk, imud_t *imu)
 }
 
 /* motion constraints */
-extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt) 
+extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt) 
 {
     ins_t *ins=&rtk->ins;
-    sol_t *sol=&rtk->sol;
-    int i,j,nx=rtk->nx,nv=0,info;
+    sol_t *sol=(GINS_TC==popt->GI_mode)?&rtk->sol:&rtk->lcgins.sol;
+    int i,j,nx=ins->nx,nv=4,info;
     double zupt_time,vel,*xp,*Pp,*H,*v,*var,*R;
 
     /* detected vehicle stationary time (s) and GNSS velocity */
     zupt_time=ins->zupt.count*ins->interval*ins->nn;
-    vel=norm(sol->rr+3,3);
+    vel=norm(rtk->sol.rr+3,3);
 
     /* initializing memory */
-    xp=zeros(nx,1); Pp=zeros(nx,nx); R=zeros(3,3);
-    H=mat(3,nx); v=mat(3,1); var=mat(3,1);
+    xp=zeros(nx,1); Pp=zeros(nx,nx); R=zeros(nv,nv);
+    H=mat(nv,nx); v=mat(nv,1); var=mat(nv,1);
 
     /* copy the covariance matrix */
-    matcpy(Pp,rtk->P,nx,nx); 
+    if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) matcpy(Pp,rtk->lcgins.P,nx,nx);
+    else if (GINS_TC==popt->GI_mode) pmatcpy(Pp,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx); 
 
     /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (opt->constraint[1]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zupt */
+    if (popt->constraint[1]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zupt */
         nv=motion_update(rtk,H,v,var,0,nx,CONS_ZUPT);
         sol->iFlag=SOLF_ZUPT; /* zupt flag */
     }
-    else if (opt->constraint[0]) { /* nhc */
+    else if (popt->constraint[0]) { /* nhc */
         nv=motion_update(rtk,H,v,var,0,nx,CONS_NHC);        
     }
-    if (opt->constraint[2]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zihr */
+    if (popt->constraint[2]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zihr */
         nv=motion_update(rtk,H,v,var,nv,nx,CONS_ZIHR);
     }
     
     /* measurement noise covariance matrix */
-    for (i=0;i<nv;i++) {
-        for (j=0;j<nv;j++) {
-            if (i==j) R[j+i*nv]=var[i];
-        }
-    }
+    diag_Cov(nv,var,R,diag_var);
 
     /* measurement update */
     if ((info=filter_gins(rtk,xp,Pp,H,v,R,nx,nv,KF_GINS,Robust_OFF))) {
         trace(7,"motion_constraints: filter_gins error info=%d\n",info);
         sol->stat=SOLQ_INS;
         /* update solution status */
-        update_instat(opt,ins,rtk->P,sol,rtk->nx);
+        update_instat(popt,ins,Pp,sol,nx);
         
         free(xp); free(Pp); free(H); free(v); free(var);
     }
@@ -1488,13 +1499,14 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *opt)
     sol->stat=SOLQ_CONS;
 
     /* update the covariance matrix */
-    matcpy(rtk->P,Pp,nx,nx); 
+    if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) matcpy(rtk->lcgins.P,Pp,nx,nx);
+    else if (GINS_TC==popt->GI_mode) pmatcpy(rtk->P,rtk->nx,rtk->nx,0,0,nx,nx,Pp,nx,nx,0,0,nx,nx); 
     
     /* ins feedback correction */
     ins_fedback(rtk,xp);
 
     /* update solution status */
-    update_instat(opt,ins,rtk->P,sol,rtk->nx);
+    update_instat(popt,ins,Pp,sol,nx);
 
     free(xp); free(Pp); free(H); free(v); free(var);
 }
@@ -1562,7 +1574,7 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 
         if (CONS_NHC==mode||CONS_ZUPT==mode) {
             v[nv]=ins->nhc_vel[k];
-            var[nv]=1; /* variance of the constraint, can be adjusted */  
+            var[nv]=0.1; /* variance of the constraint, can be adjusted */  
         }
         else if (CONS_ZIHR==mode) {
             v[nv]=ins->att[2]-yaw;       /* the difference in yaw between the last GNSS update and the current INS update */

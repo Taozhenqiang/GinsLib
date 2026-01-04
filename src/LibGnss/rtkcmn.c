@@ -586,22 +586,22 @@ extern void covtodiag(double *P, int n)
     int i,j;
     for (i=0;i<n;i++) {
         for (j=0;j<n;j++) {
-            if (i!=j) P[i*n+j]=0.0;
+            if (i!=j) P[j+i*n]=0.0;
         }
     }
 }
 
 /* set diagonal covariance matrix -------------------------------------------*/
-extern void diag_Cov(int nx, const double *var, double *P, int opt)
+extern void diag_Cov(int nv, const double *var, double *P, int opt)
 {
     int i,j;
 
-    for (i=0;i<nx;i++) {
-        for (j=0;j<nx;j++) {
-            P[i+j*nx]=0.0;
+    for (i=0;i<nv;i++) {
+        for (j=0;j<nv;j++) {
+            P[j+i*nv]=0.0;
             if (i==j) {
-                if (diag_wei==opt) P[i+j*nx]=1.0/var[i];
-                else if (diag_var==opt) P[i+j*nx]=var[i];
+                if (diag_wei==opt) P[j+i*nv]=1.0/var[i];
+                else if (diag_var==opt) P[j+i*nv]=var[i];
             }
         }
     }
@@ -721,13 +721,14 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
            obsd_t   *obs   I   observation struct
            int        n    I   number of obs satellites
            int       mode  I   mode option
+           int       ssat  I   solution status
 * return:none
 *-----------------------------------------------------------------------------*/
-extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
+extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat)
 {
     prcopt_t *opt=&rtk->opt;
     ssat_t *ssat=rtk->ssat;
-    int i,j,sys,fr;
+    int i,j,sys,fr,nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf;
 
     /* reset fix and par_ivsat flag for all sats (RTK) */
     if (SPP_ssat==mode) {
@@ -747,7 +748,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
         }
         for (i=0;i<n;i++) {
             sys=satsys(obs[i].sat,NULL); 
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
                 ssat[obs[i].sat-1].maxsnr_rover[fr]=MAX((SNR_UNIT*obs[i].SNR[fr]),ssat[obs[i].sat-1].maxsnr_rover[fr]);                
@@ -769,7 +770,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
     else if (RTK_ssat==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL); /* gnss system */
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].vsat[fr]=0;  /* valid satellite */
                 ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0.0;
@@ -780,7 +781,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
     else if (RTK_resi==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
             }  
@@ -790,7 +791,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
     else if (RTK_fix==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].fix[fr]=ssat[i].par_ivsat[fr]=0;
             }       
@@ -800,9 +801,21 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
     else if (RTK_slip==mode) {     
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].slip[fr]=0;
+            }
+        }
+    }
+    /* save satellite status auxiliary information */
+    else if (RTK_update==mode) {    
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                /* don't lose track of which sats were used to try and resolve the ambiguities */
+                if (ssat[i].fix[j]==2&&stat!=SOLQ_FIX) ssat[i].fix[j]=1;
+                if (ssat[i].slip[fr]&1) ssat[i].slipc[fr]++;
             }
         }
     }
@@ -814,14 +827,14 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
         }
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].fix[fr]=0;
             }
         }
         for (i=0;i<n&&i<MAXOBS;i++) {
             sys=satsys(obs[i].sat,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
             }  
@@ -831,13 +844,24 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode)
     else if (PPP_vsat==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
-            for (j=0;j<opt->nf;j++) {
+            for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].vsat[fr]=0;
                 ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
             }
         }
-    }    
+    } 
+    /* update ppp ssat status */   
+    else if (PPP_update==mode) {
+        for (i=0;i<MAXSAT;i++) {
+            sys=satsys(i+1,NULL);
+            for (j=0;j<nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                if (ssat[i].slip[fr]&3) ssat[i].slipc[fr]++;
+                if (ssat[i].fix[fr]==2&&stat!=SOLQ_FIX) ssat[i].fix[fr]=1;
+            }
+        }
+    }
 
     return 1;
 }
@@ -1791,6 +1815,11 @@ extern double dot(const double *a,const double *b,int n) {
  *-----------------------------------------------------------------------------*/
 extern double norm(const double *a,int n) {
     return sqrt(dot(a,a,n));
+}
+/* square of standard deviation --------------------------------------------------------*/
+extern double powstd(double std)
+{
+    return std<0.0?-(std*std):(std*std);
 }
 /* outer product of 3d vectors -------------------------------------------------
 *outer product of 3d vectors

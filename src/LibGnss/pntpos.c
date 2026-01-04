@@ -40,7 +40,7 @@
 #define ERR_ION     5.0         /* ionospheric delay Std (m) */
 #define ERR_TROP    3.0         /* tropspheric delay Std (m) */
 #define ERR_SAAS    0.3         /* Saastamoinen model error Std (m) */
-#define ERR_BRDCI   0.2         /* broadcast ionosphere model error factor */
+#define ERR_BRDCI   0.5         /* broadcast ionosphere model error factor */
 #define ERR_CBIAS   0.3         /* code bias error Std (m) */
 #define REL_HUMI    0.7         /* relative humidity for Saastamoinen model */
 #define MIN_EL      (5.0*D2R)   /* min elevation for measurement error (rad) */
@@ -372,7 +372,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
 
         if (!iter) vsat[i]=0;
 
-        /* reset spp valid satellite flags */
+        /* reset spp valid satellite flags (only for ipos result output) */
         if (ssat) ssat[sat-1].vs=0;
 
         /* exclude satellites with large residuals */
@@ -390,9 +390,10 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         
         /* geometric distance and elevation mask*/
         if ((r=geodist(rs+i*6,rr,e))<=0.0) continue;
-        if (satazel(pos,e,azel+i*2)<opt->elmin) continue;
         
-        if (iter>0) {        
+        if (iter>0) {      
+            /* test elevation mask */
+            if (satazel(pos,e,azel+i*2)<opt->elmin) continue;
 
             /* test SNR mask */
             if (!snrmask(obs+i,azel+i*2,opt)) continue;
@@ -1153,7 +1154,6 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
             resp[j]=resp_e[k++];
         }
         stat=1;
-        sol_e.eventime = sol->eventime;
         *sol=sol_e;
         sat=obs[i].sat;
         rms=rms_e;
@@ -1210,12 +1210,11 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         return 0;
     }
     sol->time=obs[0].time;
-    sol->eventime=obs[0].eventime;
     
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel_=zeros(2,n); resp=mat(1,n);
     
     /* init ssat struct */
-    if (ssat) init_ssatpar(rtk,obs,n,SPP_ssat);
+    if (ssat) init_ssatpar(rtk,obs,n,SPP_ssat,SOLQ_NONE);
     
     if (opt_.mode!=PMODE_SINGLE) { /* for precise positioning */
         opt_.sateph=EPHOPT_BRDC;

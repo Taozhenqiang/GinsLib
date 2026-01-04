@@ -206,5 +206,4 @@ def plot_err(solution, reference, flag):
     # Adjust spacing
     plt.tight_layout()
 
-    # Show the plot
-    plt.show()
+    return fig

@@ -107,7 +107,7 @@
 
 /* ephemeris selections ------------------------------------------------------*/
 static int eph_sel[]={ /* GPS,GLO,GAL,QZS,BDS,IRN,SBS */
-    0,0,1,0,0,0,0
+    0,0,0,0,0,0,0
 };
 
 /* variance by ura ephemeris -------------------------------------------------*/
@@ -451,10 +451,10 @@ static eph_t *seleph(gtime_t time, int sat, int iode, const nav_t *nav)
             sel=getseleph(SYS_GAL);
             /* this code is from 2.4.3 b34 but does not seem to be fully supported,
                so for now I have dropped back to the b33 code */
-            /* if (sel==0&&!(nav->eph[i].code&(1<<9))) continue; */ /* I/NAV */
-            /*if (sel==1&&!(nav->eph[i].code&(1<<8))) continue; */ /* F/NAV */
-            if (sel==1&&!(nav->eph[i].code&(1<<9))) continue; /* I/NAV */
-            if (sel==2&&!(nav->eph[i].code&(1<<8))) continue; /* F/NAV */
+            if (sel==0&&!(nav->eph[i].code&(1<<9))) continue; /* I/NAV */
+            if (sel==1&&!(nav->eph[i].code&(1<<8))) continue; /* F/NAV */
+            /* if (sel==1&&!(nav->eph[i].code&(1<<9))) continue; */ /* I/NAV */
+            /* if (sel==2&&!(nav->eph[i].code&(1<<8))) continue; */ /* F/NAV */
             if (timediff(nav->eph[i].toe,time)>=0.0) continue; /* AOD<=0 */
         }
         if ((t=fabs(timediff(nav->eph[i].toe,time)))>tmax) continue;
