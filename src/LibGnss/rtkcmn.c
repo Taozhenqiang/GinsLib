@@ -2207,7 +2207,7 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
 extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode) 
 {
     double *AP,*Ay,*AQ,*D,*vx,*xp_pre;
-    double dv,alpha,k0=1.0,k1=2.0;
+    double dv,alpha,k0=1.5,k1=2.5;
     int info,i,j,k,iter=(mode==Robust_OFF)?1:MAXITR_ROBUST;
 
     if (m<n) {

@@ -933,9 +933,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     for (i=0;i<MAXITR;i++) {
 
         /* pseudorange residuals (m) */
-        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati,vi); 
-        
-        /* trace(12,"H=\n"); tracemat(12,H,n+5,NX,9,4,0); */   
+        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati,vi);    
 
         /* outlier recject based on standard normal distribution */
          if (i>=2&&nv>=NX) {

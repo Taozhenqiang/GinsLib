@@ -22,10 +22,14 @@ def read_solution(navfile, skip_lines=28, row=10000, col=18, sample=5e-2):
             
             # 创建一个空的NumPy数组来存储数据
             data = np.zeros((row, col))
+            dttol = sample / 1e3
             len_data = 0
 
             # 逐行读取文件数据
             for line in file:
+                if line and (line.startswith('%') or line.startswith('#')):  # 跳过注释行
+                    continue
+
                 line = line.strip()  # 去除两端空白字符
                 if not line:
                     continue
@@ -35,7 +39,7 @@ def read_solution(navfile, skip_lines=28, row=10000, col=18, sample=5e-2):
 
                 # 判断第二个元素是否为整数（相当于检查时间戳）
                 try:
-                    if abs(float(sline[1])-round(float(sline[1]))) > sample/2.0:
+                    if abs(float(sline[1])-round(float(sline[1]))) > (sample/2.0+dttol):
                         continue
                 except ValueError:
                     continue

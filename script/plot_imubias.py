@@ -23,7 +23,7 @@ def plot_imubias(solution):
     Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
 
     # Gyroscope bias plot
-    fig, ax_bg = plt.subplots(3, 1)
+    fig_bg, ax_bg = plt.subplots(3, 1)
     
     ax_bg[0].plot(time, bg[:, 0], color=Fcolor[0],  linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
     ax_bg[0].grid(True, linestyle='--', color='k', alpha=0.3)
@@ -48,7 +48,7 @@ def plot_imubias(solution):
 
 
     # Plot accelerometer biases
-    fig, ax_ba = plt.subplots(3, 1)
+    fig_ba, ax_ba = plt.subplots(3, 1)
 
     # Accelerometer bias plot
     ax_ba[0].plot(time, ba[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
@@ -72,5 +72,5 @@ def plot_imubias(solution):
 
     plt.tight_layout()
     
-    # 返回图形对象
-    return fig
+    # 返回两个图形对象
+    return fig_bg, fig_ba

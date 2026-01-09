@@ -38,11 +38,18 @@ def plot_err(solution, reference, flag):
     vel2 = np.zeros((nsol, 3))
     datt = np.zeros((nsol, 3))
 
+    # 初始化RMS统计字典
+    rms_stats = {}
+    
+    # 初始化图形列表
+    figures = []
+
     if "p" in flag:
         k = 0
         for i in range(nsol):
             if np.dot(pva_mea[i, 2:5], pva_mea[i, 2:5]) <= 0:
                 continue
+
             time = pva_mea[i, 0] * 7 * 24 * 3600 + pva_mea[i, 1]
             idx = np.where(np.abs(pva_ref[:, 0] * 7 * 24 * 3600 + pva_ref[:, 1] - time) < 0.01)[0]
             if len(idx) > 0:
@@ -105,7 +112,7 @@ def plot_err(solution, reference, flag):
     if "p" in flag:
         delta1 = pos1 - pos2
 
-        fig, axes = plt.subplots(3, 1)
+        fig_pos, axes = plt.subplots(3, 1)
         Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
 
         # 剔除异常值
@@ -113,57 +120,91 @@ def plot_err(solution, reference, flag):
         # delta11 = delta1[~idx, :]
         delta11 = delta1
         
+        # 计算位置误差RMS值
+        rms_e = np.sqrt(np.sum(delta11[:, 0]**2) / delta11.shape[0])
+        rms_n = np.sqrt(np.sum(delta11[:, 1]**2) / delta11.shape[0])
+        rms_u = np.sqrt(np.sum(delta11[:, 2]**2) / delta11.shape[0])
+        rms_3d = np.sqrt(np.sum(np.linalg.norm(delta11, axis=1)**2) / delta11.shape[0])
+        
+        # 存储位置误差RMS值
+        rms_stats['position'] = {
+            'E': rms_e,
+            'N': rms_n, 
+            'U': rms_u,
+            '3D': rms_3d
+        }
+        
         # 绘制位置误差
         axes[0].plot(t, delta1[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[0].set_ylabel('E [m]')
         axes[0].grid(True)
         axes[0].set_title(f"Position error (GPS week={int(pva_mea[0, 0])})")
-        axes[0].legend([f'RMS: {np.sqrt(np.sum(delta11[:, 0]**2) / delta11.shape[0]):.4f} m'])
+        axes[0].legend([f'RMS: {rms_e:.4f} m'])
 
         axes[1].plot(t, delta1[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('N [m]')
         axes[1].grid(True)
-        axes[1].legend([f'RMS: {np.sqrt(np.sum(delta11[:, 1]**2) / delta11.shape[0]):.4f} m'])
+        axes[1].legend([f'RMS: {rms_n:.4f} m'])
 
         axes[2].plot(t, delta1[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('U [m]')
         axes[2].grid(True)
-        axes[2].legend([f'RMS: {np.sqrt(np.sum(delta11[:, 2]**2) / delta11.shape[0]):.4f} m'])
+        axes[2].legend([f'RMS: {rms_u:.4f} m'])
 
         # Remove scientific notation for axis labels
         for ax in axes:
             ax.ticklabel_format(style='plain', axis='x')
             ax.ticklabel_format(style='plain', axis='y')
 
+        plt.tight_layout()
+        figures.append(('pos', fig_pos))
+
     if "v" in flag:
         delta2 = vel1 - vel2
 
-        fig, axes = plt.subplots(3, 1)
+        fig_vel, axes = plt.subplots(3, 1)
         Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
         
-        # 绘制位置误差
+        # 计算速度误差RMS值
+        rms_e = np.sqrt(np.sum(delta2[:, 0]**2) / delta2.shape[0])
+        rms_n = np.sqrt(np.sum(delta2[:, 1]**2) / delta2.shape[0])
+        rms_u = np.sqrt(np.sum(delta2[:, 2]**2) / delta2.shape[0])
+        rms_3d = np.sqrt(np.sum(np.linalg.norm(delta2, axis=1)**2) / delta2.shape[0])
+        
+        # 存储速度误差RMS值
+        rms_stats['velocity'] = {
+            'E': rms_e,
+            'N': rms_n,
+            'U': rms_u,
+            '3D': rms_3d
+        }
+        
+        # 绘制速度误差
         axes[0].plot(t, delta2[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[0].set_ylabel('E [m/s]')
         axes[0].grid(True)
         axes[0].set_title(f"Velocity error (GPS week={int(pva_mea[0, 0])})")
-        axes[0].legend([f'RMS: {np.sqrt(np.sum(delta2[:, 0]**2) / delta2.shape[0]):.4f} m/s'])
+        axes[0].legend([f'RMS: {rms_e:.4f} m/s'])
 
         axes[1].plot(t, delta2[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('N [m/s]')
         axes[1].grid(True)
-        axes[1].legend([f'RMS: {np.sqrt(np.sum(delta2[:, 1]**2) / delta2.shape[0]):.4f} m/s'])
+        axes[1].legend([f'RMS: {rms_n:.4f} m/s'])
 
         axes[2].plot(t, delta2[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('U [m/s]')
         axes[2].grid(True)
-        axes[2].legend([f'RMS: {np.sqrt(np.sum(delta2[:, 2]**2) / delta2.shape[0]):.4f} m/s'])
+        axes[2].legend([f'RMS: {rms_u:.4f} m/s'])
 
         # Remove scientific notation for axis labels
         for ax in axes:
             ax.ticklabel_format(style='plain', axis='x')
             ax.ticklabel_format(style='plain', axis='y')
+
+        plt.tight_layout()
+        figures.append(('vel', fig_vel))
 
     if "a" in flag:
         delta3 = datt
@@ -176,34 +217,45 @@ def plot_err(solution, reference, flag):
         idx_att = delta3[:, 2] <= -300
         delta3[idx_att, 2] += 360  # 加上 360
 
-        fig, axes = plt.subplots(3, 1)
+        fig_att, axes = plt.subplots(3, 1)
         Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
         
-        # 绘制位置误差
+        # 计算姿态误差RMS值
+        rms_pitch = np.sqrt(np.sum(delta3[:, 0]**2) / delta3.shape[0])
+        rms_roll = np.sqrt(np.sum(delta3[:, 1]**2) / delta3.shape[0])
+        rms_yaw = np.sqrt(np.sum(delta3[:, 2]**2) / delta3.shape[0])
+        
+        # 存储姿态误差RMS值
+        rms_stats['attitude'] = {
+            'pitch': rms_pitch,
+            'roll': rms_roll,
+            'yaw': rms_yaw
+        }
+        
+        # 绘制姿态误差
         axes[0].plot(t, delta3[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[0].set_ylabel('Pitch [deg]')
         axes[0].grid(True)
         axes[0].set_title(f"Attitude error (GPS week={int(pva_mea[0, 0])})")
-        axes[0].legend([f'RMS: {np.sqrt(np.sum(delta3[:, 0]**2) / delta3.shape[0]):.4f} deg'])
+        axes[0].legend([f'RMS: {rms_pitch:.4f} deg'])
 
         axes[1].plot(t, delta3[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('Roll [deg]')
         axes[1].grid(True)
-        axes[1].legend([f'RMS: {np.sqrt(np.sum(delta3[:, 1]**2) / delta3.shape[0]):.4f} deg'])
+        axes[1].legend([f'RMS: {rms_roll:.4f} deg'])
 
         axes[2].plot(t, delta3[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('Yaw[deg]')
         axes[2].grid(True)
-        axes[2].legend([f'RMS: {np.sqrt(np.sum(delta3[:, 2]**2) / delta3.shape[0]):.4f} deg'])
+        axes[2].legend([f'RMS: {rms_yaw:.4f} deg'])
 
         # Remove scientific notation for axis labels
         for ax in axes:
             ax.ticklabel_format(style='plain', axis='x')
-            ax.ticklabel_format(style='plain', axis='y')            
+            ax.ticklabel_format(style='plain', axis='y')
 
+        plt.tight_layout()
+        figures.append(('att', fig_att))
 
-    # Adjust spacing
-    plt.tight_layout()
-
-    return fig
+    return figures, rms_stats

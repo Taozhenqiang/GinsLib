@@ -1,0 +1,21 @@
+2026-01-07 16:16:44,808 - INFO - 日志文件保存位置: G:\Navigation_Learn\GNSS\RTKLIB-b34k\batch_process\log\batch_process_20260107_161644.log
+2026-01-07 16:16:44,809 - INFO - 批处理任务开始执行
+2026-01-07 16:16:44,810 - INFO - 当前工作目录 (Data Root): G:\Navigation_Learn\GNSS\RTKLIB-b34k\data\GNSS_INS
+2026-01-07 16:16:44,810 - INFO - 解算程序路径 (EXE Path):  G:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Bin\GINSLIB.exe
+2026-01-07 16:16:44,810 - INFO - ------------------------------------------------------------
+2026-01-07 16:16:44,811 - INFO - 共 41 个数据任务，开始批处理...
+2026-01-07 16:16:44,811 - INFO - 第 23 个任务: HGI300_Uav_open_20210119
+2026-01-07 16:16:44,811 - INFO - - 路径: G:\Navigation_Learn\GNSS\RTKLIB-b34k\data\GNSS_INS\HGI300_Uav_open_20210119
+2026-01-07 16:16:44,811 - INFO - - 配置: HGI300_Uav_open_20210119.conf
+2026-01-07 16:16:47,694 - INFO - [GINSLIB] error : no observation data!
+2026-01-07 16:16:47,694 - INFO - [GINSLIB] Total processing time of program: 2.852000 sec!
+2026-01-07 16:16:47,696 - INFO - ✓ HGI300_Uav_open_20210119 SPP 执行成功
+2026-01-07 16:16:47,696 - WARNING - 结果文件不存在，跳过误差分析: G:\Navigation_Learn\GNSS\RTKLIB-b34k\data\GNSS_INS\HGI300_Uav_open_20210119\result\GNSS_Uav_open_20210119_SPP_F.pos
+2026-01-07 16:16:50,577 - INFO - [GINSLIB] error : no observation data!
+2026-01-07 16:16:50,577 - INFO - [GINSLIB] Total processing time of program: 2.850000 sec!
+2026-01-07 16:16:50,579 - INFO - ✓ HGI300_Uav_open_20210119 SPP LC 执行成功
+2026-01-07 16:16:50,579 - WARNING - 结果文件不存在，跳过误差分析: G:\Navigation_Learn\GNSS\RTKLIB-b34k\data\GNSS_INS\HGI300_Uav_open_20210119\result\HGI300_Uav_open_20210119_SPP_F_LC.pos
+2026-01-07 16:16:50,579 - WARNING - 没有误差统计结果需要保存
+2026-01-07 16:16:50,579 - INFO - 41 个批处理任务结束。
+2026-01-07 16:16:50,580 - INFO - 总共耗费时间: 5.77 秒 (0.10 分钟)
+2026-01-07 16:16:50,580 - INFO - 日志文件保存路径: G:\Navigation_Learn\GNSS\RTKLIB-b34k\batch_process\log\batch_process_20260107_161644.log
