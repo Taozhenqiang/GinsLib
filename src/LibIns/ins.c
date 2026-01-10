@@ -1104,17 +1104,16 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
 {
     /* NOTE: The structure copy is a shallow copy! */
     prcopt_t popt=*opt;
-    rtk_t rtk_=*rtk;
+    rtk_t  rtk_={0}; 
     ins_t *ins=&rtk->ins;
     int i,j,vel_flag,nr=0,nr_old=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
+    popt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
+    rtkinit(&rtk_,&popt,NULL); /* note: initialize rtk_ instead of assigning rtk to rtk_ to avoid shallow copying of the structure. */
+
     /* initialize rtk_ TDCP velocity */
     for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=rtk_.sol.tdcp_vel[i]=0.0; 
-
-    /* initialize INS position using GNSS solution */
-    rtk_.opt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
-    if (!rtk->align) rtk_.opt.mode=PMODE_SINGLE; /* set to spp mode */
 
     /* for GNSS/INS LC with pos file ,set alignment type to manual */
     if (PMODE_LC_POS==popt.mode) popt.alingetype=INSALI_MANUAL;
@@ -1129,13 +1128,14 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
         if ((fabs(timediff(ins->time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
             init_inspva(ins,popt.initpos,popt.initvel,popt.initatt); 
+
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
-
             return 1;            
         }
         else if (timediff(ins->time,popt.ts)>0) {
-            showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); return 0;
+            showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); 
+            return 0;
         }
     }
 
@@ -1143,11 +1143,12 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     if (!rtk->align&&INSALI_VELTOR==popt.alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) {
 
         if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) {
+            /* initialize INS position using GNSS solution */
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
             }
-            /* initialize position and velocity */
+            /* initialize position (from GNSS) and velocity (from tdcp) */
             ecef2pos(rtk_.sol.rr,pos);        
             ecef2enu(pos,rtk->sol.rr+3,vn);
             
@@ -1169,9 +1170,9 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             }
             gnss2ins(rtk,vn,ins->vel,2);
             init_inspva(ins,ins->pos,ins->vel,att);
+
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
-
             return 1;            
         }
     }
@@ -1179,14 +1180,15 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     /* reinitialize INS in the event of a long-term GNSS outage */
     if (rtk->align&&rtk->outage>MAX_OUTIME&&SYNC_YES==rtk->upte) {
 
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) 
-        {
+        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) {
+            /* initialize INS position using GNSS solution */
             if (!rtkpos(&rtk_,obs,n,nav)) {
                 trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
                 return 1;
             }
             /* if GNSS becomes available after a long interruption, set the GNSS interruption count to zero */
             rtk->outage=0;
+
             /* reinitialize ins position and velocity, consider lever arm correction */
             ecef2pos(rtk_.sol.rr,pos);        
             ecef2enu(pos,rtk->sol.rr+3,vn);
@@ -1215,9 +1217,9 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
             /* trace(12,"P=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,16,8,0); */
             /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,rtk->lcgins.nx,rtk->lcgins.nx,16,8,0); */
 
+            trace(12,"INS reinitialization completed: %s!\n",Debug_Glo.chTime);
             showerr("INS reinitialization completed: %s!",Debug_Glo.chTime);             
-        }
-        
+        } 
         return 1;
     }
 

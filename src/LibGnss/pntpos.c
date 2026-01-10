@@ -941,15 +941,14 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         }
 
         if (nv<NX) {
-            trace(7,"spp lack of valid sats ns=%d\n",nv); break;
+            trace(7,"spp lack of valid sats, nv=%d\n",nv); break;
         }
-
-        /* trace(12,"H=\n"); tracemat(12,H,nv,NX,9,4,0);
-        trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0); */
 
         /* weight by variance */
         diag_Cov(nv,var,P,diag_wei);
-        /* trace(12,"P=\n"); tracemat(12,P,nv,nv,9,4,0); */
+        /* trace(12,"H=\n"); tracemat(12,H,nv,NX,9,4,0);
+        trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0);
+        trace(12,"P=\n"); tracemat(12,P,nv,nv,9,4,0); */
 
         /* least square estimation */
         if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_OFF))) {

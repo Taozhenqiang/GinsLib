@@ -96,7 +96,7 @@ extern int ins_update(rtk_t *rtk)
     /* update the state transition matrix Phi */
     phi_update(&rtk->ins,&rtk->opt);
 
-    if (GINS_TC==rtk->opt.GI_mode)  pmatcpy(P,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx);
+    if (GINS_TC==rtk->opt.GI_mode) pmatcpy(P,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx);
     else matcpy(P,rtk->lcgins.P,nx,nx);
 
     /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"Pk-1=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2,0); */
@@ -109,7 +109,7 @@ extern int ins_update(rtk_t *rtk)
     matmul("NN",nx,nx,nx,ins->G,ins->Q,GQ,1.0,0.0);      /* GQ=G*Q */
     matmul("NT",nx,nx,nx,GQ,ins->G,P,1.0,1.0);           /* FPF=F*P*F'+G*Q*G' */
    
-    if (GINS_TC==rtk->opt.GI_mode)  pmatcpy(rtk->P,rtk->nx,rtk->nx,0,0,nx,nx,P,nx,nx,0,0,nx,nx);
+    if (GINS_TC==rtk->opt.GI_mode) pmatcpy(rtk->P,rtk->nx,rtk->nx,0,0,nx,nx,P,nx,nx,0,0,nx,nx);
     else matcpy(rtk->lcgins.P,P,nx,nx);
 
     /* NOTE: update GNSS/INS cross-covariance!!! */
@@ -475,14 +475,17 @@ extern int lc_gins(rtk_t *rtk)
 
     /* measurement noise covariance matrix R*/
     diag_Cov(nv+nv_cons,var,R,diag_var);
-    /* trace(12,"R=\n"); tracemat(12,R,nv+nv_cons,nv+nv_cons,9,4,0); */
 
     /* measurement update of ekf states */
     if ((info=filter_(rtk,x,P,H,v,R,nx,nv+nv_cons,xp,Pp,mode))) {
         trace(2,"lc_gins (%d) filter error info=%d\n",i+1,info);
         stat=SOLQ_NONE;
     }   
-    /* trace(12,"Pk=\n"); tracemat(12,Pp,nx,nx,9,4,0); */
+    /* trace(12,"LC H=\n");tracemat(12,H,nv+nv_cons,nx,13,6,0);
+    trace(12,"LC P_pre=\n");tracemat(12,P,nx,nx,13,6,0);
+    trace(12,"LC R=\n"); tracemat(12,R,nv+nv_cons,nv+nv_cons,9,4,0);
+    trace(12,"LC Pk=\n"); tracemat(12,Pp,nx,nx,13,6,0);
+    trace(8,"LC measuremnet update: x=\n");tracemat(8,xp,1,nx,13,6,0); */
 
     /* update state covariance matrix */
     matcpy(rtk->lcgins.P,Pp,nx,nx);

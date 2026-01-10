@@ -3518,14 +3518,13 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
             stat=SOLQ_NONE; 
             break;
         }
+
         /* calculate double-differenced residuals and create state matrix from sat angles */
         if ((nv=sddres(rtk,obs,dt,xp,Pp,sat,y,e,azel,freq,iu,ir,ns,v,H,R,vflg,0))<4) {
             trace(7,"ddres: not enough double-differenced residual, n=%d\n", nv);
             stat=SOLQ_NONE;
             break;
         }
-        /* trace(12,"H=\n");tracemat(12,H,nv,rtk->nx,13,6,0);
-        trace(12,"R=\n");tracemat(12,R,nv,nv,13,6,0); */
 
         /* kalman filter measurement update, updates x,y,z,sat phase biases, etc */
         if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==opt->GI_mode)?KF_GINS:KF_GNSS,mode))) {
@@ -3533,8 +3532,12 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
             stat=SOLQ_NONE;
             break;
         }
-        /* trace(12,"P=\n");tracemat(12,Pp,rtk->nx,rtk->nx,13,6,0);
-        trace(8,"measuremnet update: x=\n");tracemat(8,xp,1,9,13,6,0); */
+
+        /* trace(12,"H=\n");tracemat(12,H,nv,rtk->nx,13,6,0);
+        trace(12,"P_pre=\n");tracemat(12,rtk->P,rtk->nx,rtk->nx,13,6,0);
+        trace(12,"R=\n");tracemat(12,R,nv,nv,13,6,0);
+        trace(12,"P=\n");tracemat(12,Pp,rtk->nx,rtk->nx,13,6,0);
+        trace(8,"measuremnet update: x=\n");tracemat(8,xp,1,rtk->nx,13,6,0); */
 
         /* ins feedback correction */
         if (GINS_TC==opt->GI_mode) {
@@ -3658,9 +3661,13 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
 
     rtk->ins=ins0;
     rtk->sol=sol0;
-    for (i=0;i<statopt;i++) {
-        rtk->sol.stato[i]=sopt->stato[i];
+
+    if (sopt) {
+        for (i=0;i<statopt;i++) {
+            rtk->sol.stato[i]=sopt->stato[i];
+        }        
     }
+
     for (i=0;i<6;i++) {
         rtk->rb[i]=0.0;  
         rtk->ru[i]=0.0;

@@ -14,7 +14,7 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos'(位置), 'vel'(速度), 'att'(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
@@ -42,15 +42,15 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/HG4930_Uav_open_20210126/result'
-        filename = 'HG4930_Uav_open_20210126_SPP_F_TC.pos'
+        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/FSAS_Vehicle_complex_20200922/result'
+        filename = 'FSAS_Vehicle_complex_20200922_PPD_F_TC.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/HG4930_Uav_open_20210126'
+        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/FSAS_Vehicle_complex_20200922'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 
