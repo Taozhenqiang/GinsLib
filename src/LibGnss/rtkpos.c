@@ -3593,14 +3593,16 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
         else stat=SOLQ_NONE;
     }
 
-    /* if GNSS is not available, use pure inertial navigation solution */
-    if (SOLQ_NONE==stat&&GINS_TC==opt->GI_mode) stat=SOLQ_INS;
+    /* if GNSS is not available, use pure inertial navigation solution and increment the outage count */
+    if (GINS_TC==opt->GI_mode&&SOLQ_NONE==stat) {
+        rtk->outage++;
+        stat=SOLQ_INS;  
+    }
 
     /* resolve integer ambiguity by LAMBDA */
     if (stat==SOLQ_FLOAT&&rtk->sol.ns>=2) {
         /* if valid fixed solution, process it */
         if (manage_amb_LAMBDA(rtk,bias,xa,sat,nf,ns)>1) {
-
             /* find zero-diff residuals for fixed solution */
             if (zdres(rtk,0,obs,nu,rs,dts,var,svh,nav,xa,opt,y,e,azel,freq)) {
 
@@ -3725,13 +3727,17 @@ extern void rtkfree(rtk_t *rtk)
     free(rtk->xa); rtk->xa=NULL;
     free(rtk->Pa); rtk->Pa=NULL;
 
-    free(rtk->ins.F);   rtk->ins.F=NULL;
-    free(rtk->ins.G);   rtk->ins.G=NULL;    
-    free(rtk->ins.Q);   rtk->ins.Q=NULL;
-    free(rtk->ins.Phi); rtk->ins.Phi=NULL;
+    /* free GINS memory */
+    if (GINS_LC==rtk->opt.GI_mode||GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode)
+    {
+        free(rtk->ins.F);   rtk->ins.F=NULL;
+        free(rtk->ins.G);   rtk->ins.G=NULL;    
+        free(rtk->ins.Q);   rtk->ins.Q=NULL;
+        free(rtk->ins.Phi); rtk->ins.Phi=NULL;
 
-    free(rtk->lcgins.x); rtk->lcgins.x=NULL;
-    free(rtk->lcgins.P); rtk->lcgins.P=NULL;
+        free(rtk->lcgins.x); rtk->lcgins.x=NULL;
+        free(rtk->lcgins.P); rtk->lcgins.P=NULL;        
+    }
 }
 /* precise positioning ---------------------------------------------------------
 * input observation data and navigation message, compute rover position by

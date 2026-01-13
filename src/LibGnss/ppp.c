@@ -510,8 +510,7 @@ extern void detslp_gf_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav
 
     for (i=0;i<n&&i<MAXOBS;i++) {
         el=rtk->ssat[obs[i].sat-1].azel[1]*R2D;
-        sys=satsys(obs[i].sat,NULL);
-        satno2id(obs[i].sat,id);
+        sys=satsys(obs[i].sat,NULL); satno2id(obs[i].sat,id);
         fr2[0]=sys2freid(sys,0,opt);
 
         for (j=1;j<rtk->opt.nf;j++) {
@@ -530,7 +529,7 @@ extern void detslp_gf_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav
 
                 rtk->ssat[obs[i].sat-1].slip[fr2[0]]|=1;
                 rtk->ssat[obs[i].sat-1].slip[fr2[1]]|=1;
-                }
+            }
         }
     }
 }
@@ -1471,13 +1470,13 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
         }
     }
     /* posterior result check */
-    if ((GINS_TC==popt->GI_mode&&!stat)||(GINS_TC==popt->GI_mode&&sol->ns<MIN_NSAT_SOL)) {
+    if (GINS_TC==popt->GI_mode&&(SOLQ_INS==stat||sol->ns<MIN_NSAT_SOL)) {
         sol->stat=SOLQ_INS; 
         sol->ns=0;
     }
     else {
         /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
-        if (rtk->outage<=MAX_OUTIME)rtk->outage=0;
+        if (GINS_TC==popt->GI_mode&&rtk->outage<=MAX_OUTIME) rtk->outage=0;
         sol->stat=sol->ns<MIN_NSAT_SOL?SOLQ_NONE:stat; 
     }
 
@@ -1681,6 +1680,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         /* prefit residuals */
         if (!(nv=ppp_res(0,obs,n,rs,dts,var,svh,dr,exc,nav,xp,rtk,v,H,R,azel))) {
             trace(7,"%s ppp (%d) no valid obs data\n",str,i+1);
+            stat=SOLQ_NONE;
             break;
         }
 
@@ -1692,6 +1692,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         /* measurement update of ekf states */
         if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==popt->GI_mode)?KF_GINS:KF_GNSS,mode))) {
             trace(7,"%s ppp (%d) filter error info=%d\n",str,i+1,info);
+            stat=SOLQ_NONE;
             break;
         }
 
@@ -1718,9 +1719,14 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         ins_fedback(rtk,xp); 
     }
 
+    /* if GNSS is not available, use pure inertial navigation solution and increment the outage count */
+    if (GINS_TC==popt->GI_mode&&SOLQ_NONE==stat) {
+        rtk->outage++;
+        stat=SOLQ_INS;  
+    }
+
     /* TODO: PPP-AR */
     if (stat==SOLQ_PPP) {
-
         if (ppp_ar(rtk,obs,n,exc,nav,azel,xp,Pp)&&
             ppp_res(9,obs,n,rs,dts,var,svh,dr,exc,nav,xp,rtk,v,H,R,azel)) {
 

@@ -1692,7 +1692,7 @@ extern void repspace(char *str)
     int in_space=0;
 
     /* skip leading spaces */
-    while (*p && isspace((unsigned char)*p)) {
+    while (*p&&isspace((unsigned char)*p)) {
         p++;
     }
 
@@ -1722,6 +1722,7 @@ extern double *mat(int n,int m) {
     if (n <=0||m <=0)
         return NULL;
     if (!(p=(double *)malloc(sizeof(double)*n*m))) {
+        trace(7,"mat: matrix memory allocation error: n=%d,m=%d\n",n,m);
         fatalerr("matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
     return p;
@@ -1737,6 +1738,7 @@ extern int *imat(int n,int m) {
     if (n <=0||m <=0)
         return NULL;
     if (!(p=(int *)malloc(sizeof(int)*n*m))) {
+        trace(7,"imat: integer matrix memory allocation error: n=%d,m=%d\n",n,m);
         fatalerr("integer matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
     return p;
@@ -1757,6 +1759,7 @@ extern double *zeros(int n,int m) {
     if (n <=0||m <=0)
         return NULL;
     if (!(p=(double *)calloc(sizeof(double),n*m))) {
+        trace(7,"zeros: matrix memory allocation error: n=%d,m=%d\n",n,m);
         fatalerr("matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
 #endif

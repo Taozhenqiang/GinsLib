@@ -454,7 +454,7 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
     }  
     temp[1]=quadratic(db,Qb,nb)+res_da;
 
-    trace(12,"BIE/chi=%.4f BIE/ILS=%.3f BIE=\n",temp[0]/chisqr[na+nb-1],temp[0]/temp[1]); tracemat(12,b_BIE,1,nb,7,2,0); 
+    /* trace(12,"BIE/chi=%.4f BIE/ILS=%.3f BIE=\n",temp[0]/chisqr[na+nb-1],temp[0]/temp[1]); tracemat(12,b_BIE,1,nb,7,2,0); */ 
 
     free(QaIb); free(IQb); free(Qa); free(db); free(da);
 

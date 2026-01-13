@@ -1,6 +1,0 @@
-2026-01-10 15:12:43,166 - INFO - 日志文件保存位置: G:\Navigation_Learn\GNSS\RTKLIB-b34k\batch_process\log\batch_process_20260110_151243.log
-2026-01-10 15:12:43,185 - INFO - 批处理任务开始执行
-2026-01-10 15:12:43,185 - INFO - 当前工作目录 (Data Root): G:\Navigation_Learn\GNSS\RTKLIB-b34k\data\GNSS_INS
-2026-01-10 15:12:43,186 - INFO - 解算程序路径 (EXE Path):  G:\Navigation_Learn\GNSS\RTKLIB-b34k\build\Bin\GINSLIB.exe
-2026-01-10 15:12:43,186 - INFO - ------------------------------------------------------------
-2026-01-10 15:12:43,186 - INFO - 共 41 个数据任务，开始批处理...

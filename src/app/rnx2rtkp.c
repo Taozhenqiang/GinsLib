@@ -155,6 +155,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-eph")&&i+1<argc)  prcopt.sateph=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-flt")&&i+1<argc)  prcopt.filter=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-amb")&&i+1<argc)  prcopt.modear=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-ambt")&&i+1<argc) prcopt.artype=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-solt")&&i+1<argc) prcopt.soltype=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-sys")&&i+1<argc) 
         {

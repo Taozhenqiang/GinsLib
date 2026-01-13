@@ -1422,7 +1422,7 @@ extern "C"
         int outpos;              /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
         int nn;                  /* number of samples */
         int insample;            /* ins sample frequency */
-        int alingetype;          /* ins initial alignment type */
+        int alingetype;          /* ins initial alignment type (0:manual alignment,1:velocity vector alignment) */
         int att_type;            /* attitude update method (0:DCM, 1:quat) */
         int err_model;           /* ins error model (0:phi,1:psi) */
         int constraint[3];       /* constraint type (CONS_???) [1]NHC,[2]ZUPT,[3]ZIHR */

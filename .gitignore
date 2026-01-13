@@ -61,6 +61,7 @@ app/qtapp/packaging/packages/RtkLibInstaller.exe
 
 # sample date
 /app
+/batch_process
 /data
 /lib
 /test

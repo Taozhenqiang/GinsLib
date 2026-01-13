@@ -48,21 +48,21 @@ def get_soltype(solt_value):
     else:
         return "F"  # 默认值
 
-def get_result_filename(current_work_dir, mode, solt_value):
+def get_result_filename(conf_file, mode, solt_value):
     """
     根据规则生成结果文件名
     
     参数:
-    - current_work_dir: 当前工作目录路径
+    - conf_file: 配置文件名称
     - mode: 处理模式字符串
     - solt_value: solt字段值
     
     返回:
     - 结果文件名
     """
-    # 提取文件夹名称
-    folder_name = os.path.basename(current_work_dir)
-    
+
+    folder_name = os.path.splitext(conf_file)[0]  # 去掉扩展名
+
     # 确定滤波模式
     soltype = get_soltype(solt_value)
     
@@ -74,7 +74,7 @@ def get_result_filename(current_work_dir, mode, solt_value):
         combined_mode = "LC" if 'LC' in mode else "TC"
         filename = f"{folder_name}_{mode_first_part}_{soltype}_{combined_mode}.pos"
     else:
-        # GNSS模式："GNSS" + current_work_dir首个_符号后的部分 + "_" + mode + soltype + ".pos"
+        # GNSS模式："GNSS" + folder_name首个_符号后的部分 + "_" + mode + soltype + ".pos"
         # 提取首个_符号后的部分
         if '_' in folder_name:
             after_underscore = folder_name.split('_', 1)[1]
@@ -218,114 +218,124 @@ def batch_process_gins(exe_path_input):
     all_error_stats = []
 
     # for folder_name in sub_folders:  
-    for folder_name in sub_folders[31:32]:  # 处理单个子文件夹用于测试
+    for folder_name in sub_folders[42:44]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
-        # 3. 【修改点】配置文件名默认与数据文件夹名一致
-        # 例如文件夹为 "data1"，则寻找 "data1.conf"
-        conf_file = f"{folder_name}.conf"
-        target_conf_path = os.path.join(current_work_dir, conf_file)
+        # 3. 【优化】遍历当前数据文件夹中的所有.conf配置文件
+        # 获取所有.conf文件
+        conf_files = [f for f in os.listdir(current_work_dir) if f.endswith('.conf')]
         
+        if not conf_files:
+            logging.warning(f"在文件夹 {folder_name} 中没有找到任何.conf配置文件")
+            continue
+            
         logging.info(f"第 {sub_folders.index(folder_name) + 1} 个任务: {folder_name}")
         logging.info(f"- 路径: {current_work_dir}")
-        logging.info(f"- 配置: {conf_file}")
-
-        # 检查配置文件是否存在
-        if not os.path.exists(target_conf_path):
-            logging.error(f"配置文件不存在: {target_conf_path}")
-            logging.info("跳过该任务。")
-            continue
+        logging.info(f"- 共 {len(conf_files)} 个配置文件: {'\n'.join(conf_files)}")
         
-        # 4. 定义处理模式 (保持原有逻辑)
-        # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
-        mode = ["SPP","SPP LC","SPP TC","PPD","PPD LC","PPD TC"]
-        
-        # 命令列表
-        commands = [
-            [exe_path,"-k",conf_file,"-p","0","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #spp
-            [exe_path,"-k",conf_file,"-p","0","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #spp/ins LC
-            [exe_path,"-k",conf_file,"-p","0","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #spp/ins TC
-            # [exe_path,"-k",conf_file,"-p","8","-gins","0","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-solt","0"], #ppp
-            # [exe_path,"-k",conf_file,"-p","8","-gins","1","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-solt","0"], #ppp/ins LC
-            # [exe_path,"-k",conf_file,"-p","8","-gins","2","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-solt","0"], #ppp/ins TC
-            [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #ppd
-            [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #ppd/ins LC
-            [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-solt","0"], #ppd/ins TC
-            # [exe_path,"-k",conf_file,"-p","2","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-solt","0"], #ppk
-            # [exe_path,"-k",conf_file,"-p","2","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-solt","0"], #ppp/ins LC
-            # [exe_path,"-k",conf_file,"-p","2","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-solt","0"], #ppp/ins TC
-        ]
+        # 对每个配置文件执行处理
+        for conf_file in conf_files:
+            target_conf_path = os.path.join(current_work_dir, conf_file)
+            
+            logging.info(f"- 处理配置文件: {conf_file}")
+            
+            # 检查配置文件是否存在
+            if not os.path.exists(target_conf_path):
+                logging.error(f"配置文件不存在: {target_conf_path}")
+                continue
+            
+            # 4. 定义处理模式 (保持原有逻辑)
+            # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
+            mode = ["PPK LC","PPK TC"]
+            
+            # 命令列表
+            commands = [
+                # [exe_path,"-k",conf_file,"-p","0","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
+                # [exe_path,"-k",conf_file,"-p","0","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins LC
+                # [exe_path,"-k",conf_file,"-p","0","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins TC
+                # [exe_path,"-k",conf_file,"-p","8","-gins","0","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp
+                # [exe_path,"-k",conf_file,"-p","8","-gins","1","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp/ins LC
+                # [exe_path,"-k",conf_file,"-p","8","-gins","2","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp/ins TC
+                # [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd
+                # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
+                # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
+                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0"], #ppk
+                [exe_path,"-k",conf_file,"-p","2","-gins","1","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","0","-solt","0"], #ppk/ins LC
+                [exe_path,"-k",conf_file,"-p","2","-gins","2","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","0","-solt","0"], #ppk/ins TC
+            ]
 
-        # 5. 循环执行命令
-        all_success = True
-        for command, m in zip(commands, mode):
-            try:
-                # 提取solt值用于文件名生成
-                solt_index = command.index("-solt") + 1
-                solt_value = int(command[solt_index])
-                
-                # cwd=current_work_dir 确保程序在子文件夹内部运行，从而能读取到 conf_file   
-                process = subprocess.Popen(command, cwd=current_work_dir, 
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                                          text=True, bufsize=1, universal_newlines=True)
-                
-                # 实时读取并打印输出，添加去重机制
-                last_line = None
-                for line in process.stderr:
-                    stripped_line = line.strip()
-                    # 跳过空行和与上一行相同的行
-                    if stripped_line and stripped_line != last_line:
-                        logging.info(f"[GINSLIB] {stripped_line}")
-                        last_line = stripped_line
-                
-                # 等待进程结束
-                process.wait()
-                result = process
-                
-                if result.returncode == 0:
-                    logging.info(f"✓ {folder_name} {m} 执行成功")
+            # 5. 循环执行命令
+            all_success = True
+            for command, m in zip(commands, mode):
+                try:
+                    # 提取solt值用于文件名生成
+                    solt_index = command.index("-solt") + 1
+                    solt_value = int(command[solt_index])
                     
-                    # 6. 执行误差分析
-                    try:
-                        # 确定结果文件路径
-                        result_filename = get_result_filename(current_work_dir, m, solt_value)
-                        result_file_path = os.path.join(current_work_dir, "result", result_filename)
+                    # cwd=current_work_dir 确保程序在子文件夹内部运行，从而能读取到 conf_file   
+                    process = subprocess.Popen(command, cwd=current_work_dir, 
+                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                                              text=True, bufsize=1, universal_newlines=True)
+                    
+                    # 实时读取并打印输出，添加去重机制
+                    last_line = None
+                    for line in process.stderr:
+                        stripped_line = line.strip()
+                        # 跳过空行和与上一行相同的行
+                        if stripped_line and stripped_line != last_line:
+                            logging.info(f"[GINSLIB] {stripped_line}")
+                            last_line = stripped_line
+                    
+                    # 等待进程结束
+                    process.wait()
+                    result = process
+                    
+                    if result.returncode == 0:
+                        logging.info(f"✓ {folder_name}/{conf_file} {m} 执行成功")
                         
-                        # 确定参考文件路径
-                        ref_file_path = os.path.join(current_work_dir, "truth.truth")
-                        
-                        # 检查文件是否存在
-                        if not os.path.exists(result_file_path):
-                            logging.warning(f"结果文件不存在，跳过误差分析: {result_file_path}")
-                            continue
+                        # 6. 执行误差分析
+                        try:
+                            # 确定结果文件路径
+                            result_filename = get_result_filename(conf_file, m, solt_value)
+                            result_file_path = os.path.join(current_work_dir, "result", result_filename)
                             
-                        if not os.path.exists(ref_file_path):
-                            logging.warning(f"参考文件不存在，跳过误差分析: {ref_file_path}")
-                            continue
-                        
-                        logging.info(f"开始误差分析")
-                        logging.info(f"- 结果文件: {result_file_path}")
-                        logging.info(f"- 参考文件: {ref_file_path}")
-                        
-                        # 调用误差分析函数
-                        error_stats = batch_plot_analysis(result_file_path, ref_file_path, m)
-                        all_error_stats.append(error_stats)
-                        
-                        logging.info(f"✓ 误差分析完成: {result_filename}")
-                        
-                    except Exception as e:
-                        logging.error(f"误差分析异常: {e}")
-                        
-                else:
+                            # 确定参考文件路径
+                            ref_file_path = os.path.join(current_work_dir, "truth.truth")
+                            
+                            # 检查文件是否存在
+                            if not os.path.exists(result_file_path):
+                                logging.warning(f"结果文件不存在，跳过误差分析: {result_file_path}")
+                                continue
+                                
+                            if not os.path.exists(ref_file_path):
+                                logging.warning(f"参考文件不存在，跳过误差分析: {ref_file_path}")
+                                continue
+                            
+                            logging.info(f"开始误差分析")
+                            logging.info(f"- 结果文件: {result_file_path}")
+                            logging.info(f"- 参考文件: {ref_file_path}")
+                            
+                            # 调用误差分析函数
+                            error_stats = batch_plot_analysis(result_file_path, ref_file_path, m)
+                            # 在误差统计中添加配置文件信息
+                            error_stats['配置文件'] = conf_file
+                            all_error_stats.append(error_stats)
+                            
+                            logging.info(f"✓ 误差分析完成: {result_filename}")
+                            
+                        except Exception as e:
+                            logging.error(f"误差分析异常: {e}")
+                            
+                    else:
+                        all_success = False
+                        logging.error(f"✗ {conf_file} {m} 执行失败 (返回码: {result.returncode})")
+                        # 如有报错，输出部分错误信息
+                        if result.stderr:
+                             logging.error(f"错误信息: {result.stderr.strip()[:200]}")
+                except Exception as e:
                     all_success = False
-                    logging.error(f"✗ {m} 执行失败 (返回码: {result.returncode})")
-                    # 如有报错，输出部分错误信息
-                    if result.stderr:
-                         logging.error(f"错误信息: {result.stderr.strip()[:200]}")
-            except Exception as e:
-                all_success = False
-                logging.error(f"执行异常: {e}")
+                    logging.error(f"执行异常: {e}")
 
     # 保存误差统计结果到Excel文件
     if all_error_stats:
