@@ -1241,7 +1241,7 @@ static void readotl(prcopt_t *popt, const char *file, const sta_t *sta)
 /* open debug*/
 static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
 {
-    char tracefile[1024],path[1024];
+    char tracefile[1024],current_dir[1024],path[1024];
     const char *p,*q,*sep=NULL;
     const char *s1[]={
         "SPP","PPD","PPK","PPS","GNSS-TC","Static-Start","Moving-Base","Fixed",
@@ -1251,15 +1251,24 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
         "F","B","FB"
     };
 
-    p=strrchr(fopt->sol_path,'/');
-    sep=(p?"/":"\\");
-    if (!p) p=strrchr(fopt->sol_path,'\\');
+    /* set path separator */
+    #ifdef _WIN32
+        sep = "\\";
+    #else
+        sep = "/";
+    #endif
+
+    /* get current directory */
+    getcwd(current_dir, sizeof(current_dir));
+    p=strrchr(current_dir, sep[0]);
+    if (p) p++; /* move to the first character after the delimiter */
 
     q=strchr(p,'_');
 
     /* create the solution file(.pos) path */
-    sprintf(path,"%s%s%s%s%s%s_%s_%s%s",fopt->sol_path,sep,"result",sep,(GINS_OFF==popt->GI_mode?"GNSS":fopt->ins_type),q,s1[popt->mode],s2[popt->soltype],
-             (GINS_LC==popt->GI_mode?"_LC.pos":(GINS_TC==popt->GI_mode?"_TC.pos":(GINS_STC==popt->GI_mode?"_STC.pos":".pos")))); 
+    sprintf(path,"%s%s%s%s%s%s_%s_%s%s",current_dir,sep,"result",sep,(GINS_OFF==popt->GI_mode?"GNSS":fopt->ins_type),q,s1[popt->mode],s2[popt->soltype],
+    (GINS_LC==popt->GI_mode?"_LC.pos":(GINS_TC==popt->GI_mode?"_TC.pos":(GINS_STC==popt->GI_mode?"_STC.pos":".pos")))); 
+    
     strncpy(fopt->sol,path,1024);
 
      /* open debug trace */
@@ -1267,9 +1276,6 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
         if (*fopt->sol) {
             strcpy(tracefile,fopt->sol);
             strcat(tracefile,".trace");
-        }
-        else {
-            strcpy(tracefile,fopt->trace);
         }
         traceclose();
         traceopen(tracefile);

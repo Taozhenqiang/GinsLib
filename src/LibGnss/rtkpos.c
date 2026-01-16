@@ -2530,7 +2530,7 @@ static int ddres(rtk_t *rtk, const obsd_t *obs, double dt, const double *x,
 
     return nv;
 }
-/* select ddres mode loose coupling or tight coupling*/
+/* select ddres mode loose coupling or tight coupling */
 static int sddres(rtk_t *rtk, const obsd_t *obs, double dt, double *x,
                  double *P, const int *sat, double *y, double *e,
                  double *azel, double *freq, const int *iu, const int *ir,
@@ -3560,8 +3560,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
 
             /* copy state and covariance matrix */
             matcpy(rtk->x,xp,rtk->nx,1);
-            matcpy(rtk->P,Pp,rtk->nx,rtk->nx);  
-            /* for (i=0;i<rtk->ins.nx;i++) trace(12,"Pp(%d)=%.8f\n",i,Pp[i+i*rtk->nx]); */              
+            matcpy(rtk->P,Pp,rtk->nx,rtk->nx);               
 
             /* update valid satellite status for ambiguity resolution */
             rtk->sol.ns=0;

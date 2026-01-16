@@ -43,9 +43,11 @@
 #ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
+#include <direct.h>
 #else
 #include <pthread.h>
 #include <sys/select.h>
+#include <unistd.h>
 #endif
 
 #ifdef __cplusplus
@@ -1487,7 +1489,6 @@ extern "C"
 
     typedef struct
     {                             /* file options type */
-        char sol_path[MAXSTRPATH];/* solution path */
         char ins_type[MAXSTRPATH];/* ins type */
         char sol[MAXSTRPATH];     /* solution file */
         char obs_u[MAXSTRPATH];   /* user observation file */
@@ -1508,8 +1509,6 @@ extern "C"
         char sbs[MAXSTRPATH];
         char tempdir[MAXSTRPATH]; /* ftp/http temporary directory */
         char geexe[MAXSTRPATH];   /* google earth exec file */
-        char solstat[MAXSTRPATH]; /* solution statistics file */
-        char trace[MAXSTRPATH];   /* debug trace file */
     } filopt_t;
 
     typedef struct

@@ -26,7 +26,6 @@ int main(int argc, char **argv)
     prcopt.mode  =PMODE_INSPURE;
     solopt.timef=0;
     sprintf(solopt.prog ,"%s ver.%s %s",PROGNAME,VER_RTKLIB,PATCH_LEVEL);
-    sprintf(filopt.trace,"%s.trace",PROGNAME);
 
     /* load options from configuration file */
     for (i=1;i<argc;i++) {

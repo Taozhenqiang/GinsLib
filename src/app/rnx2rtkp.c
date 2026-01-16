@@ -121,7 +121,6 @@ int main(int argc, char **argv)
     prcopt.glomodear=GLO_ARMODE_ON;
     solopt.timef=0;
     sprintf(solopt.prog ,"%s ver.%s %s",PROGNAME,VER_RTKLIB,PATCH_LEVEL);
-    sprintf(filopt.trace,"%s.trace",PROGNAME);
 
     /* load options from configuration file */
     for (i=1;i<argc;i++) {
@@ -169,7 +168,6 @@ int main(int argc, char **argv)
                     case 'C': prcopt.navsys|=SYS_CMP;break;
                     case 'I': prcopt.navsys|=SYS_IRN;break;
                 }
-                if (!(p=strchr(p,','))) break;
             }
         }
         else if (!strcmp(argv[i],"-m")&&i+1<argc) prcopt.elmin=atof(argv[++i])*D2R;

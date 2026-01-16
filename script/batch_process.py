@@ -217,8 +217,8 @@ def batch_process_gins(exe_path_input):
     # 存储所有误差统计结果
     all_error_stats = []
 
-    # for folder_name in sub_folders:  
-    for folder_name in sub_folders[42:44]:  # 处理单个子文件夹用于测试
+    for folder_name in sub_folders:  
+    # for folder_name in sub_folders[36:37]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
@@ -261,8 +261,8 @@ def batch_process_gins(exe_path_input):
                 # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
                 # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
                 # [exe_path,"-k",conf_file,"-p","2","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0"], #ppk
-                [exe_path,"-k",conf_file,"-p","2","-gins","1","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","0","-solt","0"], #ppk/ins LC
-                [exe_path,"-k",conf_file,"-p","2","-gins","2","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","0","-solt","0"], #ppk/ins TC
+                [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins LC
+                [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
             ]
 
             # 5. 循环执行命令

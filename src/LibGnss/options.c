@@ -251,7 +251,6 @@ EXPORT opt_t sysopts[]={
     {"misc-rnxopt2",    2,  (void *)prcopt_.rnxopt[1],   ""     },
     {"misc-pppopt",     2,  (void *)prcopt_.pppopt,      ""     },
    
-    {"file-solpath",    2,  (void *)&filopt_.sol_path,   ""     },
     {"file-obsufile",   2,  (void *)&filopt_.obs_u,      ""     },
     {"file-obsbfile",   2,  (void *)&filopt_.obs_b,      ""     },
     {"file-navfile",    2,  (void *)&filopt_.nav,        ""     },
@@ -269,8 +268,6 @@ EXPORT opt_t sysopts[]={
     {"file-blqfile",    2,  (void *)&filopt_.blq,        ""     },
     {"file-tempdir",    2,  (void *)&filopt_.tempdir,    ""     },
     {"file-geexefile",  2,  (void *)&filopt_.geexe,      ""     },
-    {"file-solstatfile",2,  (void *)&filopt_.solstat,    ""     },
-    {"file-tracefile",  2,  (void *)&filopt_.trace,      ""     },
     
     {"",0,NULL,""} /* terminator */
 };
@@ -647,6 +644,7 @@ static void buff2sysopts(void)
     }   
 
     /* path splicing */
+    #if 0
     if (*filopt_.sol_path) {
         strcpy(sol_path,filopt_.sol_path);
         /* separator */
@@ -667,7 +665,7 @@ static void buff2sysopts(void)
         if (*filopt_.blq)      { strcpy(buff,sol_path); strcat(buff,filopt_.blq);      strcpy(filopt_.blq,buff); buff[0]='\0'; }
         if (*filopt_.trace)    { strcpy(buff,sol_path); strcat(buff,filopt_.trace);    strcpy(filopt_.trace,buff); buff[0]='\0'; }
     }
-
+    #endif
     /* Guard number of frequencies */
     if (prcopt_.nf>NFREQ) {
         fprintf(stderr,"Number of frequencies %d limited to %d, rebuild with NFREQ=%d\n",prcopt_.nf, NFREQ, prcopt_.nf);
@@ -737,13 +735,20 @@ extern void resetsysopts(void)
     
     prcopt_=prcopt_default;
     solopt_=solopt_default;
+    filopt_.obs_u  [0]='\0';
+    filopt_.obs_b  [0]='\0';
+    filopt_.nav    [0]='\0';
+    filopt_.sp3    [0]='\0';
+    filopt_.clk    [0]='\0';
+    filopt_.imu    [0]='\0';
+    filopt_.pos    [0]='\0';
+    filopt_.mgex_dcb[0]='\0';
     filopt_.antp   [0]='\0';
     filopt_.stapos [0]='\0';
     filopt_.geoid  [0]='\0';
     filopt_.dcb    [0]='\0';
+    filopt_.eop    [0]='\0';
     filopt_.blq    [0]='\0';
-    filopt_.solstat[0]='\0';
-    filopt_.trace  [0]='\0';
     elmask_=15.0;
     elmaskar_=0.0;
     elmaskhold_=0.0;

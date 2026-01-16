@@ -42,15 +42,15 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/KVH1750_Vehicle_open_20211217-nsh/result'
-        filename = 'KVH1750_Vehicle_open_20211217-nsh_PPK_F_LC.pos'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/KVH1750_Vehicle_open_20201210/result'
+        filename = 'KVH1750_Vehicle_open_20201210_PPK_F_TC.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        pathname = 'G:/Navigation_Learn/GNSS/RTKLIB-b34k/data/GNSS_INS/KVH1750_Vehicle_open_20211217-nsh'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/KVH1750_Vehicle_open_20201210'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 

@@ -52,7 +52,7 @@ def read_solution(navfile, skip_lines=28, row=10000, col=18, sample=5e-2):
                 # 检查sline长度是否足够，避免IndexError, GNSS(24), GNSS/INS(39)
                 if len(sline) == 24:
                     mode = 'GNSS'
-                elif len(sline) == 46:
+                elif len(sline) == 46 or len(sline) == 45:
                     mode = 'GNSS/INS'
                 else:
                     continue  # 如果行数据不足，跳过该行

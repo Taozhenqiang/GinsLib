@@ -30,18 +30,18 @@
                 // "LCI_Marine_open_20150108.conf",
                 // "Readmi_Static_20251010.conf",
                 // "ISA-100C_Vehicle_complex_20220309.conf",
-                "INS_Railway_open_20201004.conf",
-                // "CPT_Vehicle_open_20190328.conf",
+                // "INS_Railway_open_20201004.conf",
+                "CPT_Vehicle_open_20190328.conf",
                 // "ADIS16465_Vehicle_open_20210114.conf",
                 // "ADIS16488_Vehicle_complex_20210728.conf",
                 // "FSAS_Vehicle_complex_20200922.conf",
                 // "STIM300_Vehicle_complex_20230104.conf",
 
-                "-p","2","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0", //ppd/ins TC
+                "-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0", //ppd/ins TC
                 
                 "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS\\INS_Railway_open_20201004" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\GNSS_INS\\CPT_Vehicle_open_20190328" ,//配置文件
             
         },        
         {
@@ -97,14 +97,8 @@
             "name":"Batch Process",
             
             // for Windows
-            "program": "${workspaceFolder}\\script\\batch_process.py",
-            // "program": "${workspaceFolder}\\script\\convert_ref.py",
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS", //工作路径,
-
-            // for Linux
-            // "program": "${workspaceFolder}/script/excute.py",
-            // "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
-
+            "program": "${workspaceFolder}/script/batch_process.py",
+            "cwd": "${workspaceFolder}/data/GNSS_INS", //工作路径,
             "console": "externalTerminal",
         },
                 {

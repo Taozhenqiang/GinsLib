@@ -1106,12 +1106,12 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
     prcopt_t popt=*opt;
     rtk_t  rtk_={0}; 
     ins_t *ins=&rtk->ins;
-    int i,j,vel_flag,nr=0,nr_old=0;
+    int i,j,vel_flag,nr=0,nr_old=0,init_flag=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
     popt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
     /* note: initialize rtk_ instead of assigning rtk to rtk_ to avoid shallow copying of the structure */
-    if (INSALI_MANUAL!=popt.alingetype&&SYNC_YES==rtk->upte) rtkinit(&rtk_,&popt,NULL); 
+    if (INSALI_MANUAL!=popt.alingetype&&SYNC_YES==rtk->upte) { rtkinit(&rtk_,&popt,NULL); init_flag=1; }
 
     /* initialize rtk_ TDCP velocity */
     for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=rtk_.sol.tdcp_vel[i]=0.0; 
@@ -1225,7 +1225,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
         } 
         return 1;
     }
-    if (rtk_.x&&rtk_.P) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */  
+    if (init_flag) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */  
     return (rtk->outage>MAX_OUTIME)?1:0;
 }
 

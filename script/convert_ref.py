@@ -6,7 +6,7 @@ import re
 # 在这里修改配置参数
 
 # 输入文件路径
-INPUT_FILE = "./KVH1750_Vehicle_open_20201210/KVH1750_TC_2GNSS.txt"  # 替换为您的实际文件路径
+INPUT_FILE = "./KVH1750_Vehicle_open_20201210/20211111-KVH-TC-FB-2GNSS.txt"  # 替换为您的实际文件路径
 
 # 要跳过的行数（通常是表头或注释行）
 SKIP_LINES = 22
@@ -14,12 +14,13 @@ SKIP_LINES = 22
 # 要提取的数据列索引（从0开始计数，不包含非数字项）
 # week, sec, ecef_pos[x/y/z], ecef_vel[x/y/z], att[pitch/roll/heading]
 # tzq
-EXTRACT_COLS = [0, 1, 2, 3, 4, 8, 9, 10, 14, 15, 16]
+# EXTRACT_COLS = [0, 1, 2, 3, 4, 8, 9, 10, 14, 15, 16]
+EXTRACT_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 8]
 # zf
 # EXTRACT_COLS = [0, 1, 6, 7, 8, 12, 13, 14, 19, 20, 18]
 
 # 输出文件路径（如果为None，则自动生成）
-OUTPUT_FILE = "./KVH1750_Vehicle_open_20201210/truth.truth"  # 例如: "output.truth"
+OUTPUT_FILE = "./KVH1750_Vehicle_open_20201210/truth2.truth"  # 例如: "output.truth"
 
 # 是否显示详细信息
 VERBOSE = True

@@ -1439,6 +1439,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     /* update the measurement noise covariance matrix (MNCM) */
     nv=nv+nv_cons;
     if (R) diag_Cov(nv,var,R,diag_var);
+    
     return post?stat:nv;
 }
 /* number of estimated states ------------------------------------------------*/

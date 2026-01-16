@@ -24,14 +24,22 @@ def batch_plot_analysis(sol_file_path, ref_file_path, process_mode):
     - error_stats: 误差统计信息字典
     """
     
-    # 提取data_name：sol_file_path中倒数第三个分隔符与倒数第二个分隔符之间的部分
-    path_parts = sol_file_path.split(os.sep)
-    if len(path_parts) >= 3:
-        # 获取倒数第三个分隔符与倒数第二个分隔符之间的部分
-        data_name = path_parts[-3] if len(path_parts) >= 3 else path_parts[-1]
+    # 提取data_name：根据处理模式提取不同的部分
+    file_name = os.path.basename(sol_file_path)
+    parts = file_name.split('_')
+    
+    if 'LC' in process_mode or 'TC' in process_mode:
+        # GNSS/INS模式：提取倒数第三个_前面的部分
+        if len(parts) >= 3:
+            data_name = '_'.join(parts[:-2])  # 取除了最后两个部分的所有部分
+        else:
+            data_name = file_name
     else:
-        # 如果路径分隔符不足3个，则使用文件名
-        data_name = os.path.basename(sol_file_path)
+        # GNSS模式：提取倒数第二个_前面的部分
+        if len(parts) >= 2:
+            data_name = '_'.join(parts[:-1])  # 取除了最后一个部分的所有部分
+        else:
+            data_name = file_name
 
     # 提取data_name2：sol_file_path中最后一个分隔符后面的部分
     data_name2 = os.path.basename(sol_file_path)
