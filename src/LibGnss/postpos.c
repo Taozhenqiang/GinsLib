@@ -569,7 +569,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,438740,2120); 
+        DebugTime(rtk,Debug_Glo.tNow,545575,2362); 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -602,7 +602,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
                     for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
                     for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
                     /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
-                    if (nr_old&&nr) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
+                    if (nr_old&&nr&&(popt->constraint[1]||popt->constraint[2])) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
                 }
                 /* save the GNSS observations of the previous epoch */
                 n_old=n; 

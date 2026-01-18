@@ -167,8 +167,8 @@ extern "C"
 #define diag_var 0       /* option: covariance */
 #define diag_wei 1       /* option: weights */
 
-#define TURE  1          /* true */         
-#define FASLE 0          /* false */
+#define TRUE  1          /* true */         
+#define FALSE 0          /* false */
 
 #define MAX_OUTIME  60  /* INS maximum independent working time */
 
@@ -1851,6 +1851,7 @@ extern "C"
     EXPORT int  isoutage(rtk_t *rtk, gtime_t t, sim_t sim);
 
     /* satellites, systems, codes functions --------------------------------------*/
+    EXPORT int sys2ix(int sys);
     EXPORT int satno(int sys, int prn);
     EXPORT int sys2freid(int sys, int ix, const prcopt_t *opt);
     EXPORT void sys2frech(int sys, int ix, char *id);
@@ -2200,7 +2201,6 @@ extern "C"
     EXPORT void readsp3(const char *file, nav_t *nav, int opt);
     EXPORT int readsap(const char *file, gtime_t time, nav_t *nav);
     EXPORT int readdcb(const prcopt_t *prcopt, const char *file, nav_t *nav, const sta_t *sta);
-    EXPORT int sys2ix(int sys);
     EXPORT int code2bias_ix(const int sys, const int code);
     EXPORT int tgdarrge(const prcopt_t *opt, nav_t *nav);
     EXPORT double gettgd(int sat, const nav_t *nav, int type);

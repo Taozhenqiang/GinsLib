@@ -1261,8 +1261,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     init_ssatpar(rtk,NULL,0,PPP_vsat,SOLQ_NONE);
 
     /* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
-    init_pppos(rtk,x,dr,rr,post);
-    ecef2pos(rr,pos);
+    init_pppos(rtk,x,dr,rr,post); ecef2pos(rr,pos);
 
     for (i=0;i<n&&i<MAXOBS;i++) 
     {
@@ -1382,24 +1381,24 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             res=y-(r+cdtr-CLIGHT*dts[i*2]+dtrp+C*dion+dcb+bias);
             if (v) v[nv]=res;
 
+            /* reject satellite by pre-fit residuals */
+            if (!post&&opt->maxinno[code]>0.0&&fabs(res)>(opt->maxinno[code]*fact)) {
+                trace(7,"(prio) outlier rejected(ppp) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
+                    fr+1,res,opt->maxinno[code],azel[1+i*2]*R2D);
+                exc[i]=1; rtk->ssat[sat-1].rejc[fr]++;
+                continue;
+            }
+
             /* variance */
             var[nv]=varerr(sat,sys,azel[1+i*2],SNR_UNIT*rtk->ssat[sat-1].snr_rover[fr],j,opt,obs+i,nav);
             var[nv]+=var_tro+SQR(C)*var_ion+var_rs[i];
             if (sys==SYS_GLO&&code==1) var[nv]+=VAR_GLO_IFB;
 
-            trace(8,"%4s sat=%s %s%d res=%9.4f thres=%9.4f el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
-                fr+1,res,post?(sqrt(var[nv])*THRES_REJECT):(opt->maxinno[code]*fact),azel[1+i*2]*R2D);
-
-            /* reject satellite by pre-fit residuals */
-            if (!post&&opt->maxinno[code]>0.0&&fabs(res)>(opt->maxinno[code]*fact)) {
-                trace(7,"(%4s) outlier rejected(ppp) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",post?"post":"prio",id,code?"P":"L",
-                    fr+1,res,opt->maxinno[code],azel[1+i*2]*R2D);
-                exc[i]=1; rtk->ssat[sat-1].rejc[fr]++;
-                continue;
-            }
             /* record large post-fit residuals */
             if (post&&fabs(res)>sqrt(var[nv])*THRES_REJECT) {
                 obsi[ne]=i; frqi[ne]=fr; ve[ne]=res; vari[ne]=var[nv]; codei[ne]=code; ne++;
+                trace(7,"(post) outlier record(ppp) sat=%s %s%d res=%9.4f thres=%9.4f el=%4.1f\n",id,code?"P":"L",
+                    fr+1,res,sqrt(var[nv])*THRES_REJECT,azel[1+i*2]*R2D);
             }
             /* update solution status */
             update_ssat(&rtk->ssat[sat-1],opt,code,sat,fr,rss,rr,r,azel+i*2,res,cdtr,dts[i*2],dtrp,C*dion,bias,danto,dants,DCB[fr]);
@@ -1414,8 +1413,8 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             vmax=ve[j]; varmax=vari[j]; maxobs=obsi[j]; maxfrq=frqi[j]; maxcode=codei[j]; rej=j;
         }
         sat=obs[maxobs].sat; satno2id(sat,id);
-        trace(7,"(%4s) outlier rejected(ppp) (iter=%d) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",
-            post?"post":"prio",post,id,maxcode?"P":"L",maxfrq+1,vmax,sqrt(varmax)*THRES_REJECT,azel[1+maxobs*2]*R2D);
+        trace(7,"(post) outlier rejected(ppp) (iter=%d) sat=%s %s%d, res=%9.4f, thres=%9.4f, el=%4.1f\n",
+            post,id,maxcode?"P":"L",maxfrq+1,vmax,sqrt(varmax)*THRES_REJECT,azel[1+maxobs*2]*R2D);
         /* if the post-fit test fails, the solution flag is set to 0 */    
         exc[maxobs]=1; rtk->ssat[sat-1].rejc[maxfrq]++; stat=0;
     }

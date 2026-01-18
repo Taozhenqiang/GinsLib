@@ -14,11 +14,11 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos'(位置), 'vel'(速度), 'att'(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
-    ERROR_TYPE = 'pva'
+    ERROR_TYPE = 'p'
     
     # 文件路径配置（可选，如果使用默认路径则保持为空）
     SOLFILE_PATH = ''  # 自定义结果文件路径，留空使用默认路径
@@ -42,15 +42,15 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/KVH1750_Vehicle_open_20201210/result'
-        filename = 'KVH1750_Vehicle_open_20201210_PPK_F_TC.pos'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/EG320N_Vehicle_complex_20250419/result'
+        filename = 'GNSS_Vehicle_complex_20250419_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/KVH1750_Vehicle_open_20201210'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/EG320N_Vehicle_complex_20250419'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 
