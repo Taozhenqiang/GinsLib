@@ -309,22 +309,28 @@ extern void rv2DCM(double f, const double *rv, double *dcm)
 extern void rv2quat(double f, const double *rv, double *q)
 {
     int i;
-    double rv1[3],rv_m,n_rv[3]={0.0};
+    double rv1[3],rv_m,s=0.0;
 
     for (i=0;i<3;i++)
     {
         rv1[i]=f*rv[i];
     }
     rv_m=norm(rv1,3);
-
-    for (int i=0;i<3;i++) {
-        n_rv[i]=rv1[i]/rv_m;
+    
+    /* if the rotation vector is small, use the Taylor expansion (ref:psins rv2q.m )*/
+    if (rv_m<1e-4) {
+        /* cos(n/2)=1-n2/8+n4/384; sin(n/2)/n=1/2-n2/48+n4/3840 */
+        q[0]=1.0-rv_m*rv_m*(1.0/8.0-rv_m*rv_m/384.0);
+        s=1.0/2.0-rv_m*rv_m*(1.0/48.0-rv_m*rv_m/3840.0);
+    }
+    else {
+        q[0]=cos(rv_m/2.0);
+        s=sin(rv_m/2.0)/rv_m;
     }
 
-    q[0]=cos(rv_m/2.0);
-    q[1]=sin(rv_m/2.0)*n_rv[0];
-    q[2]=sin(rv_m/2.0)*n_rv[1];
-    q[3]=sin(rv_m/2.0)*n_rv[2];
+    q[1]=s*rv1[0];
+    q[2]=s*rv1[1];
+    q[3]=s*rv1[2];
 }
 
 /* transform quaternion to rotation vector --------------------------
@@ -864,7 +870,7 @@ extern int readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *pop
 
         if (norm(imud.dw,3)<=0.0||norm(imud.dv,3)<=0.0) {
             showerr("warning: IMU measurement output is zero: %s, week=%.0f, sec=%.4f!",file,week,sec); 
-            trace(7,"warning: IMU measurement output is zero: %s, week=%.0f, sec=%.4f\n!",file,week,sec);
+            trace(7,"warning: IMU measurement output is zero: %s, week=%.0f, sec=%.4f!\n",file,week,sec);
         }
         stat=addimudata(imu,&imud);
     }
@@ -1100,28 +1106,21 @@ extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const 
 }
 
 /* ins initial alignment -------------------------------------------*/
-extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt)
+extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag)
 {
     /* NOTE: The structure copy is a shallow copy! */
     prcopt_t popt=*opt;
     rtk_t  rtk_={0}; 
     ins_t *ins=&rtk->ins;
-    int i,j,vel_flag,nr=0,nr_old=0,init_flag=0;
+    int i,j,init_flag=0;
     double att[3]={0.0},pos[3]={0.0},vn[3]={0.0};
 
     popt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
-    /* note: initialize rtk_ instead of assigning rtk to rtk_ to avoid shallow copying of the structure */
-    if (INSALI_MANUAL!=popt.alingetype&&SYNC_YES==rtk->upte) { rtkinit(&rtk_,&popt,NULL); init_flag=1; }
-
-    /* initialize rtk_ TDCP velocity */
-    for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=rtk_.sol.tdcp_vel[i]=0.0; 
+    /* NOTE: initialize rtk_ instead of assigning rtk to rtk_ to avoid shallow copying of the structure */
+    if (SYNC_YES==rtk->upte) { rtkinit(&rtk_,&popt,NULL); init_flag=1; }
 
     /* for GNSS/INS LC with pos file ,set alignment type to manual */
     if (PMODE_LC_POS==popt.mode) popt.alingetype=INSALI_MANUAL;
-
-    /* determine the number of satellites of rover in the current epoch and the previous epoch */
-    for (i=0;i<n;i++) if (obs[i].rcv==1) nr++;
-    for (i=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
 
     /* manual alignment */
     if (!rtk->align&&INSALI_MANUAL==popt.alingetype&&popt.ts.time)
@@ -1129,24 +1128,27 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
         if ((fabs(timediff(ins->time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
             init_inspva(ins,popt.initpos,popt.initvel,popt.initatt); 
+            if (init_flag) rtkfree(&rtk_);  
 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
             return 1;            
         }
         else if (timediff(ins->time,popt.ts)>0) {
+            if (init_flag) rtkfree(&rtk_);  
             showmsg("warning : start time is smaller than GNSS/INS matching time!\n"); 
             return 0;
         }
     }
 
-    /* velocity vector assisted yaw initialization based on tdcp */
-    if (!rtk->align&&INSALI_VELTOR==popt.alingetype&&obs_old[0].time.time&&SYNC_YES==rtk->upte) 
-    {
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) {
+    /* velocity vector-assisted alignment and INS re-initialization require GNSS/INS time synchronization */
+    if (SYNC_YES==rtk->upte&&vel_flag) {
+        /* velocity vector assisted yaw initialization based on tdcp */
+        if (!rtk->align&&INSALI_VELTOR==popt.alingetype)  
+        {
             /* initialize INS position using GNSS solution */
-            if (!rtkpos(&rtk_,obs,n,nav)) {
-                rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
+            if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
+                if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
             }
             /* initialize position (from GNSS) and velocity (from tdcp) */
@@ -1174,19 +1176,17 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
-            rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */
+            if (init_flag) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */
             return 1;            
         }
-    }
 
-    /* reinitialize INS in the event of a long-term GNSS outage */
-    if (rtk->align&&rtk->outage>MAX_OUTIME&&SYNC_YES==rtk->upte) 
-    {
-        if (vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,nav,&popt)) {
+        /* reinitialize INS in the event of a long-term GNSS outage */
+        if (rtk->align&&rtk->outage>MAX_OUTIME) 
+        {
             /* initialize INS position using GNSS solution */
-            if (!rtkpos(&rtk_,obs,n,nav)) {
-                rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
-                return 1;
+            if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
+                if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
+                return rtk->align?1:0;
             }
             /* if GNSS becomes available after a long interruption, set the GNSS interruption count to zero */
             rtk->outage=0;
@@ -1207,7 +1207,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
                 for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[j+(i+3)*rtk->lcgins.nx]=0.0;
                 rtk->lcgins.P[(i+3)+(i+3)*rtk->lcgins.nx]=10.0;
             } */
-           /* for (i=0;i<3;i++) {
+            /* for (i=0;i<3;i++) {
                 for (j=0;j<rtk->nx;j++) rtk->P[(i+3)+j*rtk->nx]=0.0;
                 for (j=0;j<rtk->nx;j++) rtk->P[j+(i+3)*rtk->nx]=0.0; 
                 rtk->P[(i+3)+(i+3)*rtk->nx]=1.0;
@@ -1221,12 +1221,18 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old,
 
             trace(12,"INS reinitialization completed: %s!\n",Debug_Glo.chTime);
             showerr("INS reinitialization completed: %s!",Debug_Glo.chTime);   
-            rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */    
-        } 
-        return 1;
+            if (init_flag) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */
+            return 1;     
+        }  
+        /* NOTE: free the rtk_ structure!!! */
+        if (init_flag) rtkfree(&rtk_);   
+        return rtk->align?1:0; 
     }
-    if (init_flag) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */  
-    return (rtk->outage>MAX_OUTIME)?1:0;
+    else {
+        /* NOTE: free the rtk_ structure!!! */
+        if (init_flag) rtkfree(&rtk_);   
+        return rtk->align?1:0; 
+    }
 }
 
 /* TDCP-assisted motion alignment */
@@ -1238,11 +1244,15 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
     double sgn=(SOLTYPE_BACKWARD==opt->reverse?-1.0:1.0);
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
+    double rr_[3]={0.0},ins_pos[3]={0.0},dpos[3]={0.0},thres_ins_ouj=50.0;
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
-    int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,flag=1,vel_flag=1,mode=Robust_RES;
+    int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,pos_flag=1,tdcp_flag=1,vel_flag=0,mode=Robust_RES;
     int vsat[MAXOBS]={0},vsat_old[MAXOBS]={0},svh[MAXOBS]={0},svh_old[MAXOBS]={0};
 
     if (!n||!n_old) return 0;
+
+    /* initialize rtk TDCP velocity */
+    for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=0.0; 
 
     /* initializing memory */
     rs=mat(n,6);    rs_old=mat(n_old,6);   dts=mat(n,2);   dts_old=mat(n_old,2);
@@ -1264,13 +1274,36 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     satposs(obs[0].time,obs,n,nav,opt_.sateph,rs,dts,vare,svh);
     satposs(obs_old[0].time,obs_old,n_old,nav,opt_.sateph,rs_old,dts_old,vare_old,svh_old);
 
-    /* satellite positons, velocities and clocks of current and previous epoch */
+    /* receiver positions of current and previous epoch */
     stat=estpos(rtk,obs,n,rs,dts,vare,svh,nav,&opt_,NULL,&sol,azel,vsat,resp);
     stat_old=estpos(rtk,obs_old,n_old,rs_old,dts_old,vare_old,svh_old,nav,&opt_,NULL,&sol_old,azel_old,vsat_old,resp_old);
 
+    /* GNSS-assisted detection INS status count, used for INS reinitialization */
+    if (stat&&rtk->align&&(GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode))
+    {
+        if (rtk->outage<MAX_OUTIME) {
+            ins2gnss(opt,&rtk->ins,rr_,3);
+            pos2ecef(rr_,ins_pos);
+            for (i=0;i<3;i++) dpos[i]=ins_pos[i]-sol.rr[i];
+            if (norm(dpos,3)>thres_ins_ouj) {
+                rtk->gnss_aid_age++;
+            }
+            else rtk->gnss_aid_age=0;          
+        }
+        else rtk->gnss_aid_age=0;
+    }
+
+    /* check GNSS-assisted INS status */
+    if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE) {
+        rtk->outage+=(MAX_OUTIME+1); /* trigger INS reinitialization */
+        rtk->gnss_aid_age=0;         /* reset GNSS-assisted INS status count */
+        trace(7,"warning: The GNSS and INS positions differ too much!\n");
+    }
+
     /* check solution status */
     if (!stat||!stat_old) {
-        flag=0; trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old); 
+        if (!stat) rtk->gnss_aid_age=0;
+        pos_flag=tdcp_flag=0; trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old); 
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
@@ -1282,11 +1315,11 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
     /* if GNSS outage, tdcp fails */
     if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
-        flag=0; trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
+        tdcp_flag=0; trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
     }
 
     /* epoch-to-epoch average velocity estimation based on tdcp */
-    if (flag) {
+    if (tdcp_flag) {
         /* check whether a cycle slip occurs in the current epoch observation */
         init_ssatpar(rtk,NULL,n,RTK_slip,SOLQ_NONE);
 
@@ -1361,7 +1394,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
         }
 
         if (max_vnv<nx) {
-            vel_flag=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
+            tdcp_flag=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
         }
         else {
             /* mode=(max_vnv>nx)?Robust_OFF:Robust_RES; */
@@ -1376,7 +1409,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
             /* least square estimation */
             if ((info=lsq_roubst(H,v,P,4,nv,dx,Q,mode))) {
-                vel_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
+                tdcp_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
             }
 
             /* calculate the posterior residuals */
@@ -1384,11 +1417,15 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
 
             /* validate solution */
             if (valsol(&sol,azel,vsat,n,opt,v,P,nv,nx)==0) {
-                vel_flag=0;trace(7,"validation of tdcp solution failed nv=%d\n",nv);
+                tdcp_flag=0;trace(7,"validation of tdcp solution failed nv=%d\n",nv);
             }
             
-            if (vel_flag) {
-                for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*dx[i]/rtk->interval;  
+            if (tdcp_flag) {
+                /* update the receiver velocity with tdcp */
+                for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*dx[i]/rtk->interval; 
+                vel_flag=1;
+
+                /* save tdcp velocity */ 
                 matcpy(rtk->sol.tdcp_vel,rtk->sol.rr+3,3,1);
                 /* outsolstat(rtk,nav); */                   
             }           
@@ -1396,19 +1433,20 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     }
 
     /* if tdcp fails, velocity estimation is performed using Doppler observations */
-    if (flag&&!vel_flag&&rtk->dopsgn&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
+    if (stat&&!vel_flag&&rtk->dopsgn&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
         vel_flag=1;
+        /* update the receiver velocity with dopple */
         matcpy(rtk->sol.rr+3,sol.rr+3,3,1);
     }
 
     /* if tdcp and dopple fail, velocity estimation is performed using the spp position difference between epochs */
-    if (flag&&!vel_flag) {
+    if (pos_flag&&!vel_flag) {
         vel_flag=1;
-        /* calculate the average velocity between epochs */
+        /* update the receiver velocity with dpos */
         for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*(rr[i]-rr_old[i])/rtk->interval;
     }
 
-    /* when the vehicle velocity exceeds the threshold, the alignment is considered complete */
+    /* only the vehicle velocity exceeds the threshold, the alignment is considered complete */
     if (!rtk->align&&vel_flag&&norm(rtk->sol.rr+3,3)<thres) {
         vel_flag=0;
     }
@@ -1419,7 +1457,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     free(azel); free(azel_old);
     free(v);    free(H);        free(var);  free(P);        
 
-    return flag?vel_flag:0;
+    return vel_flag;
 }
 
 /* zero speed detection*/

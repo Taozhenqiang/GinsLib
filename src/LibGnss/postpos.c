@@ -54,7 +54,6 @@
 #define MAXINVALIDTM 100         /* max number of invalid time marks */
 
 /* constants/global variables ------------------------------------------------*/
-
 static spcvs_t pcvss={0};        /* satellite antenna parameters */
 static rpcvs_t pcvsr={0};        /* receiver antenna parameters */
 static imu_t imus={0};          /* imu data */
@@ -552,7 +551,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
     obsd_t *obs_old=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2); /* observations at the previous epoch for rover and base */
     imud_t *imu=(imud_t *)malloc(sizeof(imud_t)*MAXINS);
     double rb[3]={0};
-    int i,nobs,num=0,align,stat;
+    int i,nobs,num=0,align,vel_flag=0,stat;
     int n=0,n_old=0,nr=0,nr_old=0;
 
     trace(3,"procpos : mode=%d\n",mode); /* 0=forward or backward, 1=forward and backward smoothing */
@@ -569,7 +568,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,545575,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,546727,2362); 
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -590,24 +589,23 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
 
         /* ins initial alignment */
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
-            if (NO==rtk->match) continue;   
-            /* velocity vector assisted alignment */  
-            if (!rtk->align||rtk->outage>MAX_OUTIME) {
-                rtk->align=ins_align(rtk,obs,obs_old,n,n_old,&navs,imu,popt);
-            } 
+            if (NO==rtk->match) continue; 
+            /* TDCP estimated velocity */
             if (SYNC_YES==rtk->upte) {
-                /* tdcp for zupt/zihr */
-                if (rtk->align) {
-                    /* determine the number of satellites of rover in the current epoch and the previous epoch */
-                    for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
-                    for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
-                    /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
-                    if (nr_old&&nr&&(popt->constraint[1]||popt->constraint[2])) tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
-                }
+                vel_flag=0; /* reset vel flag */
+                /* determine the number of satellites of rover in the current epoch and the previous epoch */
+                for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
+                for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+                /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
+                if (nr_old&&nr) vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
                 /* save the GNSS observations of the previous epoch */
                 n_old=n; 
                 for (i=0;i<n;i++) obs_old[i]=obs[i];                 
-            }   
+            }  
+            /* velocity vector assisted alignment */  
+            if (!rtk->align||rtk->outage>MAX_OUTIME) {
+                rtk->align=ins_align(rtk,obs,n,&navs,popt,vel_flag);
+            }    
             if (!rtk->align) continue;  
         }
 
@@ -619,7 +617,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         }
 
         /* for GNSS/INS integration navigation, when GNSS is not available, use motion constraints to assist */
-        if (GINS_OFF!=popt->GI_mode&&n<=0&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
+        if (n<=0&&GINS_OFF!=popt->GI_mode&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
             motion_constraints(rtk,popt);
         }
 

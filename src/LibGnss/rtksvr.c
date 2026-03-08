@@ -48,12 +48,12 @@
 #define MIN_INT_RESET   30000   /* mininum interval of reset command (ms) */
 
 /* write solution header to output stream ------------------------------------*/
-static void writesolhead(stream_t *stream, const solopt_t *solopt)
+static void writesolhead(stream_t *stream, const prcopt_t *prcopt, const solopt_t *solopt)
 {
     uint8_t buff[1024];
     int n;
-    /* TODO*/
-    n=outsolheads(buff,NULL,solopt);
+
+    n=outsolheads(buff,prcopt,solopt);
     strwrite(stream,buff,n);
 }
 /* save output buffer --------------------------------------------------------*/
@@ -78,8 +78,7 @@ static void writesol(rtksvr_t *svr, int index)
     
     for (i=0;i<2;i++) {
         
-        if (svr->solopt[i].posf==SOLF_STAT) {
-            
+        if (svr->solopt[i].posf==SOLF_STAT) {       
             /* output solution status */
             rtksvrlock(svr);
             n=rtkoutstat(&svr->rtk,svr->solopt[i].sstat,(char *)buff);
@@ -559,7 +558,7 @@ static void send_nmea(rtksvr_t *svr, uint32_t *tickreset)
     }
 }
 /* rtk server thread ---------------------------------------------------------*/
-#ifdef WIN32
+#ifdef _WIN32
 static DWORD WINAPI rtksvrthread(void *arg)
 #else
 static void *rtksvrthread(void *arg)
@@ -642,8 +641,7 @@ static void *rtksvrthread(void *arg)
             rtkpos(&svr->rtk,obs.data,obs.n,&svr->nav);
             rtksvrunlock(svr);
             
-            if (svr->rtk.sol.stat!=SOLQ_NONE) {
-                
+            if (svr->rtk.sol.stat!=SOLQ_NONE) {               
                 /* adjust current time */
                 tt=(int)(tickget()-tick)/1000.0+DTTOL;
                 timeset(gpst2utc(timeadd(svr->rtk.sol.time,tt)));
@@ -945,10 +943,11 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     }
     /* write solution header to solution streams */
     for (i=3;i<5;i++) {
-        writesolhead(svr->stream+i,svr->solopt+i-3);
+        writesolhead(svr->stream+i,prcopt,svr->solopt+i-3);
     }
+
     /* create rtk server thread */
-#ifdef WIN32
+#ifdef _WIN32
     if (!(svr->thread=CreateThread(NULL,0,rtksvrthread,svr,0,NULL))) {
 #else
     if (pthread_create(&svr->thread,NULL,rtksvrthread,svr)) {
@@ -956,7 +955,7 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
         for (i=0;i<MAXSTRRTK;i++) strclose(svr->stream+i);
         sprintf(errmsg,"thread create error\n");
         return 0;
-    }
+        }
     return 1;
 }
 /* stop rtk server -------------------------------------------------------------
@@ -985,7 +984,7 @@ extern void rtksvrstop(rtksvr_t *svr, const char **cmds)
     svr->state=0;
     
     /* free rtk server thread */
-#ifdef WIN32
+#ifdef _WIN32
     WaitForSingleObject(svr->thread,10000);
     CloseHandle(svr->thread);
 #else
@@ -1025,7 +1024,7 @@ extern int rtksvropenstr(rtksvr_t *svr, int index, int str, const char *path,
         svr->solopt[index-3]=*solopt;
         
         /* write solution header to solution stream */
-        writesolhead(svr->stream+index,svr->solopt+index-3);
+        writesolhead(svr->stream+index,NULL,svr->solopt+index-3);
     }
     rtksvrunlock(svr);
     return 1;

@@ -76,23 +76,6 @@ static const char *help[]={
 " -x level  debug trace level (0:off) [0]",
 " --version display release version",
 };
-/* show message --------------------------------------------------------------*/
-extern int showmsg(const char *format, ...)
-{
-    va_list arg;
-    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
-    fprintf(stderr,"\r");
-    return 0;
-}
-extern int showerr(const char *format, ...)
-{
-    va_list arg;
-    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
-    fprintf(stderr,"\r\n");
-    return 0;
-}
-extern void settspan(gtime_t ts, gtime_t te) {}
-extern void settime(gtime_t time) {}
 
 /* print help ----------------------------------------------------------------*/
 static void printhelp(void)

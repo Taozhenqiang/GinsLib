@@ -68,11 +68,11 @@ set(CMAKE_MINSIZEREL_POSTFIX "s")
 include_directories(include) #添加包含路径
 
 # 仅在Windows平台添加WIN32宏定义，其他宏保持不变
-if(WIN32)
-    add_definitions(-DWIN32)
-endif()
-add_definitions(-DENAGLO -DENAGAL -DENACMP -DENAQZS -DENAIRN -DNEXOBS=3 -DNFREQ=7 -DTRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
-# add_compile_definitions(WIN32 ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
+# if(WIN32)
+#     add_definitions(-DWIN32)
+# endif()
+# add_definitions(-DENAGLO -DENAGAL -DENACMP -DENAQZS -DENAIRN -DNEXOBS=3 -DNFREQ=7 -DTRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
+add_compile_definitions(ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
 
 # global value
 # set lib name

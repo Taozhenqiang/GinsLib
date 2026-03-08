@@ -247,11 +247,11 @@ def batch_process_gins(exe_path_input):
             
             # 4. 定义处理模式 (保持原有逻辑)
             # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
-            mode = ["PPK LC","PPK TC"]
+            mode = ["PPK"]
             
             # 命令列表
             commands = [
-                # [exe_path,"-k",conf_file,"-p","0","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
+                # [exe_path,"-k",conf_file,"-p","0","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
                 # [exe_path,"-k",conf_file,"-p","0","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins LC
                 # [exe_path,"-k",conf_file,"-p","0","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins TC
                 # [exe_path,"-k",conf_file,"-p","8","-gins","0","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp
@@ -260,9 +260,9 @@ def batch_process_gins(exe_path_input):
                 # [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd
                 # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
                 # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
-                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0"], #ppk
-                [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins LC
-                [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
+                [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk
+                # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins LC
+                # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
             ]
 
             # 5. 循环执行命令

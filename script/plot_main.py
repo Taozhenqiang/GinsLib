@@ -14,7 +14,7 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos'(位置), 'vel'(速度), 'att'(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['trj','err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
@@ -23,10 +23,13 @@ def main():
     # 文件路径配置（可选，如果使用默认路径则保持为空）
     SOLFILE_PATH = ''  # 自定义结果文件路径，留空使用默认路径
     REFFILE_PATH = ''  # 自定义参考文件路径，留空使用默认路径
+
+    # 图片保存配置
+    SAVE_IMAGES = True  # 设置为True保存图像，False不保存
     # ================= 配置结束 =================
     
     # 检查配置是否有效
-    valid_options = ['trj', 'pos', 'vel', 'att', 'bias', 'err']
+    valid_options = ['trj', 'pos_', 'vel_', 'att_', 'bias', 'err']
     for option in PLOT_OPTIONS:
         if option not in valid_options:
             print(f"错误: 无效的绘制选项 '{option}'")
@@ -42,15 +45,15 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/EG320N_Vehicle_complex_20250419/result'
-        filename = 'GNSS_Vehicle_complex_20250419_PPK_F.pos'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230/result'
+        filename = 'GNSS_Vehicle_complex_20221230_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS/EG320N_Vehicle_complex_20250419'
+        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 
@@ -86,52 +89,104 @@ def main():
     # IE-zf
     # idx = [0,1,9,10,11,15,16,17,22,23,21]
 
-    # 读取参考文件
-    ref_data = read_ref(refile, skip_lines, row, col, ins_flag, ins_interval, GNSS_interval, idx)
+    if 'err' in PLOT_OPTIONS:
+        # 读取参考文件
+        ref_data = read_ref(refile, skip_lines, row, col, ins_flag, ins_interval, GNSS_interval, idx)
 
-    # 检查是否成功读取
-    if ref_data is not None:
-        print("参考文件数据读取成功")
-    else:
-        print("参考文件数据读取失败")
-        return
+        # 检查是否成功读取
+        if ref_data is not None:
+            print("参考文件数据读取成功")
+        else:
+            print("参考文件数据读取失败")
+            return
+    
     
     # 根据配置选择绘制图表
     print(f"开始绘制选定的图表: {PLOT_OPTIONS}")
     
     # 在绘制循环中修改
-    figures = []  # 存储所有图形对象
+    figures = []  # 存储所有图形对象和对应的类型
 
     for plot_type in PLOT_OPTIONS:
         if plot_type == 'trj':
             print("绘制轨迹图...")
             fig = plot_trajectory(data)
-            figures.append(('轨迹图', fig))
-        elif plot_type == 'pos':
+            figures.append(('trj', fig))
+        elif plot_type == 'pos_':
             print("绘制位置图...")
             fig = plot_position(data)
-            figures.append(('位置图', fig))
-        elif plot_type == 'vel':
+            figures.append(('pos_', fig))
+        elif plot_type == 'vel_':
             print("绘制速度图...")
             fig = plot_velocity(data)
-            figures.append(('速度图', fig))
-        elif plot_type == 'att':
+            figures.append(('vel_', fig))
+        elif plot_type == 'att_':
             print("绘制姿态图...")
             fig = plot_attitude(data)
-            figures.append(('姿态图', fig))
+            figures.append(('att_', fig))
         elif plot_type == 'bias':
             print("绘制IMU零偏图...")
             fig_bg, fig_ba = plot_imubias(data)
-            figures.append(('陀螺仪零偏', fig_bg))
-            figures.append(('加速度计零偏', fig_ba))
+            figures.append(('bg', fig_bg))
+            figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
             fig, rms_stats = plot_err(data, ref_data, ERROR_TYPE)
-            figures.append(('误差图', fig))
+            figures.extend(fig)  # 添加所有误差图
+    
+    # 保存所有图像到文件
+    if SAVE_IMAGES:
+        # 构建保存路径：参考文件同级的figure文件夹
+        ref_dir = os.path.dirname(refile)
+        save_dir = os.path.join(ref_dir, 'figure')
+        
+        # 创建保存目录
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+            print(f"✓ 创建保存目录: {save_dir}")
+        
+        # 提取结果文件名（不含路径和扩展名）
+        sol_filename = os.path.basename(solfile)
+        if sol_filename.endswith('.pos'):
+            data_name_without_ext = sol_filename[:-4]  # 去掉.pos扩展名
+        else:
+            data_name_without_ext = sol_filename
+        
+        # 保存所有图像到文件
+        for plot_type, fig in figures:
+            # 根据图像类型生成文件名
+            if plot_type == 'trj':
+                filename = f"{data_name_without_ext}_trj.png"
+            elif plot_type == 'pos_':
+                filename = f"{data_name_without_ext}_pos.png"
+            elif plot_type == 'vel_':
+                filename = f"{data_name_without_ext}_vel.png"
+            elif plot_type == 'att':
+                filename = f"{data_name_without_ext}_att.png"
+            elif plot_type == 'bg':
+                filename = f"{data_name_without_ext}_bg.png"
+            elif plot_type == 'ba':
+                filename = f"{data_name_without_ext}_ba.png"
+            elif plot_type == 'pos':
+                filename = f"{data_name_without_ext}_pos_err.png"
+            elif plot_type == 'vel':
+                filename = f"{data_name_without_ext}_vel_err.png"
+            elif plot_type == 'att':
+                filename = f"{data_name_without_ext}_att_err.png"
+            
+            filepath = os.path.join(save_dir, filename)
+            
+            # 保存图像
+            fig.savefig(filepath, dpi=300, bbox_inches='tight')
+            print(f"✓ 保存图像: {filepath}")
+        
+        print(f"✓ 所有图像已保存到 {save_dir}")
+    else:
+        print("图片保存已关闭，仅显示图像")
     
     # 最后统一显示所有图形
     print("所有图表绘制完成，开始显示...")
-    for title, fig in figures:
+    for plot_type, fig in figures:
         plt.show(block=False)   # 非阻塞显示
 
     # 保持程序运行，直到所有窗口关闭

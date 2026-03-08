@@ -40,7 +40,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
 #include <direct.h>
@@ -170,7 +170,8 @@ extern "C"
 #define TRUE  1          /* true */         
 #define FALSE 0          /* false */
 
-#define MAX_OUTIME  60  /* INS maximum independent working time */
+#define MAX_OUTIME  60       /* INS maximum independent working time */
+#define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length */
 
 /* ins constants/macros ----------------------------------------------------------*/
 #define NINCIMU     100000              /* incremental number of imu data */
@@ -669,7 +670,7 @@ extern "C"
 #define P2_50 8.881784197001252E-16 /* 2^-50 */
 #define P2_55 2.775557561562891E-17 /* 2^-55 */
 
-#ifdef WIN32
+#ifdef _WIN32
 #define rtklib_thread_t HANDLE
 #define rtklib_lock_t CRITICAL_SECTION
 #define rtklib_initlock(f) InitializeCriticalSection(f)
@@ -688,7 +689,6 @@ extern "C"
 #endif
 
     /* type definitions ----------------------------------------------------------*/
-
     typedef struct
     {                /* time struct */
         time_t time; /* time (s) expressed by standard time_t */
@@ -1663,6 +1663,7 @@ extern "C"
         int nominal_upte;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
         int align;
         int outage;             /* GNSS outage count, if GNSS is available, outage is reset to 0 */
+        int gnss_aid_age;       /* GNSS-assisted detection INS status count, used for INS reinitialization */
         ins_t ins;
         tightc_t tightc;        /* tightly coupled integration */
         lcgins_t lcgins;        /* loosely coupled integration */
@@ -2422,6 +2423,7 @@ extern "C"
     EXPORT int rtkopenazel(prcopt_t *opt, const char *file);
     EXPORT int rtkopensatdop(prcopt_t *opt, const char *file);
     EXPORT void rtkcloseoutfile(void);
+    EXPORT void rtkclosestat(void);
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
     /* precise point positioning -------------------------------------------------*/
@@ -2448,7 +2450,7 @@ extern "C"
     EXPORT int  readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_week);
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 
                         const char *infile, const char *outfile);
-    EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, int n, int n_old, nav_t *nav, imud_t *imu, const prcopt_t *opt);
+    EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag);
     EXPORT int  tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);

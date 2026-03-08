@@ -50,8 +50,9 @@
 /* get fields (little-endian) ------------------------------------------------*/
 #define U1(p) (*((unsigned char *)(p)))
 #define I1(p) (*((signed char *)(p)))
+/* TODO */
 const double lam_carr[] = {/* carrier wave length (m) */
-                           CLIGHT / FREQ1, CLIGHT / FREQ2, CLIGHT / FREQ5, CLIGHT / FREQ6, CLIGHT / FREQ7, CLIGHT / FREQ8};
+                           CLIGHT / FREQL1, CLIGHT / FREQL2, CLIGHT / FREQL5, CLIGHT / FREQL6, CLIGHT / FREQ1_CMP, CLIGHT / FREQ2_CMP};
 static unsigned short U2(unsigned char *p)
 {
     unsigned short u;

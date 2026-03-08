@@ -25,8 +25,8 @@ if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     source_group("CMake Files" FILES CMakeLists.txt)
     source_group("Header Files" FILES header_files)
     source_group("Soruce Files" FILES source_files)
-    #source_group("Header Files\\rcv" FILES ${rcv_header_files})
-    #source_group("Source Files\\rcv" FILES ${rcv_source_files})
+    source_group("Header Files/rcv" FILES ${rcv_header_files})
+    source_group("Source Files/rcv" FILES ${rcv_source_files})
 
 else ()
 

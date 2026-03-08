@@ -11,39 +11,63 @@
             "program": "${workspaceFolder}\\build\\Bin\\GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                // "CHC_Static_open_20250713.conf",
-                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
-                // "KVH1750_Vehicle_open_20211217-nsh.conf",
-                // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
-                // "IGM-A1_Vehicle_open_20201210.conf",
-                // "KVH1750_Vehicle_open_20201210.conf",
-                // "EG320N_Vehicle_open_20250419.conf",
-                "EG320N_Vehicle_complex_20250419.conf",
+                // "CPT_Vehicle_open_20190328.conf",
+                // "EG320N_Vehicle_complex_20250419.conf",
+                // "EG320N_Vehicle_open_20250418.conf",                
                 // "EG320N_Vehicle_open_20250418_campus1.conf",
                 // "EG320N_Vehicle_open_20250418_campus2.conf",
-                // "EG320N_Vehicle_open_20250418.conf",
-                // "KVH1750_Vehicle_complex_20210715.conf",
-                // "STIM300_Vehicle_complex_20230102.conf",
-                // "FSAS_Vehicle_open_20150722.conf",
+                // "EG320N_Vehicle_open_20250419.conf",  
+                // "FSAS_Vehicle_complex_20200828.conf",
+                // "FSAS_Vehicle_complex_20200922.conf",  
+                // "FSAS_Vehicle_complex_20211118.conf", 
                 // "FSAS_Vehicle_complex_20220315.conf",
-                // "HG4930_Vehicle_open_20201128.conf", 
-                // "LCI_Marine_open_20150108.conf",
-                // "Readmi_Static_20251010.conf",
-                // "ISA-100C_Vehicle_complex_20220309.conf",
+                // "FSAS_Vehicle_open_20150722.conf",   
+                // "HG4930_Vehicle_complex_20200617.conf",
+                // "HG4930_Vehicle_complex_20200618.conf",
+                // "HG4930_Vehicle_open_20201128.conf",           
+                // "HG4930_Vehicle_open_20201214.conf",
+                // "HG4930_Vehicle_open_20210115.conf",  
+                // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
+                // "IGM-A1_Vehicle_open_20201210.conf",                                         
+                // "IGM-A1_Vehicle_open_20211217-nsh.conf",
                 // "INS_Railway_open_20201004.conf",
-                // "CPT_Vehicle_open_20190328.conf",
-                // "ADIS16465_Vehicle_open_20210114.conf",
-                // "ADIS16488_Vehicle_complex_20210728.conf",
-                // "FSAS_Vehicle_complex_20200922.conf",
+                // "ISA-100C_Vehicle_complex_20211118.conf",
+                // "ISA-100C_Vehicle_complex_20220309.conf",
+                // "KVH1750_Vehicle_complex_20210715.conf",
+                // "KVH1750_Vehicle_complex_20211217-ylh.conf",
+                // "KVH1750_Vehicle_open_20211217-nsh.conf",    
+                // "KVH1750_Vehicle_open_20201210.conf",
+                // "Mti10_Vehicle_complex_20190428.conf",
+                "STIM300_Vehicle_complex_20221230.conf",
+                // "STIM300_Vehicle_complex_20230102.conf",
                 // "STIM300_Vehicle_complex_20230104.conf",
+                // "LCI_Marine_open_20150108.conf",                             
+                // "ADIS16465_Vehicle_open_20210114.conf",
+                // "ADIS16488_Vehicle_complex_20210728.conf",                              
+               
 
-                "-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0", //ppd/ins TC
+                "-p","2","-gins","0","-sys","GERC","-ion","1","-tro","1","-eph","0","-flt","2","-amb","2","-ambt","3","-solt","0", //ppd/ins TC
                 
-                "-x","4240",//trace level:12,7,4
+                // "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS\\EG320N_Vehicle_complex_20250419" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\GNSS_INS_Vehicle\\STIM300_Vehicle_complex_20221230" ,//配置文件
             
-        },        
+        },  
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "RTKRCV_Window",
+            "program": "${workspaceFolder}/build/Bin/RTKRCV.exe", //注意为可执行文件的完整路径+文件名
+            "externalConsole": true,
+            "args": [
+                "-o",
+                "CPT_Vehicle_open_20190328.rtconf",                              
+                
+                // "-x","4240",//trace level:12,7,4
+            ],
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328" ,//配置文件
+            
+        },      
         {
             "type": "cppdbg",
             "request": "launch",
@@ -101,7 +125,7 @@
             "cwd": "${workspaceFolder}/data/GNSS_INS", //工作路径,
             "console": "externalTerminal",
         },
-                {
+     {
             "type":"debugpy",
             "request": "launch",
             "name":"convert_ref",
@@ -123,7 +147,7 @@
             
             // for Windows
             "program": "${workspaceFolder}\\script\\plot_main.py",
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS", //工作路径,
+            "cwd": "${workspaceFolder}\\data\\GNSS_INS_Vehicle", //工作路径,
 
             // for Linux
             // "program": "${workspaceFolder}/script/excute.py",

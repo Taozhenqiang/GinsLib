@@ -364,7 +364,6 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
     trace(8,"rescode: rr=%.3f %.3f %.3f\n",rr[0], rr[1], rr[2]);
 
     for (i=*ns=0;i<n&&i<MAXOBS;i++) {
-
         time=obs[i].time; sat=obs[i].sat;
         fr=sys2freid(sys,0,opt);
 
@@ -1226,7 +1225,6 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
 
     /* output azel/satdop solution */
     outsolfile(rtk,obs,n,OUTFILE_AZEL);
-    outsolfile(rtk,obs,n,OUTFILE_SATDOP);
 
     /* TC mode and GNSS unavailable, output INS solution */
     if (!stat&&GINS_TC==opt->GI_mode) {

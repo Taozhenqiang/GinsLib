@@ -147,7 +147,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -499,6 +499,24 @@ static void fatalerr(const char *format,...) {
         fprintf(stderr,"%s",msg);
     exit(-9);
 }
+/* show message --------------------------------------------------------------*/
+extern int showmsg(const char *format, ...)
+{
+    va_list arg;
+    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
+    fprintf(stderr,"\r");
+    return 0;
+}
+extern int showerr(const char *format, ...)
+{
+    va_list arg;
+    va_start(arg,format); vfprintf(stderr,format,arg); va_end(arg);
+    fprintf(stderr,"\r\n");
+    return 0;
+}
+extern void settspan(gtime_t ts, gtime_t te) {}
+extern void settime(gtime_t time) {}
+
 /* add fatal callback function -------------------------------------------------
 *add fatal callback function for mat(),zeros(),imat()
 *args  :fatalfunc_t *func I  callback function
@@ -1817,7 +1835,7 @@ extern double dot(const double *a,const double *b,int n) {
 *return :||a ||
  *-----------------------------------------------------------------------------*/
 extern double norm(const double *a,int n) {
-    return sqrt(dot(a,a,n));
+    return sqrt(fabs(dot(a,a,n)));
 }
 /* square of standard deviation --------------------------------------------------------*/
 extern double powstd(double std)
@@ -3157,7 +3175,7 @@ static double timeoffset_=0.0;/* time offset (s) */
 extern gtime_t timeget(void) {
     gtime_t time;
     double ep[6]={0};
-#ifdef WIN32
+#ifdef _WIN32
     SYSTEMTIME ts;
 
     GetSystemTime(&ts);/* utc */
@@ -3432,7 +3450,7 @@ extern int adjgpsweek(int week) {
 *return:current tick in ms
  *-----------------------------------------------------------------------------*/
 extern uint32_t tickget(void) {
-#ifdef WIN32
+#ifdef _WIN32
     return (uint32_t) timeGetTime();
 #else
     struct timespec tp={0};
@@ -3458,7 +3476,7 @@ extern uint32_t tickget(void) {
 *return:none
  *-----------------------------------------------------------------------------*/
 extern void sleepms(int ms) {
-#ifdef WIN32
+#ifdef _WIN32
     if (ms<5)
         Sleep(1);
     else
@@ -4884,7 +4902,7 @@ extern void freenav(nav_t *nav,int opt) {
 *return:execution status (0:ok,0>:error)
  *-----------------------------------------------------------------------------*/
 extern int execcmd(const char *cmd) {
-#ifdef WIN32
+#ifdef _WIN32
     PROCESS_INFORMATION info;
     STARTUPINFO si={0};
     DWORD stat;
@@ -4920,7 +4938,7 @@ extern int execcmd(const char *cmd) {
 extern int expath(const char *path,char *paths[],int nmax) {
     int i,j,n=0;
     char tmp[1024];
-#ifdef WIN32
+#ifdef _WIN32
     WIN32_FIND_DATA file;
     HANDLE h;
     char dir[1024]="",*p;
@@ -4997,7 +5015,7 @@ extern int expath(const char *path,char *paths[],int nmax) {
 static int mkdir_r(const char *dir) {
     char pdir[1024],*p;
 
-#ifdef WIN32
+#ifdef _WIN32
     HANDLE h;
     WIN32_FIND_DATA data;
 
@@ -5799,7 +5817,7 @@ extern int rtk_uncompress(const char *file,char *uncfile) {
         uncfile[p-tmpfile]='\0';
         strcpy(buff,tmpfile);
         fname=buff;
-#ifdef WIN32
+#ifdef _WIN32
         if ((p=strrchr(buff,'\\'))) {
             *p='\0';
             dir=fname;

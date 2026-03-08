@@ -1422,7 +1422,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
     the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
     zupt_time=ins->zupt.count*ins->interval*ins->nn;    
-    if (GINS_OFF!=opt->GI_mode) {
+    if (GINS_TC==opt->GI_mode) {
         if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
             nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZUPT);
             rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
