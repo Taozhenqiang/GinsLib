@@ -62,7 +62,7 @@ extern "C"
 #endif
 
 /* constants -----------------------------------------------------------------*/
-#define VER_RTKLIB "demo5" /* library version */
+#define VER_RTKLIB "demo5 2.4.3" /* library version */
 #define PATCH_LEVEL "b34j" /* patch level */
 #define COPYRIGHT_RTKLIB \
     "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
