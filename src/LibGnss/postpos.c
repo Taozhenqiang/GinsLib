@@ -83,20 +83,34 @@ static char rtcm_file[1024]=""; /* rtcm data file */
 static char rtcm_path[1024]=""; /* rtcm data path */
 static rtcm_t rtcm;             /* rtcm control struct */
 static FILE *fp_rtcm=NULL;      /* rtcm data file pointer */
+static int checkbrk_counter=0;
+static char last_buff[256]="";
 
 /* show message and check break ----------------------------------------------*/
 static int checkbrk(const char *format, ...)
 {
     va_list arg;
-    char buff[1024],*p=buff;
+    char buff[256],*p=buff;
+
+    /* only check every 5th call */
+    if (++checkbrk_counter%5!=0) return 0;
+
     if (!*format) return showmsg("");
     va_start(arg,format);
     p+=vsprintf(p,format,arg);
     va_end(arg);
+
     if (*proc_rov&&*proc_base) sprintf(p," (%s-%s)",proc_rov,proc_base);
     else if (*proc_rov ) sprintf(p," (%s)",proc_rov );
     else if (*proc_base) sprintf(p," (%s)",proc_base);
-    return showmsg(buff);
+
+    /* only show when the message content changes */
+    if (strcmp(buff,last_buff)!=0) {
+        strcpy(last_buff, buff);
+        return showmsg(buff);
+    }
+
+    return 0;
 }
 /* Solution option to field separator ----------------------------------------*/
 /* Repeated from solution.c */
@@ -272,10 +286,10 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
     if ((0<=iobsu&&iobsu<obss.n)||PMODE_LC_POS==popt->mode) {
-        settime((time=(GINS_OFF==popt->GI_mode?obss.data[iobsu].time:imus.data[iimu].time)));
+        time=(GINS_OFF==popt->GI_mode)?obss.data[iobsu].time:imus.data[iimu].time;
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
-        }
+        }            
     }
     /* input forward data */
     if (SOLTYPE_FORWARD==popt->reverse) 

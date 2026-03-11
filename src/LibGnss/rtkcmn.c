@@ -508,7 +508,6 @@ extern int showerr(const char *format, ...)
     return 0;
 }
 extern void settspan(gtime_t ts, gtime_t te) {}
-extern void settime(gtime_t time) {}
 
 /* add fatal callback function -------------------------------------------------
 *add fatal callback function for mat(),zeros(),imat()
@@ -5863,5 +5862,4 @@ extern int rtk_uncompress(const char *file,char *uncfile) {
 #if defined(WIN_DLL)||defined(DLL)
 extern int showmsg(const char *format,...) { return 0;}
 extern void settspan(gtime_t ts,gtime_t te) {}
-extern void settime(gtime_t time) {}
 #endif

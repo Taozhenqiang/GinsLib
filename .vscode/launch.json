@@ -46,7 +46,7 @@
                 // "ADIS16488_Vehicle_complex_20210728.conf",                              
                
 
-                "-p","0","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","2","-solt","0", //spp/ins TC
+                "-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","2","-solt","0", //spp/ins TC
                 
                 // "-x","4240",//trace level:12,7,4
             ],

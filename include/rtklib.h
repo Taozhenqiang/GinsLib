@@ -2597,7 +2597,6 @@ extern "C"
     EXPORT int showmsg(const char *format, ...);
     EXPORT int showerr(const char *format, ...);
     extern void settspan(gtime_t ts, gtime_t te);
-    extern void settime(gtime_t time);
 
 #ifdef __cplusplus
 }
