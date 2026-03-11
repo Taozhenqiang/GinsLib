@@ -1181,7 +1181,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
         }
 
         /* reinitialize INS in the event of a long-term GNSS outage */
-        if (rtk->align&&rtk->outage>MAX_OUTIME) 
+        if (rtk->align&&rtk->outage>MAX_OUTIME&&!outsim.valid_flag) 
         {
             /* initialize INS position using GNSS solution */
             if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
@@ -1281,7 +1281,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     /* GNSS-assisted detection INS status count, used for INS reinitialization */
     if (stat&&rtk->align&&(GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode))
     {
-        if (rtk->outage<MAX_OUTIME) {
+        if (rtk->outage<MAX_OUTIME&&!outsim.valid_flag) {
             ins2gnss(opt,&rtk->ins,rr_,3);
             pos2ecef(rr_,ins_pos);
             for (i=0;i<3;i++) dpos[i]=ins_pos[i]-sol.rr[i];
@@ -1294,7 +1294,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     }
 
     /* check GNSS-assisted INS status */
-    if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE) {
+    if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE&&!outsim.valid_flag) {
         rtk->outage+=(MAX_OUTIME+1); /* trigger INS reinitialization */
         rtk->gnss_aid_age=0;         /* reset GNSS-assisted INS status count */
         trace(7,"warning: The GNSS and INS positions differ too much!\n");
@@ -1403,14 +1403,12 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
             /* calculate the weight matrix */
             diag_Cov(nv,var,P,diag_wei);
 
-            /* trace(12,"TDCP H=\n");tracemat(12,H,nv,nx,9,4,0);
-            trace(12,"TDCP v=\n");tracemat(12,v,nv,1,9,4,0);
-            trace(12,"TDCP P=\n");tracemat(12,P,nv,nv,9,4,0); */
-
             /* least square estimation */
             if ((info=lsq_roubst(H,v,P,4,nv,dx,Q,mode))) {
                 tdcp_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
             }
+
+            tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,4,nv,P,H,rtk->P,NULL,v,dx,NULL);
 
             /* calculate the posterior residuals */
             matmul("NN",nv,nx,1,H,dx,v,1.0,-1.0);

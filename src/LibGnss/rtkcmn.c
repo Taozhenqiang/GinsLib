@@ -224,19 +224,12 @@ Debug_Glo_t Debug_Glo={
     {""},
 };         
 
-sim_t sim={
-    0,       /* outage simulation flag (0:off, 1:on) */
+outsim_t outsim={
+    1,       /* outage simulation flag (0:off, 1:on) */
+    0,       /* Is the current epoch within the set interruption period? (0:no, 1:yes) */
     2188,    /* GPS week */
-    30,      /* outage interval (s) = outage end time- outage start time */
-    {436955,
-     437360,
-     437600,
-     437770,
-     437920,
-     438150,
-     438360,
-     438560,
-     438760} /* outage start time series */
+    600,     /* outage interval (s) = outage end time- outage start time */
+    {447454} /* outage start time series */
 };
 
 const prcopt_t prcopt_default={
@@ -552,20 +545,24 @@ extern void DebugTime(rtk_t *rtk, gtime_t t, int t1, int t2)
 *       sim_t      sim  I   outage options
 *return:outage flag (1:outage,0:not outage or off)
 *--------------------------------------------------------------*/
-extern int isoutage(rtk_t *rtk, gtime_t t, sim_t sim) 
+extern int isoutage(rtk_t *rtk, gtime_t t, outsim_t outsim) 
 {
     int week,i,time;
     double sec;
     sec=time2gpst(t,&week);
 
-    if (sim.sim_flag==0) return 0;
-    if (week!=sim.week) return 0;
+    if (outsim.sim_flag==0) return 0;
+    if (week!=outsim.week) return 0;
     if (GINS_OFF==rtk->opt.GI_mode) time=(int) floor(sec+0.5);
     else time=(int) floor(sec+rtk->ins.interval/2.0);
 
     for (i=0;i<MAXOUT;i++) {
-        if (sim.outage[i]&&time>=sim.outage[i]&&time<=(sim.outage[i]+sim.interval)) {
+        if (outsim.outage[i]&&time>=outsim.outage[i]&&time<=(outsim.outage[i]+outsim.interval)) {
+            outsim.valid_flag=1;
             return 1;
+        }
+        else {
+            outsim.valid_flag=0;
         }
     }
     
@@ -633,7 +630,7 @@ extern void diag_Cov(int nv, const double *var, double *P, int opt)
 extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
 {
     int i,j,k;
-    double t0,t[2]={0.0},dttol=1e-3;
+    double t0=0.0,t[2]={0.0},dttol=1e-3;
 
     if ((!obss&&!poss)||!rtk) {
         return 0;  /* invalid input */
@@ -642,7 +639,7 @@ extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
     /* calculate interval from observation file */
     if (PMODE_LC_POS!=rtk->opt.mode) 
     {
-        for (i=0;i<obss->n;i++) {
+        for (i=j=k=0;i<obss->n;i++) {
             if (obss->data[i].rcv!=1) continue;  
             
             for (j=i+1;j<obss->n;j++) {
@@ -667,7 +664,7 @@ extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
         }        
     }
     else { /* calculate interval from pos file */
-        for (i=0;i<poss->n;i++) {  
+        for (i=j=k=0;i<poss->n;i++) {  
 
             for (j=i+1;j<poss->n;j++) {  
 

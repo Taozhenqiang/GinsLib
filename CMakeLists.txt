@@ -4,19 +4,40 @@ cmake_minimum_required(VERSION 3.10.0) #项目执行所需最低版本cmake
 #Project name and version number
 project(RTKNav VERSION 0.1.0) #设置项目名称
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+# 根据构建类型设置优化选项
+if(CMAKE_BUILD_TYPE MATCHES "Release")
+    # Release模式：最高优化级别
+    add_compile_options(-O3) 		#最高级别优化
+    add_compile_options(-DNDEBUG) 	#禁用调试断言
+    add_compile_options(-ffast-math) #快速数学运算
+    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        add_compile_options(-march=native) #针对当前CPU架构优化
+    endif()
+elseif(CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
+    # 带调试信息的发布版本
+    add_compile_options(-O2) 		#平衡优化
+    add_compile_options(-g) 		#保留调试信息
+elseif(CMAKE_BUILD_TYPE MATCHES "Debug")
+    # Debug模式：不优化，便于调试
     add_compile_options(-O0) 		#不进行优化
+    add_compile_options(-g) 		#生成调试信息
+    add_compile_options(-Wno-unused-variable) #忽略未使用变量警告
+else()
+    # 默认模式：中等优化
+    add_compile_options(-O2) 		#中等优化级别
+endif()
+
+# 平台特定的通用选项
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_options(-pthread)   #启用多线程
-    add_compile_options(-w) 		#禁止所有警告信息
     add_compile_options(-m64) 		#指定生成64位可执行文件
+    add_compile_options(-Wno-unused-variable) #忽略未使用变量警告
     # add_compile_options(-lz) 		#链接zlib库
     # add_compile_options(-lstdc++) 	#链接标准C++库
-    # add_compile_options(-lm)        # 添加数学库链接（新增此行）
+    # add_compile_options(-lm)        # 添加数学库链接
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    add_compile_options(-g) 		#生成调试信息
-    add_compile_options(-O0)
-    add_compile_options(-Wall) 		#启用所有警告信息
     add_compile_options(-pthread)
+    add_compile_options(-Wall) 		#启用所有警告信息
 endif()
 
 if(WIN32)
@@ -32,9 +53,16 @@ CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+    # 链接时优化(LTO) - 如果编译器支持
+    CHECK_CXX_COMPILER_FLAG("-flto" COMPILER_SUPPORTS_LTO)
+    if(COMPILER_SUPPORTS_LTO AND CMAKE_BUILD_TYPE MATCHES "Release")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -flto")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
@@ -47,17 +75,57 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT}/build/Lib) #设置静态库输出路�
 # set(EXECUTABLE_OUTPUT_PATH ${ROOT}/build/Bin) #设置可执行文件输出路径
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT}/build/Bin) #设置可执行文件输出路径
 
-#Choose different compilation configurations according to VS compilation
+# 根据构建类型设置编译配置
 if(CMAKE_BUILD_TYPE MATCHES "Release")
     set(CMAKE_BUILD_POSTFIX "${CMAKE_RELEASE_POSTFIX}")
+    # Release模式额外优化选项
+    if(MSVC)
+        add_compile_options(/Ox)  # MSVC最大优化
+        add_compile_options(/Ob2) #内联函数扩展
+        add_compile_options(/Ot)  #速度优先
+    else()
+        add_compile_options(-O3)  # GCC最大优化
+        add_compile_options(-ffast-math) #快速数学运算
+        if(NOT WIN32)
+            add_compile_options(-march=native) #针对当前CPU架构优化
+        endif()
+    endif()
 elseif(CMAKE_BUILD_TYPE MATCHES "Debug")
     set(CMAKE_BUILD_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+    # Debug模式调试选项
+    if(MSVC)
+        add_compile_options(/Od)  #禁用优化
+        add_compile_options(/Zi)  #生成调试信息
+    else()
+        add_compile_options(-O0)  # GCC禁用优化
+        add_compile_options(-g)   #生成调试信息
+    endif()
 elseif(CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
     set(CMAKE_BUILD_POSTFIX "${CMAKE_RELWITHDEBINFO_POSTFIX}")
+    # 带调试信息的发布版本
+    if(MSVC)
+        add_compile_options(/O2)  #最大速度优化
+        add_compile_options(/Zi)  #生成调试信息
+    else()
+        add_compile_options(-O2)  # GCC平衡优化
+        add_compile_options(-g)   #生成调试信息
+    endif()
 elseif(CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
     set(CMAKE_BUILD_POSTFIX "${CMAKE_MINSIZEREL_POSTFIX}")
+    # 最小尺寸优化
+    if(MSVC)
+        add_compile_options(/O1)  #最小尺寸优化
+    else()
+        add_compile_options(-Os)  # GCC最小尺寸优化
+    endif()
 else()
     set(CMAKE_BUILD_POSTFIX "")
+    # 默认使用Release优化
+    if(MSVC)
+        add_compile_options(/O2)
+    else()
+        add_compile_options(-O2)
+    endif()
 endif()
 
 set(CMAKE_DEBUG_POSTFIX "d") #在Debug配置下生成的目标文件名后添加"d"作为后缀

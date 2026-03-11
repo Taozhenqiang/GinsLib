@@ -63,123 +63,16 @@ extern "C"
 
 /* constants -----------------------------------------------------------------*/
 #define VER_RTKLIB "demo5" /* library version */
-
 #define PATCH_LEVEL "b34j" /* patch level */
-
 #define COPYRIGHT_RTKLIB \
     "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
 
-/* modified by tzq */
-#define MAXITR  10      /* max number of iteration for spp */
-#define MAXSYS  6       /* max system */
-#define MAXFREQ 7       /* max NFREQ */
-#define statopt 15      /* maximum number of solution statistics output flags */
-#define BDS2 "C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C16"
-#define BDS3 "C19 C20 C21 C22 C23 C24 C25 C26 C27 C28 C29 C30 C32 C33 C34 C35 C36 C37 C38 C39 C40 C41 C42 C43 C44 C45 C46 C56 C57 C58 C59 C60 C61"
-
-/* GNSS/INS options */
-#define GINS_OFF 0      /* only GNSS */
-#define GINS_LC  1      /* loose coupled */
-#define GINS_TC  2      /* tight coupled */
-#define GINS_STC 3      /* semi-tight coupled */
-
-#define CONS_OFF  0     /* constraint: off */
-#define CONS_NHC  1     /* NHC */
-#define CONS_ZUPT 2     /* ZUPT */
-#define CONS_ZIHR 3     /* ZIHR */
-
-#define ATT_DCM  0      /* attitude update method: direction cosine matrix */
-#define ATT_QUAT 1      /* attitude update method: quaternion */
-
-#define ERR_PHI 0       /* ins error model: phi angle error */
-#define ERR_PSI 1       /* ins error model: psi angle error */
-
-#define GNSISB_CT  1    /* GNSS ISB: time constant */
-#define GNSISB_RW  2    /* GNSS ISB: random walk process */
-#define GNSISB_WN  3    /* GNSS ISB: white noise process */
-
-#define MAXOUT  50      /* number of output interval */
-
-#define OPT_DCB 1       /* option: dcb correction */
-#define OPT_OSB 2       /* option: osb correction */
-#define OPT_TGD 3       /* option: tgd correction */
-
-#define KF_GNSS 0       /* GNSS filter */
-#define KF_GINS 1       /* GNSS/INS filter */
-
-/* filter */
-#define Robust_OFF 0    /* robust filter: off */
-#define Robust_INO 1    /* robust filter based on the innovation vector */
-#define Robust_RES 2    /* robust filter based on the posteriori residuals */
-#define Robust_Chi 3    /* robust filter based on Mahalanobis distance */
-#define Robust_ST  4    /* robust filter based on the Student's t-distribution */
-#define Robust_MST 5    /* robust filter based on the multidimensional Student's t-distribution */
-
-#define IGG3  0         /* IGG3 robust weight function */
-#define Huber 1         /* Huber robust weight function */
-#define MCKF  2         /* MCKF robust weight function */
-
-#define MAXITR_ROBUST 6 /* max number of iteration for robust filter */
-#define ITR_TOL    1E-5 /* iteration termination tolerance for robust filter */
-
-#define MAXINFO_ROBUST 100 /* max number of robust filter info output */
-
-#define NO   0          /* GNSS/INS time matching: No */
-#define YES  1          /* GNSS/INS time matching: Yes */
-
-#define SYNC_NO   0     /* GNSS/INS time synchronization: No */
-#define SYNC_YES  1     /* GNSS/INS time synchronization: Yes */
-
-#define IMUT_INCRENT 0  /* imu data type: increment */
-#define IMUT_RATE    1  /* imu data type: rate */
-
-#define BODYF_RFU 0     /* body frame direction: RFU */
-#define BODYF_FRD 1     /* body frame direction: FRD */
-
-#define POSF_XYZ 0      /* pos file with ecef_pos and ecef_std */
-#define POSF_NED 1      /* pos file with llh and ned_std */
-#define POSF_ENU 2      /* pos file with llh and enu_std */
-
-#define INSALI_MANUAL 0 /* manual alignment */
-#define INSALI_VELTOR 1 /* velocity vector alignment */
-
-#define SOLF_GNSS 0     /* solution falg: GNSS */
-#define SOLF_ZUPT 1     /* solution falg: ZUPT */
-
-/* init ssat struct for spp/ppp/rtk */
-#define SPP_ssat  0      /* init ssat struct for spp */
-#define SPP_range 1     /* store the distance from the satellite to the receiver at the current epoch */
-#define PPP_ssat 2      /* init ssat struct for ppp */
-#define PPP_vsat 3      /* reset vsat flag for spp */
-#define PPP_update 4    /* update ssat status for ppp */
-#define RTK_ssat 5      /* init ssat struct for rtk */
-#define RTK_resi 6      /* reset resc/resp for rtk */
-#define RTK_fix  7      /* init fix flag for rtk */
-#define RTK_slip 8      /* reset clip flag for rtk */
-#define RTK_update 9    /* update ssat status for rtk*/
-
-#define OUTPOS_INS 0        /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
-#define OUTPOS_GNSS 1       /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
-
-#define OUTFILE_AZEL   0    /* output azel file */
-#define OUTFILE_SATDOP 1    /* output satdop file */
-
+/* common option */
 #define diag_var 0       /* option: covariance */
 #define diag_wei 1       /* option: weights */
 
 #define TRUE  1          /* true */         
 #define FALSE 0          /* false */
-
-#define MAX_OUTIME  60       /* INS maximum independent working time */
-#define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length */
-
-/* ins constants/macros ----------------------------------------------------------*/
-#define NINCIMU     100000              /* incremental number of imu data */
-#define NMAXPOS     10000               /* max number of pos data */
-#define MAXINS      2                   /* maximum number of samples */
-
-#define THRES_MW_JUMP 10.0
-/*end*/
 
 #define PI 3.1415926535897932  /* pi */
 #define D2R (PI / 180.0)       /* deg to rad */
@@ -195,6 +88,118 @@ extern "C"
 #define FE_WGS84 (1.0 / 298.257223563) /* earth flattening (WGS84) */
 
 #define HION 350000.0 /* ionosphere height (m) */
+
+/* GNSS/INS options ---------------*/
+/* ins constants/macros */
+#define NINCIMU     100000        /* incremental number of imu data */
+#define NMAXPOS     10000         /* max number of pos data */
+#define MAXINS      2             /* maximum number of samples */
+
+/* GNSS/INS mode */
+#define GINS_OFF 0      /* only GNSS */
+#define GINS_LC  1      /* loose coupled */
+#define GINS_TC  2      /* tight coupled */
+#define GINS_STC 3      /* semi-tight coupled */
+
+/* motion constraint */
+#define CONS_OFF  0     /* constraint: off */
+#define CONS_NHC  1     /* NHC */
+#define CONS_ZUPT 2     /* ZUPT */
+#define CONS_ZIHR 3     /* ZIHR */
+
+/* GNSS/INS time matching flag */
+#define NO   0          /* GNSS/INS time matching: No */
+#define YES  1          /* GNSS/INS time matching: Yes */
+
+/* GNSS/INS time synchronization flag */
+#define SYNC_NO   0     /* GNSS/INS time synchronization: No */
+#define SYNC_YES  1     /* GNSS/INS time synchronization: Yes */
+
+/* imu data type */
+#define IMUT_INCRENT 0  /* imu data type: increment */
+#define IMUT_RATE    1  /* imu data type: rate */
+
+/* body frame direction */
+#define BODYF_RFU 0     /* body frame direction: RFU */
+#define BODYF_FRD 1     /* body frame direction: FRD */
+
+/* attitude update method */
+#define ATT_DCM  0      /* attitude update method: direction cosine matrix */
+#define ATT_QUAT 1      /* attitude update method: quaternion */
+
+/* ins error model */
+#define ERR_PHI 0       /* ins error model: phi angle error */
+#define ERR_PSI 1       /* ins error model: psi angle error */
+
+/* ins alignment mode */
+#define INSALI_MANUAL 0 /* manual alignment */
+#define INSALI_VELTOR 1 /* velocity vector alignment */
+
+/* ins mechanization */
+#define MECH_FORWARD  0   /* forward ins mechanization */
+#define MECH_BACKWARD 1   /* backward ins mechanization */
+
+#define MAX_OUTIME  60       /* INS maximum independent working time 60 */
+#define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length 20 */
+
+/* position file format (for LC) */
+#define POSF_XYZ 0      /* pos file with ecef_pos and ecef_std */
+#define POSF_NED 1      /* pos file with llh and ned_std */
+#define POSF_ENU 2      /* pos file with llh and enu_std */
+
+/* output position */
+#define OUTPOS_INS 0        /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
+#define OUTPOS_GNSS 1       /* reference point for GNSS/INS output position (0:INS,1:GNSS) */
+
+/* solution flag */
+#define SOLF_GNSS 0     /* solution falg: GNSS */
+#define SOLF_ZUPT 1     /* solution falg: ZUPT */
+/* end */
+
+
+/* filter option --------------------*/
+/* filter mode */
+#define KF_GNSS 0       /* GNSS filter */
+#define KF_GINS 1       /* GNSS/INS filter */
+
+/* filter type */
+#define Robust_OFF 0    /* robust filter: off */
+#define Robust_INO 1    /* robust filter based on the innovation vector */
+#define Robust_RES 2    /* robust filter based on the posteriori residuals */
+#define Robust_Chi 3    /* robust filter based on Mahalanobis distance */
+#define Robust_ST  4    /* robust filter based on the Student's t-distribution */
+#define Robust_MST 5    /* robust filter based on the multidimensional Student's t-distribution */
+
+/* M-estimator */
+#define IGG3  0         /* IGG3 robust weight function */
+#define Huber 1         /* Huber robust weight function */
+#define MCKF  2         /* MCKF robust weight function */
+
+#define MAXITR_ROBUST 6 /* max number of iteration for robust filter */
+#define ITR_TOL    1E-5 /* iteration termination tolerance for robust filter */
+
+#define MAXINFO_ROBUST 100 /* max number of robust filter info output */
+/* end */
+
+/* GNSS option */
+#define MAXITR  10      /* max number of iteration for spp */
+#define MAXSYS  6       /* max system */
+#define MAXFREQ 7       /* max NFREQ */
+#define THRES_MW_JUMP 10.0 /* threshold for mw jump detection */
+#define BDS2 "C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 C13 C14 C16"
+#define BDS3 "C19 C20 C21 C22 C23 C24 C25 C26 C27 C28 C29 C30 C32 C33 C34 C35 C36 C37 C38 C39 C40 C41 C42 C43 C44 C45 C46 C56 C57 C58 C59 C60 C61"
+
+/* GNSS ISB model */
+#define GNSISB_CT  1    /* GNSS ISB: time constant */
+#define GNSISB_RW  2    /* GNSS ISB: random walk process */
+#define GNSISB_WN  3    /* GNSS ISB: white noise process */
+
+#define MAXOUT  50      /* number of output interval */
+
+/* DCB correction option */
+#define OPT_DCB 1       /* option: dcb correction */
+#define OPT_OSB 2       /* option: osb correction */
+#define OPT_TGD 3       /* option: tgd correction */
 
 #define FREQL1 1.57542E9      /* L1/E1/B1C  frequency (Hz) */
 #define FREQL2 1.22760E9      /* L2     frequency (Hz) */
@@ -518,9 +523,6 @@ extern "C"
 #define SOLQ_CONS 8   /* solution status: motion constraints */
 #define MAXSOLQ 9     /* max number of solution status */
 
-#define MECH_FORWARD  0   /* forward ins mechanization */
-#define MECH_BACKWARD 1   /* backward ins mechanization */
-
 #define SOLTYPE_FORWARD 0          /* solution type: forward */
 #define SOLTYPE_BACKWARD 1         /* solution type: backward */
 #define SOLTYPE_COMBINED 2         /* solution type: combined */
@@ -562,10 +564,12 @@ extern "C"
 #define GLO_ARMODE_AUTOCAL 2 /* GLO AR mode: autocal */
 #define GLO_ARMODE_FIXHOLD 3 /* GLO AR mode: fix and hold */
 
-#define Full_AR     0   /* AR mode: full integer ambiguity resolution */
-#define PAR     1       /* AR mode: partial integer ambiguity resolution*/
-#define BIE     2       /* AR mode: best integer estimator */
-#define PAR_BIE 3       /* AR mode: PAR + BIE */
+/* AR mode */
+#define OFF     0       /* AR mode: off , for test instantaneous float solutions */
+#define Full_AR 1       /* AR mode: full integer ambiguity resolution */
+#define PAR     2       /* AR mode: partial integer ambiguity resolution*/
+#define BIE     3       /* AR mode: best integer estimator */
+#define PAR_BIE 4       /* AR mode: PAR + BIE */
 
 #define BIE_amb 1       /* BIE quality control considering ambiguity solition */
 #define BIE_amb_rec 2   /* BIE quality control considering ambiguity + position solution */
@@ -670,6 +674,41 @@ extern "C"
 #define P2_50 8.881784197001252E-16 /* 2^-50 */
 #define P2_55 2.775557561562891E-17 /* 2^-55 */
 
+/* solution statistics output option ----------*/
+#define statopt 15      /* maximum number of solution statistics output flags */
+
+/* init ssat struct for spp/ppp/rtk */
+#define SPP_ssat  0      /* init ssat struct for spp */
+#define SPP_range 1     /* store the distance from the satellite to the receiver at the current epoch */
+#define PPP_ssat 2      /* init ssat struct for ppp */
+#define PPP_vsat 3      /* reset vsat flag for spp */
+#define PPP_update 4    /* update ssat status for ppp */
+#define RTK_ssat 5      /* init ssat struct for rtk */
+#define RTK_resi 6      /* reset resc/resp for rtk */
+#define RTK_fix  7      /* init fix flag for rtk */
+#define RTK_slip 8      /* reset clip flag for rtk */
+#define RTK_update 9    /* update ssat status for rtk*/
+
+/* output file type */
+#define OUTFILE_STAT 0 /* output solution status file (.stat) */
+#define OUTFILE_IPOS 1 /* output solution ipos file (.ipos) */
+#define OUTFILE_FILE 2 /* output solution file (azel/dop) */
+
+/* output type */
+#define OUT_AZEL   0    /* output azel file */
+#define OUT_SATDOP 1    /* output satdop file */
+
+/* trace output type of filter */
+#define TRAE_R    0     /* measurement noise matrix R */
+#define TRAE_H    1     /* measurement matrix H */
+#define TRAE_Ppre 2     /* pre-filter covariance matrix Ppre */
+#define TRAE_Pp   3     /* post-filter covariance matrix Pp */
+#define TRAE_v    4     /* innovation vector v */
+#define TRAE_xpre 5     /* pre-filter state vector xpre */
+#define TRAE_xp   6     /* post-filter state vector xp */
+
+/* end */
+
 #ifdef _WIN32
 #define rtklib_thread_t HANDLE
 #define rtklib_lock_t CRITICAL_SECTION
@@ -698,10 +737,11 @@ extern "C"
     typedef struct
     {                     /* outage simulation */   
         int sim_flag;     /* outage simulation flag (0:off, 1:on) */
+        int valid_flag;   /* Is the current epoch within the set interruption period? (0:no, 1:yes) */
         int week;         /* GPS week */
         int interval;     /* outage interval (s) = outage end time - outage start time */
         int outage[MAXOUT];      /* outage start time series */
-    } sim_t;
+    } outsim_t;
 
     typedef struct
     {                                 /* observation data record */
@@ -1355,7 +1395,7 @@ extern "C"
         double elmin;            /* elevation mask angle (rad) */
         snrmask_t snrmask;       /* SNR mask */
         int sateph;              /* satellite ephemeris/clock (EPHOPT_???) */
-        int artype;              /* LAMBDA algrithm type (0:FAR,1:PAR,2:BIE,3:PAR-BIE)*/
+        int artype;              /* LAMBDA algrithm type (0,OFF,1:FAR,2:PAR,3:BIE,4:PAR-BIE)*/
         int modear;              /* AR mode (0:off,1:continuous,2:instantaneous,3:fix and hold,4:ppp-ar) */
         int glomodear;           /* GLONASS AR mode (0:off,1:on,2:auto cal,3:ext cal) */
         int gpsmodear;           /* GPS AR mode, debug/learning only (0:off,1:on) */
@@ -1564,7 +1604,7 @@ extern "C"
         double range[2];           /* current and previous distance from satellite to receiver */
         double rs[3];              /* satellite position (ecef) (m) */
         double azel[2];            /* azimuth/elevation angles {az,el} (rad) */
-        double cdtr;               /* receiver clock error (m) */
+        double cdtr[2];            /* receiver clock error (m) and clock drift (m/s)  */
         double dts;                /* satellite clock error (m) */
         double dtrp;               /* tropospheric delay (m) */   
         double dion[MAXFREQ];      /* ionospheric delay (m) */
@@ -1840,7 +1880,7 @@ extern "C"
     EXPORT extern const prcopt_t prcopt_default;     /* default positioning options */
     EXPORT extern const solopt_t solopt_default;     /* default solution output options */
     EXPORT extern Debug_Glo_t Debug_Glo;             /* default debug time options */
-    EXPORT extern sim_t sim;                         /* default outage simulation options */
+    EXPORT extern outsim_t outsim;                         /* default outage simulation options */
     EXPORT extern const sbsigpband_t igpband1[9][8]; /* SBAS IGP band 0-8 */
     EXPORT extern const sbsigpband_t igpband2[2][5]; /* SBAS IGP band 9-10 */
     EXPORT extern const char *formatstrs[];          /* stream format strings */
@@ -1849,7 +1889,7 @@ extern "C"
     /*Debug*/
     EXPORT void DebugTime(rtk_t *rtk, gtime_t t, int t1, int t2);
     EXPORT Debug_Glo_t DebugGlo_init(Debug_Glo_t Debug_Glo);
-    EXPORT int  isoutage(rtk_t *rtk, gtime_t t, sim_t sim);
+    EXPORT int  isoutage(rtk_t *rtk, gtime_t t, outsim_t sim);
 
     /* satellites, systems, codes functions --------------------------------------*/
     EXPORT int sys2ix(int sys);
@@ -2060,6 +2100,8 @@ extern "C"
 
     EXPORT void trace(int level, const char *format, ...);
     EXPORT void tracet(int level, const char *format, ...);
+    EXPORT void tracefilter(int level, int type, int nx, int nv, const double *R, const double *H, const double *P_pre, const double *Pp, 
+                        const double *v, const double *x_pre, const double *xp);
     EXPORT void tracemat(int level, const double *A, int n, int m, int p, int q, int flag);
     EXPORT void traceobs(int level, const obsd_t *obs, int n);
     EXPORT void tracenav(int level, const nav_t *nav);
@@ -2315,7 +2357,9 @@ extern "C"
     EXPORT void outprcopt(FILE *fp, const prcopt_t *opt);
     EXPORT void outsolhead(FILE *fp, const prcopt_t *popt, const solopt_t *opt);
     EXPORT void outsol(FILE *fp, sol_t *sol, const double *rb, const prcopt_t *popt, const solopt_t *opt);
+    EXPORT void outsol_general(int type, rtk_t *rtk, const obsd_t *obs, const nav_t *nav, const int nu, int mode);
     EXPORT void outsolstat(rtk_t *rtk, const nav_t *nav);
+    EXPORT void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode);
     EXPORT void outsolex(FILE *fp, const sol_t *sol, const ssat_t *ssat,
                          const solopt_t *opt);
     EXPORT int outnmea_rmc(uint8_t *buff, const sol_t *sol);
@@ -2386,6 +2430,7 @@ extern "C"
 
     /* integer ambiguity resolution ----------------------------------------------*/
     EXPORT double determinant(const double* Qb, int n);
+    EXPORT int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE);
     EXPORT int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const double *y, const double *b, 
                      int na, int nb, int num_candidate, int mode, double *b_BIE, double *temp); 
     EXPORT int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, double *F,
@@ -2404,8 +2449,7 @@ extern "C"
     EXPORT int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
                       const nav_t *nav, const prcopt_t *opt, sol_t *sol, const double *azel, const int *vsat);  
     EXPORT double varerr_spp(const prcopt_t *opt, const ssat_t *ssat, const obsd_t *obs, double el, int sys); 
-    EXPORT int valsol(sol_t *sol, const double *azel, const int *vsat, int n, const prcopt_t *opt, const double *v, double *P, int nv, int nx);
-    EXPORT void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode);                 
+    EXPORT int valsol(sol_t *sol, const double *azel, const int *vsat, int n, const prcopt_t *opt, const double *v, double *P, int nv, int nx);                 
 
     /* precise positioning -------------------------------------------------------*/
     EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss);

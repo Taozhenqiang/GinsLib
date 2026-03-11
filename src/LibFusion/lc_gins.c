@@ -13,8 +13,7 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
 
     ins_init(ins,popt);
 
-    if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode)
-    {
+    if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         sol_t sol0={{0}};
         nx=15; 
 
@@ -36,8 +35,7 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4,0); */
     } 
-    if (GINS_TC==popt->GI_mode)
-    {
+    if (GINS_TC==popt->GI_mode) {
         nx=15; 
         for (i=0;i<nx;i++)
         {
@@ -486,6 +484,7 @@ extern int lc_gins(rtk_t *rtk)
     trace(12,"LC R=\n"); tracemat(12,R,nv+nv_cons,nv+nv_cons,9,4,0);
     trace(12,"LC Pk=\n"); tracemat(12,Pp,nx,nx,13,6,0);
     trace(8,"LC measuremnet update: x=\n");tracemat(8,xp,1,nx,13,6,0); */
+    tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_cons,R,H,P,Pp,v,x,xp);
 
     /* update state covariance matrix */
     matcpy(rtk->lcgins.P,Pp,nx,nx);

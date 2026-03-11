@@ -460,3 +460,50 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
 
     return 1;
 }
+
+/* Integer Ambiguity Resolution Based on BIE ------------------------------
+* args   : int           nb                 I  number of float parameters
+*          int           num_candidate      I  number of candidate fixed solutions
+*          const double  *y                 I  float parameters (nb x 1) (double-diff phase biases)
+*          const double  *Qb                I  covariance matrix of float parameters (nb x nb)
+*          const double  *b                 I  candidate solution set of fixed ambiguities from lambda (nb x num_candidate)
+*          const double  *b_BIE             O  BIE ambiguity solution (nb x 1)
+* return : status (1:ok,other:error)
+*-----------------------------------------------------------------------------*/
+extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE) 
+{
+    int i,j,vnum=num_candidate;
+    double gamma,sum_p;
+    double *db;
+
+    db=mat(nb,1);
+
+    /* overall quality control, test threshold */
+    /* for (j=0;j<nb;j++) db[j]=y[j]-b[j];
+    gamma=2.0*quadratic(db,Qb,nb);
+    while (1) {
+        for (i=0,sum_p=0.0;i<vnum;i++) {
+            for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+            sum_p+=quadratic(db,Qb,nb);
+        }
+        if (sum_p>gamma*vnum) {
+            vnum--;
+            continue;
+        }
+        else break;
+    } */
+
+    /* BIE soluiton */
+    for (i=0,sum_p=0.0;i<vnum;i++) {
+        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+        sum_p+=exp(-0.5*quadratic(db,Qb,nb));
+    }
+    for (i=0;i<vnum;i++) {
+        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+        for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*quadratic(db,Qb,nb))/sum_p;
+    }
+
+    free(db);
+
+    return 1;
+}

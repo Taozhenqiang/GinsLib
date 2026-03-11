@@ -562,8 +562,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
     if (!rtk->interval) gnss_intervel(rtk,&obss,&poss);
 
     /* epoch-by-epoch processing */
-    while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {
-
+    while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {    
         /* DebugGlo initialization */
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
@@ -622,7 +621,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         }
 
         /* GNSS outage simulation */
-        if (isoutage(rtk,Debug_Glo.tNow,sim)||YES==rtk->nominal_upte||0==n) {
+        if (isoutage(rtk,Debug_Glo.tNow,outsim)||YES==rtk->nominal_upte||0==n) {
             rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
                 rtk->lcgins.sol.stat=SOLQ_INS;
@@ -638,8 +637,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         }
 
         /* GNSS/INS tightly coupled integration */
-        if (PMODE_LC_POS!=popt->mode) 
-        {
+        if (PMODE_LC_POS!=popt->mode) {
             /* carrier-phase bias correction */
             if (!strstr(popt->pppopt,"-ENA_FCB")) {
                 corr_phase_bias_ssr(obs,n,&navs);
@@ -1376,8 +1374,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     opentrace(popt,sopt,fopt);
 
     /* read obs and nav data */
-    if (PMODE_LC_POS!=popt->mode) 
-    {
+    if (PMODE_LC_POS!=popt->mode) {
         if (!readobsnav(ts,te,ti,fopt,popt,&obss,&navs,stas)) {
             /* free obs and nav data */
             freeobsnav(&obss,&navs);
@@ -1457,7 +1454,6 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         if (!(*fopt->imu)) showerr("Error : imu file open failed %s",fopt->imu);    
     }
 
-
     /* set antenna parameters */
     if (PMODE_LC_POS!=popt->mode&&popt->mode!=PMODE_SINGLE) {
         setpcv(obss.n>0?obss.data[0].time:timeget(),popt,&navs,&pcvss,&pcvsr,
@@ -1493,7 +1489,6 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     if (PMODE_LC_POS!=popt->mode) {
-
         /* open solution statistics */
         if (sopt->sstat>0) {
             strcpy(statfile,fopt->sol);
@@ -1527,6 +1522,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         }        
     }
 
+    /* index of obs/imu data */
     iobsu=iobsr=isbs=iimu=aborts=reverse_flag=0;
 
     /* forward solutions */

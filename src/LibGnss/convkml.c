@@ -59,27 +59,127 @@ static void outtrack(FILE *f, const solbuf_t *solbuf, const char *color,
     fprintf(f,"</Placemark>\n");
 }
 /* output point --------------------------------------------------------------*/
-static void outpoint(FILE *fp, gtime_t time, const double *pos,
+static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const double *pos,
                      const char *label, int style, int outalt, int outtime)
 {
+    const sol_t *sol=NULL;
     double ep[6],alt=0.0;
-    char str[256]="";
+    char str[256]="", name_str[256]="", desc_str[4096]="";
+    double pos_ref[3], pos_deg[3], vel_enu[3], att_deg[3], pos_sig[3], vel_sig[3], att_sig[3];
+    int i;
     
     fprintf(fp,"<Placemark>\n");
-    if (*label) fprintf(fp,"<name>%s</name>\n",label);
+
+    if (solbuf) {
+        sprintf(name_str,"%.3f",time2gpst(time,NULL));
+        fprintf(fp,"<name>%s</name>\n",name_str);
+    } else if (*label) {
+        fprintf(fp,"<name>%s</name>\n",label);
+    }
+
+    fprintf(fp,"<Snippet maxLines=\"0\"></Snippet>\n");
+
+    if (solbuf) {
+        /* convert position to degree-minute-second format */
+        pos_deg[0]=pos[0]*R2D;  /* latitude */
+        pos_deg[1]=pos[1]*R2D;  /* longitude */
+        pos_deg[2]=pos[2];      /* elevation */
+        
+        /* find corresponding sol data */
+        for (i=0;i<solbuf->n;i++) {
+            if (fabs(timediff(solbuf->data[i].time,time))<0.01) {
+                sol=&solbuf->data[i];
+                break;
+            }
+        }
+        
+        if (sol) {
+            /* compute velocity of ENU frame */
+            if (norm(sol->rr+3,3)>0) {
+                ecef2pos(pos,pos_ref);
+                ecef2enu(pos_ref,sol->rr+3,vel_enu);
+            } else {
+                vel_enu[0]=vel_enu[1]=vel_enu[2]=0.0;
+            }
+            
+            /* attitude */
+            if (norm(sol->att,3)>0) {
+                att_deg[0]=sol->att[0];  /* pitch */
+                att_deg[1]=sol->att[1];  /* roll */
+                att_deg[2]=sol->att[2];  /* yaw */
+            } else {
+                att_deg[0]=att_deg[1]=att_deg[2]=0.0;
+            }
+            
+            /* position accuracy */
+            pos_sig[0]=sqrt(sol->qr[0]);  /* E */
+            pos_sig[1]=sqrt(sol->qr[1]);  /* N */
+            pos_sig[2]=sqrt(sol->qr[2]);  /* U */
+            
+            /* velocity accuracy */
+            if (norm(sol->qv,6)>0) {
+                vel_sig[0]=sqrt(sol->qv[0]);  /* E */
+                vel_sig[1]=sqrt(sol->qv[1]);  /* N */
+                vel_sig[2]=sqrt(sol->qv[2]);  /* U */
+            } else {
+                vel_sig[0]=vel_sig[1]=vel_sig[2]=0.0;
+            }
+            
+            /* attitude accuracy */
+            if (norm(sol->qa,6)>0) {
+                att_sig[0]=sqrt(sol->qa[0]);  /* pitch */
+                att_sig[1]=sqrt(sol->qa[1]);  /* roll */
+                att_sig[2]=sqrt(sol->qa[2]);  /* yaw */
+            } else {
+                att_sig[0]=att_sig[1]=att_sig[2]=0.0;
+            }
+            
+            /* generate description table */
+            time2epoch(time,ep);
+            sprintf(desc_str,
+                "<![CDATA[<B>Epoch:%.0f - Q%d</B><BR><BR>\n"
+                "<TABLE border=\"1\" width=\"100\" Align=\"center\">\n"
+                "<TR ALIGN=RIGHT>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Time</TD><TD>%04.0f/%02.0f/%02.0f</TD><TD>%02.0f:%02.0f:%05.2f</TD><TD>%.0f</TD><TD>%.2f</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Position</TD><TD>%.0f %.0f %.6f</TD><TD>%.0f %.0f %.6f</TD><TD>%.3f</TD><TD>(DMS,m)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Velocity</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m/s)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Attitude</TD><TD>%.5f</TD><TD>%.5f</TD><TD>%.5f</TD><TD>(deg)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>PosSig</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>VelSig</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m/s)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>AttSig</TD><TD>%.5f</TD><TD>%.5f</TD><TD>%.5f</TD><TD>(deg)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Quality</TD><TD>Q%d</TD><TD>%s</TD><TD>%.2f</TD><TD>%s</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>PDOP</TD><TD>%.2f</TD><TD>Age</TD><TD>%.4f</TD><TD>(s)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>NSAT</TD><TD>%2d</TD></TR>\n"
+                "</TABLE>]]>",
+                time2gpst(time,NULL), sol->stat,
+                ep[0], ep[1], ep[2], ep[3], ep[4], ep[5], time2gpst(time,NULL), time2doy(time),
+                floor(fabs(pos_deg[0])), floor(fmod(fabs(pos_deg[0])*60,60)), fmod(fabs(pos_deg[0])*3600,60),
+                floor(fabs(pos_deg[1])), floor(fmod(fabs(pos_deg[1])*60,60)), fmod(fabs(pos_deg[1])*3600,60),
+                pos_deg[2],
+                vel_enu[0], vel_enu[1], vel_enu[2],
+                att_deg[0], att_deg[1], att_deg[2],
+                pos_sig[0], pos_sig[1], pos_sig[2],
+                vel_sig[0], vel_sig[1], vel_sig[2],
+                att_sig[0], att_sig[1], att_sig[2],
+                sol->stat, (SOLQ_SINGLE==sol->stat)?"SPP":((SOLQ_DGPS==sol->stat)?"DGNSS":((SOLQ_FLOAT==sol->stat)?"AMB_FLOAT":((SOLQ_FIX==sol->stat)?"AMB_FIX":((SOLQ_PPP==sol->stat)?"PPP":"NONE")))), sol->ratio,
+                (sol->iFlag==1)?"IMU_ZUPT":"IMU_NONE",
+                sol->dop[1], sol->age,
+                sol->ns);
+            fprintf(fp,"<description>%s</description>\n",desc_str);
+        }
+    }
+
     fprintf(fp,"<styleUrl>#P%d</styleUrl>\n",style);
+
     if (outtime) {
         if      (outtime==2) time=gpst2utc(time);
         else if (outtime==3) time=timeadd(gpst2utc(time),9*3600.0);
         time2epoch(time,ep);
-        if (!*label&&fmod(ep[5]+0.005,TINT)<0.01) {
-            sprintf(str,"%02.0f:%02.0f",ep[3],ep[4]);
-            fprintf(fp,"<name>%s</name>\n",str);
-        }
         sprintf(str,"%04.0f-%02.0f-%02.0fT%02.0f:%02.0f:%05.2fZ",
                 ep[0],ep[1],ep[2],ep[3],ep[4],ep[5]);
         fprintf(fp,"<TimeStamp><when>%s</when></TimeStamp>\n",str);
     }
+
     fprintf(fp,"<Point>\n");
     if (outalt) {
         fprintf(fp,"<extrude>1</extrude>\n");
@@ -89,8 +189,10 @@ static void outpoint(FILE *fp, gtime_t time, const double *pos,
     fprintf(fp,"<coordinates>%13.9f,%12.9f,%5.3f</coordinates>\n",pos[1]*R2D,
             pos[0]*R2D,alt);
     fprintf(fp,"</Point>\n");
+
     fprintf(fp,"</Placemark>\n");
 }
+
 /* save kml file -------------------------------------------------------------*/
 static int savekml(const char *file, const solbuf_t *solbuf, int tcolor,
                    int pcolor, int outalt, int outtime)
@@ -114,6 +216,11 @@ static int savekml(const char *file, const solbuf_t *solbuf, int tcolor,
         fprintf(fp,"    <scale>%.1f</scale>\n",i==0?SIZR:SIZP);
         fprintf(fp,"    <Icon><href>%s</href></Icon>\n",mark);
         fprintf(fp,"  </IconStyle>\n");
+        fprintf(fp,"  <LabelStyle><scale>%d</scale></LabelStyle>\n",0); /* Control whether Google Earth displays coordinate point labels (generally set to off). */
+        fprintf(fp,"  <BalloonStyle>\n");
+        fprintf(fp,"     <text><![CDATA[<b><font color=%s size=%d>$[name]</font></b><br>$[description]</font><br/>]]></text>\n","#cc0000",3);
+        fprintf(fp,"     <bgColor>%s</bgColor>\n","ffd5f3fa");
+        fprintf(fp,"  </BalloonStyle>\n");
         fprintf(fp,"</Style>\n");
     }
     if (tcolor>0) {
@@ -124,14 +231,14 @@ static int savekml(const char *file, const solbuf_t *solbuf, int tcolor,
         fprintf(fp,"  <name>Rover Position</name>\n");
         for (i=0;i<solbuf->n;i++) {
             ecef2pos(solbuf->data[i].rr,pos);
-            outpoint(fp,solbuf->data[i].time,pos,"",
+            outpoint(fp,solbuf->data[i].time,solbuf,pos,"",
                      pcolor==5?qcolor[solbuf->data[i].stat]:pcolor-1,outalt,outtime);
         }
         fprintf(fp,"</Folder>\n");
     }
     if (norm(solbuf->rb,3)>0.0) {
         ecef2pos(solbuf->rb,pos);
-        outpoint(fp,solbuf->data[0].time,pos,"Reference Position",0,outalt,0);
+        outpoint(fp,solbuf->data[0].time,NULL,pos,"Reference Position",0,outalt,0);
     }
     fprintf(fp,"</Document>\n");
     fprintf(fp,"</kml>\n");

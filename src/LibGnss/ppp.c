@@ -1223,7 +1223,7 @@ extern int update_ssat(ssat_t *ssat, const prcopt_t *opt, int code, int sat, int
     if (azel) {
         for (k=0;k<2;k++) ssat->azel[k]=azel[k]; /* azimuth/elevation (deg) */    
     }
-    ssat->cdtr=cdtr;                        /* receiver clock (m) */
+    ssat->cdtr[0]=cdtr;                     /* receiver clock (m) */
     ssat->dts=CLIGHT*dts;                   /* satellite clock (m) */
     ssat->dtrp=dtrp;                        /* tropospheric delay (m) */ 
     if (danto) ssat->pco[fr]=norm(danto,3); /* satellite phase center offset (m) */
@@ -1684,10 +1684,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             break;
         }
 
-        /* trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0);
-        trace(12,"H=\n"); tracemat(12,H,nv,rtk->nx,9,4,0);
-        trace(12,"R=\n"); tracemat(12,R,nv,nv,9,4,0);
-        trace(12,"P=\n"); tracemat(12,Pp,rtk->nx,rtk->nx,9,4,0); */
+        tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,rtk->nx,nv,R,H,Pp,NULL,v,xp,NULL);
 
         /* measurement update of ekf states */
         if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==popt->GI_mode)?KF_GINS:KF_GNSS,mode))) {

@@ -14,7 +14,7 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos'(位置), 'vel'(速度), 'att'(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['trj','err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
@@ -45,15 +45,17 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230/result'
-        filename = 'GNSS_Vehicle_complex_20221230_PPK_F.pos'
+        # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230/result' #laptop
+        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328/result'
+        filename = 'GNSS_Vehicle_open_20190328_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230'
+        # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230' #laptop
+        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 
@@ -131,7 +133,7 @@ def main():
             figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
-            fig, rms_stats = plot_err(data, ref_data, ERROR_TYPE)
+            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, False)
             figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件

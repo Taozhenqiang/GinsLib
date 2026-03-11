@@ -2,8 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from xyz2blh import xyz2blh
 
+def calculate_cep(errors, percentage):
+    """
+    计算给定百分比的CEP (Circular Error Probable)
+    :param errors: 二维误差数组 (N x 2)
+    :param percentage: 百分比 (0-100)
+    :return: CEP值
+    """
+    # 计算每个点的水平误差
+    horizontal_errors = np.linalg.norm(errors, axis=1)
+    # 按升序排序
+    sorted_errors = np.sort(horizontal_errors)
+    # 计算对应百分比的索引
+    idx = int(len(sorted_errors) * percentage / 100)
+    # 返回对应索引的值
+    return sorted_errors[idx] if idx < len(sorted_errors) else sorted_errors[-1]
 
-def plot_err(solution, reference, flag):
+def plot_err(solution, reference, flag, manual_yaxis=False):
 
     nsol = solution.shape[0]
     nref = reference.shape[0]
@@ -40,6 +55,8 @@ def plot_err(solution, reference, flag):
 
     # 初始化RMS统计字典
     rms_stats = {}
+    # 初始化CEP统计字典
+    cep_stats = {}
     
     # 初始化图形列表
     figures = []
@@ -124,7 +141,7 @@ def plot_err(solution, reference, flag):
         rms_e = np.sqrt(np.sum(delta11[:, 0]**2) / delta11.shape[0])
         rms_n = np.sqrt(np.sum(delta11[:, 1]**2) / delta11.shape[0])
         rms_u = np.sqrt(np.sum(delta11[:, 2]**2) / delta11.shape[0])
-        rms_3d = np.sqrt(np.sum(np.linalg.norm(delta11, axis=1)**2) / delta11.shape[0])
+        rms_3d = np.sqrt(np.sum(np.linalg.norm(delta11, axis=1)**2) / delta11.shape[0])      
         
         # 存储位置误差RMS值
         rms_stats['position'] = {
@@ -133,6 +150,33 @@ def plot_err(solution, reference, flag):
             'U': rms_u,
             '3D': rms_3d
         }
+
+        # 计算位置误差CEP值
+        # 水平方向（东和北）
+        horizontal_errors = delta11[:, :2]  # 只取东和北方向
+        cep50_horizontal = calculate_cep(horizontal_errors, 50)
+        cep68_horizontal = calculate_cep(horizontal_errors, 68)
+        cep95_horizontal = calculate_cep(horizontal_errors, 95)
+        
+        # 高程方向（天向）
+        vertical_errors = delta11[:, 2:3]  # 只取天向
+        cep50_vertical = np.percentile(np.abs(vertical_errors), 50)
+        cep68_vertical = np.percentile(np.abs(vertical_errors), 68)
+        cep95_vertical = np.percentile(np.abs(vertical_errors), 95)
+        
+        # 存储位置误差CEP值
+        cep_stats['position'] = {
+            'horizontal': {
+                'CEP50': cep50_horizontal,
+                'CEP68': cep68_horizontal,
+                'CEP95': cep95_horizontal
+            },
+            'vertical': {
+                'CEP50': cep50_vertical,
+                'CEP68': cep68_vertical,
+                'CEP95': cep95_vertical
+            }
+        }
         
         # 绘制位置误差
         axes[0].plot(t, delta1[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
@@ -140,17 +184,43 @@ def plot_err(solution, reference, flag):
         axes[0].grid(True)
         axes[0].set_title(f"Position error (GPS week={int(pva_mea[0, 0])})")
         axes[0].legend([f'RMS: {rms_e:.4f} m'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            # 计算y轴范围，确保包含所有数据点
+            y_min = np.min(delta1[:, 0])
+            y_max = np.max(delta1[:, 0])
+            y_range = y_max - y_min
+            # 设置y轴范围，留出10%的边距
+            # axes[0].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
+            axes[0].set_ylim(-2, 2)
 
         axes[1].plot(t, delta1[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('N [m]')
         axes[1].grid(True)
         axes[1].legend([f'RMS: {rms_n:.4f} m'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta1[:, 1])
+            y_max = np.max(delta1[:, 1])
+            y_range = y_max - y_min
+            # axes[1].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
+            axes[1].set_ylim(-2, 2)
 
         axes[2].plot(t, delta1[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('U [m]')
         axes[2].grid(True)
         axes[2].legend([f'RMS: {rms_u:.4f} m'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta1[:, 2])
+            y_max = np.max(delta1[:, 2])
+            y_range = y_max - y_min
+            # axes[2].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
+            axes[2].set_ylim(-5, 5)
 
         # Remove scientific notation for axis labels
         for ax in axes:
@@ -179,6 +249,32 @@ def plot_err(solution, reference, flag):
             'U': rms_u,
             '3D': rms_3d
         }
+        # 计算速度误差CEP值
+        # 水平方向（东和北）
+        horizontal_errors = delta2[:, :2]  # 只取东和北方向
+        cep50_horizontal = calculate_cep(horizontal_errors, 50)
+        cep68_horizontal = calculate_cep(horizontal_errors, 68)
+        cep95_horizontal = calculate_cep(horizontal_errors, 95)
+        
+        # 高程方向（天向）
+        vertical_errors = delta2[:, 2:3]  # 只取天向
+        cep50_vertical = np.percentile(np.abs(vertical_errors), 50)
+        cep68_vertical = np.percentile(np.abs(vertical_errors), 68)
+        cep95_vertical = np.percentile(np.abs(vertical_errors), 95)
+        
+        # 存储速度误差CEP值
+        cep_stats['velocity'] = {
+            'horizontal': {
+                'CEP50': cep50_horizontal,
+                'CEP68': cep68_horizontal,
+                'CEP95': cep95_horizontal
+            },
+            'vertical': {
+                'CEP50': cep50_vertical,
+                'CEP68': cep68_vertical,
+                'CEP95': cep95_vertical
+            }
+        }
         
         # 绘制速度误差
         axes[0].plot(t, delta2[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
@@ -186,17 +282,38 @@ def plot_err(solution, reference, flag):
         axes[0].grid(True)
         axes[0].set_title(f"Velocity error (GPS week={int(pva_mea[0, 0])})")
         axes[0].legend([f'RMS: {rms_e:.4f} m/s'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta2[:, 0])
+            y_max = np.max(delta2[:, 0])
+            y_range = y_max - y_min
+            axes[0].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         axes[1].plot(t, delta2[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('N [m/s]')
         axes[1].grid(True)
         axes[1].legend([f'RMS: {rms_n:.4f} m/s'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta2[:, 1])
+            y_max = np.max(delta2[:, 1])
+            y_range = y_max - y_min
+            axes[1].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         axes[2].plot(t, delta2[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('U [m/s]')
         axes[2].grid(True)
         axes[2].legend([f'RMS: {rms_u:.4f} m/s'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta2[:, 2])
+            y_max = np.max(delta2[:, 2])
+            y_range = y_max - y_min
+            axes[2].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         # Remove scientific notation for axis labels
         for ax in axes:
@@ -231,6 +348,38 @@ def plot_err(solution, reference, flag):
             'roll': rms_roll,
             'yaw': rms_yaw
         }
+        # 计算姿态误差CEP值
+        # 对于姿态，我们计算每个轴的CEP50、CEP68和CEP95
+        pitch_cep50 = np.percentile(np.abs(delta3[:, 0]), 50)
+        pitch_cep68 = np.percentile(np.abs(delta3[:, 0]), 68)
+        pitch_cep95 = np.percentile(np.abs(delta3[:, 0]), 95)
+        
+        roll_cep50 = np.percentile(np.abs(delta3[:, 1]), 50)
+        roll_cep68 = np.percentile(np.abs(delta3[:, 1]), 68)
+        roll_cep95 = np.percentile(np.abs(delta3[:, 1]), 95)
+        
+        yaw_cep50 = np.percentile(np.abs(delta3[:, 2]), 50)
+        yaw_cep68 = np.percentile(np.abs(delta3[:, 2]), 68)
+        yaw_cep95 = np.percentile(np.abs(delta3[:, 2]), 95)
+        
+        # 存储姿态误差CEP值
+        cep_stats['attitude'] = {
+            'pitch': {
+                'CEP50': pitch_cep50,
+                'CEP68': pitch_cep68,
+                'CEP95': pitch_cep95
+            },
+            'roll': {
+                'CEP50': roll_cep50,
+                'CEP68': roll_cep68,
+                'CEP95': roll_cep95
+            },
+            'yaw': {
+                'CEP50': yaw_cep50,
+                'CEP68': yaw_cep68,
+                'CEP95': yaw_cep95
+            }
+        }
         
         # 绘制姿态误差
         axes[0].plot(t, delta3[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
@@ -238,17 +387,38 @@ def plot_err(solution, reference, flag):
         axes[0].grid(True)
         axes[0].set_title(f"Attitude error (GPS week={int(pva_mea[0, 0])})")
         axes[0].legend([f'RMS: {rms_pitch:.4f} deg'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta3[:, 0])
+            y_max = np.max(delta3[:, 0])
+            y_range = y_max - y_min
+            axes[0].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         axes[1].plot(t, delta3[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('Roll [deg]')
         axes[1].grid(True)
         axes[1].legend([f'RMS: {rms_roll:.4f} deg'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta3[:, 1])
+            y_max = np.max(delta3[:, 1])
+            y_range = y_max - y_min
+            axes[1].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         axes[2].plot(t, delta3[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')
         axes[2].set_ylabel('Yaw[deg]')
         axes[2].grid(True)
         axes[2].legend([f'RMS: {rms_yaw:.4f} deg'])
+        
+        # 如果启用手动设置y轴标签
+        if manual_yaxis:
+            y_min = np.min(delta3[:, 2])
+            y_max = np.max(delta3[:, 2])
+            y_range = y_max - y_min
+            axes[2].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
 
         # Remove scientific notation for axis labels
         for ax in axes:
@@ -258,4 +428,4 @@ def plot_err(solution, reference, flag):
         plt.tight_layout()
         figures.append(('att', fig_att))
 
-    return figures, rms_stats
+    return figures, rms_stats, cep_stats

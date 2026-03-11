@@ -232,7 +232,7 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
 
     /* frequency independent term */
     p+=sprintf(p,"*PRN:  SatPos_x(m),     SatPos_y(m),     SatPos_z(m),    Azimuth(deg),     "
-		"Elev(deg),   RecClock(m),     SatClock(m),     Trop Delay(m),     "
+		"Elev(deg),   RecClock(m),     RecClockDrift(m/s),      SatClock(m),    Trop Delay(m),     "
 		"Windup(c),     Sagnac(m),      RelaTiv(m),     ");
 
     /* frequency dependent term - SF*/ 
@@ -657,7 +657,7 @@ extern void outsolstat(rtk_t *rtk, const nav_t *nav)
     fputs(buff,fp_stat);
 }
 /* output solution ipos ----------------------------------------------------*/
-static void outsolipos(rtk_t *rtk,const nav_t *nav)
+static void outsolipos(rtk_t *rtk, const nav_t *nav)
 {
     prcopt_t *opt=&rtk->opt;
     ssat_t *ssat,ssat0={0};
@@ -688,10 +688,10 @@ static void outsolipos(rtk_t *rtk,const nav_t *nav)
             }  
             if (j>=nfreq) continue;         
         }
-
+        /* PRN, satellite position, azimuth, elevation, receiver clock error, receiver clock drift, satellite clock error, tropospheric, phase windup, sagnac, relative effect */
         satno2id(i+1,id);
-        p+=sprintf(p,"%s:%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,",
-            id,ssat->rs[0],ssat->rs[1],ssat->rs[2],ssat->azel[0]*R2D,ssat->azel[1]*R2D,ssat->cdtr,ssat->dts,ssat->dtrp,
+        p+=sprintf(p,"%s:%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,",
+            id,ssat->rs[0],ssat->rs[1],ssat->rs[2],ssat->azel[0]*R2D,ssat->azel[1]*R2D,ssat->cdtr[0],ssat->cdtr[1],ssat->dts,ssat->dtrp,
             ssat->phw,ssat->sagnac,ssat->rel);
         /* DCB */    
         for (j=0;j<nfreq;j++) {
@@ -743,18 +743,18 @@ extern void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode)
     double tow;
     char id[4],buff[2*MAXSOLMSG+1],*p=buff;
 
-    if (OUTFILE_AZEL==mode) {
+    if (OUT_AZEL&mode) {
         if (!fp_azel) return;
         trace(3,"outsolazel:\n");        
     }
-    else if (OUTFILE_SATDOP==mode) {
+    else if (OUT_SATDOP&mode) {
         if (!fp_satdop) return;
         trace(3,"outsolsatdop:\n");
     }
 
     tow=time2gpst(obs[0].time,&week);
 
-    if (OUTFILE_AZEL==mode) {
+    if (OUT_AZEL&mode) {
         for (i=0;i<nu;i++) {
             sat=obs[i].sat;
             for (j=0;j<NFREQ;j++) { if (obs[i].L[j]!=0.0||obs[i].P[j]!=0.0) break; }
@@ -770,7 +770,7 @@ extern void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode)
 
         fputs(buff,fp_azel);        
     }
-    else if (OUTFILE_SATDOP==mode) {
+    else if (OUT_SATDOP&mode) {
         p+=sprintf(p,"%4d %.3f %6d   %6.2f   %6.2f   %6.2f   %6.2f\n",week,tow,
             sol->ns,sol->dop[0],sol->dop[1],sol->dop[2],sol->dop[3]);
         
@@ -781,7 +781,13 @@ extern void outsolfile(rtk_t *rtk, const obsd_t *obs, const int nu, int mode)
     }
 
 }
-
+/* output solution */
+extern void outsol_general(int type, rtk_t *rtk, const obsd_t *obs, const nav_t *nav, const int nu, int mode) 
+{
+    if (OUTFILE_STAT&type) outsolstat(rtk,nav);
+    if (OUTFILE_IPOS&type) outsolipos(rtk,nav);
+    if (OUTFILE_FILE&type) outsolfile(rtk,obs,nu,mode);
+}
 /* save error message --------------------------------------------------------*/
 static void errmsg(rtk_t *rtk, const char *format, ...)
 {
@@ -3058,7 +3064,8 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
             /* BIE method */
             if (BIE==opt->artype||(PAR_BIE==opt->artype&&!PAR_flag)) {
                 /* quality control for BIE */
-                if (!amb_BIE_qc(rtk,Qab,Qb,y,b,na,nb,num_candidate,BIE_amb_rec,b_BIE,temp)) {
+                /* if (!amb_BIE_qc(rtk,Qab,Qb,y,b,na,nb,num_candidate,BIE_amb_rec,b_BIE,temp)) { */
+                if (!amb_BIE(nb,num_candidate,y,Qb,b,b_BIE)) {
                     nb=0; break;
                 }
               }
@@ -3091,7 +3098,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                 rtk->sol.thres=(float)opt->thresar[0];
             /* validation by ratio-test of residuals*/
             if (((Full_AR==opt->artype||PAR==opt->artype||(PAR_BIE==opt->artype&&PAR_flag))&&(s[0]<=0.0||s[1]/s[0]>=rtk->sol.thres))||
-                ((BIE==opt->artype||(PAR_BIE==opt->artype&&!PAR_flag))&&temp[1]<=2.0*chisqr[na+nb-1])) {
+                ((BIE==opt->artype||(PAR_BIE==opt->artype&&!PAR_flag))/* &&temp[1]<=2.0*chisqr[na+nb-1] */)) {
 
                 /* init non phase-bias states and covariances with float solution values */
                 /* transform float to fixed solution (xa=x-Qab*Qb\(b0-b)) */
@@ -3191,7 +3198,7 @@ static int manage_amb_LAMBDA(rtk_t *rtk, double *bias, double *xa, const int *sa
     trace(11,"num ambiguities used last AR: %d\n",rtk->nb_ar);
 
     /* skip AR if don't meet criteria */
-    if (rtk->opt.mode<=PMODE_DGPS||rtk->opt.modear==ARMODE_OFF||rtk->opt.thresar[0]<1.0||(posvar>rtk->opt.thresar[1]&&rtk->opt.artype<BIE)) {
+    if (rtk->opt.mode<=PMODE_DGPS||rtk->opt.modear==ARMODE_OFF||(ARMODE_INST==rtk->opt.modear&&OFF==rtk->opt.artype)||rtk->opt.thresar[0]<1.0||(posvar>rtk->opt.thresar[1]&&rtk->opt.artype<BIE)) {
         trace(7,"skip AR: posvar=%.2f, thres=%.2f\n",posvar,rtk->opt.thresar[1]);
         rtk->sol.ratio=0.0;
         rtk->sol.prev_ratio1=rtk->sol.prev_ratio2=0.0;
@@ -3593,11 +3600,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
             break;
         }
 
-        /* trace(12,"H=\n");tracemat(12,H,nv,rtk->nx,13,6,0);
-        trace(12,"P_pre=\n");tracemat(12,rtk->P,rtk->nx,rtk->nx,13,6,0);
-        trace(12,"R=\n");tracemat(12,R,nv,nv,13,6,0);
-        trace(12,"P=\n");tracemat(12,Pp,rtk->nx,rtk->nx,13,6,0);
-        trace(8,"measuremnet update: x=\n");tracemat(8,xp,1,rtk->nx,13,6,0); */
+        tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv,R,H,rtk->P,Pp,v,rtk->x,xp);
 
         /* calc zero diff residuals again after kalman filter update */
         if ((stat!=SOLQ_NONE)&&zdres(i+1,rtk,0,obs,nu,rs,dts,var,svh,nav,xp,opt,y,e,azel,freq)) {
@@ -3881,10 +3884,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
     /* rover position and time by single point positioning */ 
     if (!pntpos(rtk,obs,nu,nav,&rtk->opt,&rtk->sol,NULL,rtk->ssat)) {
         trace(7,"spp pos error!\n");
-
         if (!rtk->opt.dynamics) {
-            outsolstat(rtk,nav);
-            outsolipos(rtk,nav);
             return 0;
         }
     }        
@@ -3902,9 +3902,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
 
     /* single point positioning */
     if (opt->mode==PMODE_SINGLE) {
-        outsolfile(rtk,obs,nu,OUTFILE_SATDOP);
-        outsolstat(rtk,nav);
-        outsolipos(rtk,nav);
+        outsol_general(OUTFILE_STAT|OUTFILE_IPOS|OUTFILE_FILE,rtk,obs,nav,nu,OUT_AZEL|OUT_SATDOP);
         return 1;
     }
     /* suppress output of single solution */
@@ -3916,8 +3914,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
         /* PPP observation value pre-check */
         obsScan_ppp(opt,obs,nu,&ns);
         pppos(rtk,obs,ns,nav);
-        outsolstat(rtk,nav);
-        outsolipos(rtk,nav);
+        outsol_general(OUTFILE_STAT|OUTFILE_IPOS|OUTFILE_FILE,rtk,obs,nav,nu,OUT_AZEL|OUT_SATDOP);
         return 1;
     }
     /* check number of data of base station */
@@ -3962,9 +3959,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
 
     /* relative potitioning */
     relpos(rtk,obs,nu,nr,nav);
-    outsolfile(rtk,obs,nu,OUTFILE_SATDOP);
-    outsolstat(rtk,nav);
-    outsolipos(rtk,nav);
+    outsol_general(OUTFILE_STAT|OUTFILE_IPOS|OUTFILE_FILE,rtk,obs,nav,nu,OUT_AZEL|OUT_SATDOP);
 
     return 1;
 }

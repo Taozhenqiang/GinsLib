@@ -115,6 +115,23 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
             row_data['U (m)'] = None
             row_data['3D (m)'] = None
         
+        # 位置误差CEP
+        if stats['position_cep']:
+            pos_cep = stats['position_cep']
+            row_data['Horizontal CEP50 (m)'] = pos_cep['horizontal']['CEP50']
+            row_data['Horizontal CEP68 (m)'] = pos_cep['horizontal']['CEP68']
+            row_data['Horizontal CEP95 (m)'] = pos_cep['horizontal']['CEP95']
+            row_data['Vertical CEP50 (m)'] = pos_cep['vertical']['CEP50']
+            row_data['Vertical CEP68 (m)'] = pos_cep['vertical']['CEP68']
+            row_data['Vertical CEP95 (m)'] = pos_cep['vertical']['CEP95']
+        else:
+            row_data['Horizontal CEP50 (m)'] = None
+            row_data['Horizontal CEP68 (m)'] = None
+            row_data['Horizontal CEP95 (m)'] = None
+            row_data['Vertical CEP50 (m)'] = None
+            row_data['Vertical CEP68 (m)'] = None
+            row_data['Vertical CEP95 (m)'] = None
+        
         # 速度误差（仅GNSS/INS模式）
         if 'LC' in stats['process_mode'] or 'TC' in stats['process_mode']:
             if stats['velocity_rms']:
@@ -129,6 +146,23 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
                 row_data['U (m/s)'] = None
                 row_data['3D (m/s)'] = None
             
+            # 速度误差CEP（仅GNSS/INS模式）
+            if stats['velocity_cep']:
+                vel_cep = stats['velocity_cep']
+                row_data['Horizontal CEP50 (m/s)'] = vel_cep['horizontal']['CEP50']
+                row_data['Horizontal CEP68 (m/s)'] = vel_cep['horizontal']['CEP68']
+                row_data['Horizontal CEP95 (m/s)'] = vel_cep['horizontal']['CEP95']
+                row_data['Vertical CEP50 (m/s)'] = vel_cep['vertical']['CEP50']
+                row_data['Vertical CEP68 (m/s)'] = vel_cep['vertical']['CEP68']
+                row_data['Vertical CEP95 (m/s)'] = vel_cep['vertical']['CEP95']
+            else:
+                row_data['Horizontal CEP50 (m/s)'] = None
+                row_data['Horizontal CEP68 (m/s)'] = None
+                row_data['Horizontal CEP95 (m/s)'] = None
+                row_data['Vertical CEP50 (m/s)'] = None
+                row_data['Vertical CEP68 (m/s)'] = None
+                row_data['Vertical CEP95 (m/s)'] = None
+
             # 姿态误差（仅GNSS/INS模式）
             if stats['attitude_rms']:
                 att_rms = stats['attitude_rms']
@@ -139,15 +173,56 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
                 row_data['pitch (deg)'] = None
                 row_data['roll (deg)'] = None
                 row_data['yaw (deg)'] = None
+            
+            # 姿态误差CEP（仅GNSS/INS模式）
+            if stats['attitude_cep']:
+                att_cep = stats['attitude_cep']
+                row_data['pitch CEP50 (deg)'] = att_cep['pitch']['CEP50']
+                row_data['pitch CEP68 (deg)'] = att_cep['pitch']['CEP68']
+                row_data['pitch CEP95 (deg)'] = att_cep['pitch']['CEP95']
+                row_data['roll CEP50 (deg)'] = att_cep['roll']['CEP50']
+                row_data['roll CEP68 (deg)'] = att_cep['roll']['CEP68']
+                row_data['roll CEP95 (deg)'] = att_cep['roll']['CEP95']
+                row_data['yaw CEP50 (deg)'] = att_cep['yaw']['CEP50']
+                row_data['yaw CEP68 (deg)'] = att_cep['yaw']['CEP68']
+                row_data['yaw CEP95 (deg)'] = att_cep['yaw']['CEP95']
+            else:
+                row_data['pitch CEP50 (deg)'] = None
+                row_data['pitch CEP68 (deg)'] = None
+                row_data['pitch CEP95 (deg)'] = None
+                row_data['roll CEP50 (deg)'] = None
+                row_data['roll CEP68 (deg)'] = None
+                row_data['roll CEP95 (deg)'] = None
+                row_data['yaw CEP50 (deg)'] = None
+                row_data['yaw CEP68 (deg)'] = None
+                row_data['yaw CEP95 (deg)'] = None
         else:
-            # GNSS模式，速度误差和姿态误差为空
+            # GNSS模式，速度误差CEP为空
             row_data['E (m/s)'] = None
             row_data['N (m/s)'] = None
             row_data['U (m/s)'] = None
             row_data['3D (m/s)'] = None
+
+            row_data['Horizontal CEP50 (m/s)'] = None
+            row_data['Horizontal CEP68 (m/s)'] = None
+            row_data['Horizontal CEP95 (m/s)'] = None
+            row_data['Vertical CEP50 (m/s)'] = None
+            row_data['Vertical CEP68 (m/s)'] = None
+            row_data['Vertical CEP95 (m/s)'] = None
+
+            # GNSS模式，姿态误差为空
             row_data['pitch (deg)'] = None
             row_data['roll (deg)'] = None
             row_data['yaw (deg)'] = None
+            row_data['pitch CEP50 (deg)'] = None
+            row_data['pitch CEP68 (deg)'] = None
+            row_data['pitch CEP95 (deg)'] = None
+            row_data['roll CEP50 (deg)'] = None
+            row_data['roll CEP68 (deg)'] = None
+            row_data['roll CEP95 (deg)'] = None
+            row_data['yaw CEP50 (deg)'] = None
+            row_data['yaw CEP68 (deg)'] = None
+            row_data['yaw CEP95 (deg)'] = None
         
         data_rows.append(row_data)
     
@@ -158,8 +233,15 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
     columns_order = [
         '数据', '模式', 
         'E (m)', 'N (m)', 'U (m)', '3D (m)',
+        'Horizontal CEP50 (m)', 'Horizontal CEP68 (m)', 'Horizontal CEP95 (m)',
+        'Vertical CEP50 (m)', 'Vertical CEP68 (m)', 'Vertical CEP95 (m)',
         'E (m/s)', 'N (m/s)', 'U (m/s)', '3D (m/s)',
-        'pitch (deg)', 'roll (deg)', 'yaw (deg)'
+        'Horizontal CEP50 (m/s)', 'Horizontal CEP68 (m/s)', 'Horizontal CEP95 (m/s)',
+        'Vertical CEP50 (m/s)', 'Vertical CEP68 (m/s)', 'Vertical CEP95 (m/s)',
+        'pitch (deg)', 'roll (deg)', 'yaw (deg)',
+        'pitch CEP50 (deg)', 'pitch CEP68 (deg)', 'pitch CEP95 (deg)',
+        'roll CEP50 (deg)', 'roll CEP68 (deg)', 'roll CEP95 (deg)',
+        'yaw CEP50 (deg)', 'yaw CEP68 (deg)', 'yaw CEP95 (deg)'
     ]
     
     # 重新排列列的顺序
@@ -217,13 +299,12 @@ def batch_process_gins(exe_path_input):
     # 存储所有误差统计结果
     all_error_stats = []
 
-    for folder_name in sub_folders:  
-    # for folder_name in sub_folders[36:37]:  # 处理单个子文件夹用于测试
+    # for folder_name in sub_folders:  
+    for folder_name in sub_folders[16:17]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
-        # 3. 【优化】遍历当前数据文件夹中的所有.conf配置文件
-        # 获取所有.conf文件
+        # 3. 遍历当前数据文件夹中的所有.conf配置文件
         conf_files = [f for f in os.listdir(current_work_dir) if f.endswith('.conf')]
         
         if not conf_files:
@@ -247,11 +328,11 @@ def batch_process_gins(exe_path_input):
             
             # 4. 定义处理模式 (保持原有逻辑)
             # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
-            mode = ["PPK"]
+            mode = ["PPK TC"]
             
             # 命令列表
             commands = [
-                # [exe_path,"-k",conf_file,"-p","0","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
+                # [exe_path,"-k",conf_file,"-p","0","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
                 # [exe_path,"-k",conf_file,"-p","0","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins LC
                 # [exe_path,"-k",conf_file,"-p","0","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins TC
                 # [exe_path,"-k",conf_file,"-p","8","-gins","0","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp
@@ -260,9 +341,9 @@ def batch_process_gins(exe_path_input):
                 # [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd
                 # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
                 # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
-                [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk
+                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk
                 # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins LC
-                # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
+                [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","2","-solt","0"], #ppk/ins TC
             ]
 
             # 5. 循环执行命令

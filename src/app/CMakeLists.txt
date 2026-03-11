@@ -13,7 +13,8 @@ source_group("Source Files" FILES source_files)
 set(lib_list ${libGnss} ${libIns} ${libFusion})
 
 add_executable(GINSLIB rnx2rtkp.c)
-add_executable(RTKRCV  rtkrcv.c)
+# add_executable(RTKRCV  rtkrcv.c)
+add_executable(POS2KML pos2kml.c)
 #add_executable(inspure inspure.c)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -36,6 +37,7 @@ elseif(WIN32)
     # Windows 数学库已包含在默认链接中，无需额外添加
     target_link_libraries(GINSLIB ${lib_list})
     # Windows 需要链接系统库，如 pthread（多线程）、ws2_32（网络通信）、winmm（定时器）、kernel32、advapi32（高级API服务）
-    target_link_libraries(RTKRCV ${lib_list} pthread ws2_32 winmm kernel32 advapi32)
+    # target_link_libraries(RTKRCV ${lib_list} pthread ws2_32 winmm kernel32 advapi32)
+    target_link_libraries(POS2KML ${lib_list})
 endif()
 #target_link_libraries(inspure  ${lib_list})

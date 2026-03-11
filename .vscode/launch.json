@@ -27,7 +27,7 @@
                 // "HG4930_Vehicle_open_20201128.conf",           
                 // "HG4930_Vehicle_open_20201214.conf",
                 // "HG4930_Vehicle_open_20210115.conf",  
-                // "IGM-A1_Vehicle_complex_20211217-ylh.conf",
+                "IGM-A1_Vehicle_complex_20211217-ylh.conf",
                 // "IGM-A1_Vehicle_open_20201210.conf",                                         
                 // "IGM-A1_Vehicle_open_20211217-nsh.conf",
                 // "INS_Railway_open_20201004.conf",
@@ -38,7 +38,7 @@
                 // "KVH1750_Vehicle_open_20211217-nsh.conf",    
                 // "KVH1750_Vehicle_open_20201210.conf",
                 // "Mti10_Vehicle_complex_20190428.conf",
-                "STIM300_Vehicle_complex_20221230.conf",
+                // "STIM300_Vehicle_complex_20221230.conf",
                 // "STIM300_Vehicle_complex_20230102.conf",
                 // "STIM300_Vehicle_complex_20230104.conf",
                 // "LCI_Marine_open_20150108.conf",                             
@@ -46,11 +46,11 @@
                 // "ADIS16488_Vehicle_complex_20210728.conf",                              
                
 
-                "-p","2","-gins","0","-sys","GERC","-ion","1","-tro","1","-eph","0","-flt","2","-amb","2","-ambt","3","-solt","0", //ppd/ins TC
+                "-p","0","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","2","-solt","0", //spp/ins TC
                 
                 // "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS_Vehicle\\STIM300_Vehicle_complex_20221230" ,//配置文件
+            "cwd": "${workspaceFolder}\\data\\GNSS_INS_Vehicle\\IGM-A1_Vehicle_complex_20211217-ylh" ,//配置文件
             
         },  
         {
@@ -67,7 +67,28 @@
             ],
             "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328" ,//配置文件
             
-        },      
+        },   
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "POS2KML_Window",
+            "program": "${workspaceFolder}/build/Bin/POS2KML.exe", //注意为可执行文件的完整路径+文件名
+            "args": [
+                "-o",
+                "IGM-A1_Vehicle_complex_20211217-ylh_PPK_F_TC.kml",                              
+                "-c",
+                "2",
+                "-p",
+                "4",
+                "-i",
+                "1",
+                "-q",
+                "0",
+                "IGM-A1_Vehicle_complex_20211217-ylh_PPK_F_TC.pos"
+            ],
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/IGM-A1_Vehicle_complex_20211217-ylh/result" ,//配置文件
+            
+        },    
         {
             "type": "cppdbg",
             "request": "launch",
@@ -122,7 +143,7 @@
             
             // for Windows
             "program": "${workspaceFolder}/script/batch_process.py",
-            "cwd": "${workspaceFolder}/data/GNSS_INS", //工作路径,
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle", //工作路径,
             "console": "externalTerminal",
         },
      {
@@ -131,8 +152,8 @@
             "name":"convert_ref",
             
             // for Windows
-            "program": "${workspaceFolder}\\script\\convert_ref.py",
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS", //工作路径,
+            "program": "${workspaceFolder}/script/convert_ref.py",
+            "cwd": "${workspaceFolder}/data/GNSS_INS", //工作路径,
 
             // for Linux
             // "program": "${workspaceFolder}/script/excute.py",

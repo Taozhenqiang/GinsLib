@@ -141,7 +141,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-solt")&&i+1<argc) prcopt.soltype=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-sys")&&i+1<argc) 
         {
-            prcopt.navsys=0;
+            prcopt.navsys=SYS_NONE;
             for (p=argv[++i];*p;p++) {
                 switch (*p) {
                     case 'G': prcopt.navsys|=SYS_GPS;break;

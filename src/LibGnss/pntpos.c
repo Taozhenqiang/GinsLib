@@ -472,8 +472,9 @@ static int rescode_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs
     double Hpa[3],Hpp[3],Cne[9],Cen[9],Cnb[9],lever_n[3]; /* spp/ins */
     int i,j,nx=rtk->nx,nv=0,sat,sys,fr=0,ic;
 
+    /* receiver position and clock error (m) */
     for (i=0;i<3;i++) rr[i]=x[i];
-    ic=IC(0,opt);     dtr=rtk->x[ic];
+    ic=IC(0,opt); dtr=rtk->x[ic];
 
     xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
     Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
@@ -526,8 +527,8 @@ static int rescode_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs
         /* pseudorange with code bias correction */
         if ((P=prange(obs+i,nav,opt,&vmeas,&dcb))==0.0) continue;
         
-        /* pseudorange residual */
-        v[nv]=P-(r+dtr-CLIGHT*dts[i*2]+dion+dtrp);
+        /* pseudorange residual (v=z-h(x)) */
+        v[nv]=(P-(r-CLIGHT*dts[i*2]+dion+dtrp))-dtr;
         if (ssat) trace(8,"sat=%d: v=%.3f P=%.3f r=%.3f dts=%.6f dion=%.3f dtrp=%.3f\n",
             ssat[i].id,v[nv],P,r,dts[i*2],dion,dtrp);
         
@@ -662,7 +663,7 @@ extern int valsol(sol_t *sol, const double *azel, const int *vsat, int n,
     return 1;
 }
 
-/* time update of position */
+/* time update of position for spp/ins tc mode */
 static void udpos_spp(rtk_t *rtk)
 {
     int i;
@@ -681,12 +682,12 @@ static void udpos_spp(rtk_t *rtk)
     for(i=0;i<ins->nx;i++) rtk->x[i]=0.0;
 }
 
-/* time update of clock*/
+/* time update of clock for spp/ins tc mode */
 static void udclk_spp(rtk_t *rtk)
 {
     prcopt_t *opt=&rtk->opt;
     double dtr;
-    int i,ic,sys=rtk->opt.navsys,dclk=3;
+    int i,ic,sys=rtk->opt.navsys,dclk=GNSISB_RW;
     trace(3,"udclk_spp:\n");
 
     /* initialize GPS clock (white noise) */
@@ -712,7 +713,7 @@ static void udclk_spp(rtk_t *rtk)
             initx(rtk,CLIGHT*dtr,VAR_CLKD,ic);
         }  
         else {
-            rtk->P[ic+ic*rtk->nx]+=SQR(1e-3)*fabs(rtk->tt);
+            rtk->P[ic+ic*rtk->nx]+=SQR(1e-2)*fabs(rtk->tt);
         }
     }   
 
@@ -752,7 +753,7 @@ static void udclk_spp(rtk_t *rtk)
     }
 }
 
-/* time update of states*/
+/* time update of states */
 static void udstate_spp(rtk_t *rtk)
 {
     /* time update of position */
@@ -831,8 +832,8 @@ static int resdop_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs,
         rate=dot3(vs,e)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
                                      rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);                                    
         
-        /* range rate residual (m/s) */
-        v[nv]=(factor*obs[i].D[fr]*CLIGHT/freq-(rate-CLIGHT*dts[1+i*2]+x[3]));
+        /* range rate residual (v=z-h(x)) (m/s) */
+        v[nv]=(factor*obs[i].D[fr]*CLIGHT/freq-(rate-CLIGHT*dts[1+i*2]))-x[3];
         
         /* design matrix */
         if (flag&&(GINS_TC==rtk->opt.GI_mode)){
@@ -920,7 +921,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     double *P,*R,thres=2.0,zupt_time;
     double *xp,*Pp,vx[4];
     int i,j,k,it,m,info,stat=SOLQ_NONE,mode,nv=0,nv_dop=0,nv_cons=0,ns,*sati,*vi;
-    int tc_flag=0; /* spp/ins tc flag */
+    int spp_tc_flag=0; /* spp/ins tc flag */
     
     trace(8,"estpos  : n=%d\n",n);
     
@@ -930,7 +931,6 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     for (i=0;i<3;i++) x[i]=sol->rr[i];
 
     for (i=0;i<MAXITR;i++) {
-
         /* pseudorange residuals (m) */
         nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati,vi);    
 
@@ -945,19 +945,18 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 
         /* weight by variance */
         diag_Cov(nv,var,P,diag_wei);
-        /* trace(12,"H=\n"); tracemat(12,H,nv,NX,9,4,0);
-        trace(12,"v=\n"); tracemat(12,v,nv,1,9,4,0);
-        trace(12,"P=\n"); tracemat(12,P,nv,nv,9,4,0); */
 
         /* least square estimation */
         if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_OFF))) {
             trace(7,"spp lsq error info=%d\n!",info); break;
         }
+
+        tracefilter(12,TRAE_R|TRAE_H|TRAE_v|TRAE_xpre,NX,nv,P,H,NULL,NULL,v,dx,NULL);
+
         for (j=0;j<NX;j++) {
             x[j]+=dx[j];
         }
         if (norm(dx,NX)<1E-4) {
-
             sol->type=0;
             sol->time=timeadd(obs[0].time,-x[3]/CLIGHT);
             sol->dtr[0]=x[3]/CLIGHT; /* receiver clock bias (s) */
@@ -981,31 +980,26 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             if ((stat=valsol(sol,azel,vsat,n,opt,v,P,nv,NX))) {
                 sol->stat=opt->sateph==EPHOPT_SBAS?SOLQ_SBAS:SOLQ_SINGLE;
                 /* save receiver clock (m) */
-                for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr=x[3];
+                for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr[0]=x[3];
             }
             
             /* free memory */
             free(v); free(H); free(var); free(P); free(sati); free(vi);
 
-            if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) { tc_flag=1; break; }
+            if (GINS_TC==opt->GI_mode&&PMODE_SINGLE==opt->mode) { spp_tc_flag=1; break; }
             else return stat;
         }
     }
 
     /* if the iteration exceeds the limit or the solution fails, the solution fails flag is returned */
-    if (i>=MAXITR||(SOLQ_NONE==stat&&!tc_flag)) {
-        if (i>=MAXITR) trace(7,"spp: iteration over limit i=%d!\n",i);       
-        
-        /* free memory */
-        free(v);  free(H);    free(var); 
-        free(P);  free(sati); free(vi);  
-
+    if (i>=MAXITR||(SOLQ_NONE==stat&&!spp_tc_flag)) {
+        if (i>=MAXITR) trace(7,"spp: iteration over limit i=%d!\n",i);              
+        free(v);  free(H);  free(var); free(P);  free(sati); free(vi);  
         return SOLQ_NONE;
     }
     
-    /* spp/ins TC mode */
-    if (tc_flag) {
-
+    /* SPP/INS TC integration */
+    if (spp_tc_flag) {
         /* fusion filter mode */
         mode=rtk->opt.filter;
         /* detected vehicle stationary time (s)*/
@@ -1013,10 +1007,9 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 
         /* if GNSS solution fails, do not enable GNSS/INS integration mode */
         if (stat) {
-
             /* initialization, consider motion constraints (NHC/ZUPT/ZIHR) */
             xp=zeros(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx);
-            nv=2*n+4;
+            nv=2*n+3+1; /* ZUPT+ZIHR */
             v=mat(nv,1); H=mat(nv,rtk->nx); var=mat(nv,1); R=zeros(nv,nv); sati=imat(2*n,1);  
 
             /* time update of ekf states*/
@@ -1028,9 +1021,8 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             /* copy states */
             matcpy(xp,rtk->x,rtk->nx,1);
             matcpy(Pp,rtk->P,rtk->nx,rtk->nx);
-            /* trace(12,"P_pre=\n"); tracemat(12,Pp,rtk->nx,rtk->nx,9,4,0); */
 
-            /* prefit residuals */
+            /* prefit residuals (v=z-h(x))*/
             nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,rtk->ru,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati);
             if (rtk->dopsgn) {
                 nv_dop=resdop_filter(rtk,obs,n,rs,dts,nav,rtk->ru,vx,azel,vsat,v+nv,H+nv*rtk->nx,var+nv,1);                
@@ -1052,10 +1044,6 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             /* measurement noise covariance matrix R */
             diag_Cov(nv+nv_dop+nv_cons,var,R,diag_var);
 
-            /* trace(12,"v=\n"); tracemat(12,v,nv+nv_dop+nv_cons,1,9,4,0);
-            trace(12,"H=\n"); tracemat(12,H,nv+nv_dop+nv_cons,rtk->nx,9,4,0);
-            trace(12,"Rn=\n"); tracemat(12,R,nv+nv_dop+nv_cons,nv+nv_dop+nv_cons,9,4,0); */
-
             /* kalman filter measurement update */
             if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,(nv+nv_dop+nv_cons),KF_GINS,mode))) {
                 trace(7,"SPP/INS filter error (info=%d)\n",info);
@@ -1063,14 +1051,17 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
                 return SOLQ_NONE;
             };
 
+            /* save receiver clock drift (m/s) */
+            for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr[1]=xp[IC(6,opt)];
+
+            tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv+nv_dop+nv_cons,R,H,rtk->P,Pp,v,rtk->x,xp);
+
             /* updates states */
             matcpy(rtk->x,xp,rtk->nx,1);
             matcpy(rtk->P,Pp,rtk->nx,rtk->nx);
-            /* trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
 
             /* reset cross-covariance */
-            /* init_crosscov(rtk,rtk->ins.nx,rtk->nx);
-            trace(12,"Pp=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,4,0); */
+            /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
 
             /* ins feedback correction */
             ins_fedback(rtk,xp);
@@ -1187,7 +1178,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     
     trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
     
-    /* NOTE: for GNSS/INS integration, the INS solution is set to the initial state. */
+    /* NOTE: for GNSS/INS integration, the INS solution is set to the initial solution status */
     if (GINS_TC==opt_.GI_mode) sol->stat=SOLQ_INS;
     else sol->stat=SOLQ_NONE; 
     
@@ -1223,10 +1214,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     /* estimate receiver position and time with pseudorange */
     stat=estpos(rtk,obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp);
 
-    /* output azel/satdop solution */
-    outsolfile(rtk,obs,n,OUTFILE_AZEL);
-
-    /* TC mode and GNSS unavailable, output INS solution */
+    /* SPP/INS TC mode and GNSS unavailable, output INS solution */
     if (!stat&&GINS_TC==opt->GI_mode) {
         rtk->outage++;
         sol->stat=SOLQ_INS;

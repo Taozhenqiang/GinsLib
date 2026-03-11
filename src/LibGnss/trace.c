@@ -91,6 +91,32 @@ extern void trace(int level, const char *format, ...)
     fflush(fp_trace);                     /* Flush the output buffer to ensure the message is written */ 
 }
 
+extern void tracefilter(int level, int type, int nx, int nv, const double *R, const double *H, const double *P_pre, const double *Pp, 
+                        const double *v, const double *x_pre, const double *xp)
+{
+    if (TRAE_R&type) {
+        trace(level,"R=\n"); tracemat(level,R,nv,nv,13,6,0);
+    }
+    if (TRAE_H&type) {
+        trace(level,"H=\n"); tracemat(level,H,nv,nx,13,6,0);
+    }
+    if (TRAE_Ppre&type) {
+        trace(level,"P_pre=%f\n",P_pre); tracemat(level,Pp,nx,nx,13,6,0);
+    }
+    if (TRAE_Pp&type) {
+        trace(level,"Pp=\n"); tracemat(level,Pp,nx,nx,13,6,0);
+    }
+    if (TRAE_v&type) {
+        trace(level,"v=\n"); tracemat(level,v,nv,1,13,6,0);
+    }
+    if (TRAE_xpre&type) {
+        trace(level,"x_pre=\n"); tracemat(level,x_pre,nx,1,13,6,0);
+    }
+    if (TRAE_xp&type) {
+        trace(level,"xp=\n"); tracemat(level,xp,nx,1,13,6,0);
+    }
+}
+
 extern void tracet(int level, const char *format, ...)
 {
     va_list ap;
