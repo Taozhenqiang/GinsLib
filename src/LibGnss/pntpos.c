@@ -935,7 +935,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,&ns,sati,vi);    
 
         /* outlier recject based on standard normal distribution */
-         if (i>=2&&nv>=NX) {
+        if (i>=2&&nv>=NX) {
             nv=outrej_spp(nv,NX,thres,v,H,var,ssat,sati,vi,vsat,i);
         }
 
@@ -947,11 +947,11 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         diag_Cov(nv,var,P,diag_wei);
 
         /* least square estimation */
-        if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_OFF))) {
+        if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_RES))) {
             trace(7,"spp lsq error info=%d\n!",info); break;
         }
 
-        tracefilter(12,TRAE_R|TRAE_H|TRAE_v|TRAE_xpre,NX,nv,P,H,NULL,NULL,v,dx,NULL);
+        /* tracefilter(12,TRAE_R|TRAE_H|TRAE_v|TRAE_xpre,NX,nv,P,H,NULL,NULL,v,dx,NULL); */
 
         for (j=0;j<NX;j++) {
             x[j]+=dx[j];
@@ -999,7 +999,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     }
     
     /* SPP/INS TC integration */
-    if (spp_tc_flag) {
+    if (rtk&&spp_tc_flag) {
         /* fusion filter mode */
         mode=rtk->opt.filter;
         /* detected vehicle stationary time (s)*/
@@ -1054,7 +1054,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             /* save receiver clock drift (m/s) */
             for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr[1]=xp[IC(6,opt)];
 
-            tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv+nv_dop+nv_cons,R,H,rtk->P,Pp,v,rtk->x,xp);
+            /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv+nv_dop+nv_cons,R,H,rtk->P,Pp,v,rtk->x,xp); */
 
             /* updates states */
             matcpy(rtk->x,xp,rtk->nx,1);
@@ -1100,8 +1100,7 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
     rs_e = mat(6,n); dts_e = mat(2,n); vare_e=mat(1,n); azel_e=zeros(2,n);
     svh_e=imat(1,n); vsat_e=imat(1,n); resp_e=mat(1,n); 
     
-    for (i=0;i<n;i++) {
-        
+    for (i=0;i<n;i++) {       
         /* satellite exclusion */
         for (j=k=0;j<n;j++) {
             if (j==i) continue;
@@ -1201,7 +1200,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel_=zeros(2,n); resp=mat(1,n);
     
     /* init ssat struct */
-    if (ssat) init_ssatpar(rtk,obs,n,SPP_ssat,SOLQ_NONE);
+    if (rtk&&ssat) init_ssatpar(rtk,obs,n,SPP_ssat,SOLQ_NONE);
     
     if (opt_.mode!=PMODE_SINGLE) { /* for precise positioning */
         opt_.sateph=EPHOPT_BRDC;
@@ -1215,7 +1214,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     stat=estpos(rtk,obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp);
 
     /* SPP/INS TC mode and GNSS unavailable, output INS solution */
-    if (!stat&&GINS_TC==opt->GI_mode) {
+    if (!stat&&rtk&&GINS_TC==opt->GI_mode) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(&rtk->opt,&rtk->ins,rtk->P,sol,rtk->nx);
@@ -1228,7 +1227,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     }
 
     /* estimate receiver velocity with Doppler */
-    if (stat&&rtk->dopsgn&&(GINS_OFF==rtk->opt.GI_mode)) {
+    if (stat&&rtk&&rtk->dopsgn&&(GINS_OFF==rtk->opt.GI_mode)) {
         estvel(rtk,obs,n,rs,dts,nav,&opt_,sol,azel_,vsat);
     }
 

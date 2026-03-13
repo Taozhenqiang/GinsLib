@@ -2357,9 +2357,9 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
             tropr[i]=prectrop(rtk->sol.time,posr,1,azel+ir[i]*2,opt,x,dtdxr+i*3);
         }
     }
+
     /* step through sat systems: m=0:gps/sbs,1:glo,2:gal,3:bds 4:qzs 5:irn*/
     for (m=0;m<6;m++) {
-
         /* step through phases/codes */
         for (f=opt->mode>PMODE_DGPS?0:nf;f<nf*2;f++) {
             frq=f%nf;code=f<nf?0:1;
@@ -2510,13 +2510,14 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                 if (!code&&(obs[iu[j]].LLI[fr]&LLI_HALFC)) Rj[nv]+=0.01;
                 
                 /* record large post-fit residuals */
+#if 1                
                 if (post>0&&fabs(v[nv])>sqrt((Ri[nv]+Rj[nv]))*THRES_REJECT) {
                     obsi[ne]=j; frqi[ne]=fr; ve[ne]=v[nv]; vari[ne]=(Ri[nv]+Rj[nv]); codei[ne]=code; sysix[ne]=sysi; ne++;
                     sys2frech(sysj,fr,fc);
                     trace(8,"(post) outlier record(ppk) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
                         fr+1,fc,v[nv],sqrt((Ri[nv]+Rj[nv]))*THRES_REJECT,azel[1+iu[j]*2]*R2D);
                 }
-
+#endif
                 /* set valid data flags, for PPK mode, if only pseudorange observations are available, the valid flag is set to 0 */
                 if (opt->mode>PMODE_DGPS) {
                     if (!code) rtk->ssat[sat[i]-1].vsat[fr]=rtk->ssat[sat[j]-1].vsat[fr]=1;
@@ -3600,7 +3601,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
             break;
         }
 
-        tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv,R,H,rtk->P,Pp,v,rtk->x,xp);
+        /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,rtk->nx,nv,R,H,rtk->P,Pp,v,rtk->x,xp); */
 
         /* calc zero diff residuals again after kalman filter update */
         if ((stat!=SOLQ_NONE)&&zdres(i+1,rtk,0,obs,nu,rs,dts,var,svh,nav,xp,opt,y,e,azel,freq)) {

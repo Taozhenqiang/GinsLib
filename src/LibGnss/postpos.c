@@ -62,6 +62,7 @@ static obs_t obss={0};          /* observation data */
 static nav_t navs={0};          /* navigation data */
 static sbs_t sbss={0};          /* sbas messages */
 static sta_t stas[MAXRCV];      /* station information */
+static vrs_t vrs={0};           /* vrs data */
 static int nepoch=0;            /* number of observation epochs */
 static int nitm  =0;            /* number of invalid time marks */
 static int iobsu =0;            /* current rover observation data index */
@@ -557,8 +558,25 @@ static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
     }
 }
 
+/* determine the position of the current reference station (vrs mode) */
+static int vrs_pos(prcopt_t *popt, const obsd_t *obs, vrs_t *vrs)
+{
+    int i;
+    gtime_t obs_time=obs[0].time;
+
+    for (i=vrs->idx;i<vrs->nbase;i++) {
+        if (timediff(vrs->time[i],obs_time)<=0&&timediff(vrs->time[i+1],obs_time)>0) break;
+        /*the observation times of the base station and the rover station are not yet aligned */
+        else if (timediff(vrs->time[i],obs_time)>0) return 0; 
+    }
+    vrs->idx=i;
+    matcpy(popt->rb,vrs->pos[vrs->idx],3,1);
+
+    return 1;
+}
+
 /* process positioning -------------------------------------------------------*/
-static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, int mode)
+static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, int mode)
 {
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
     obsd_t *obs=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2);     /* observations at the current epoch for rover and base */
@@ -571,6 +589,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
     trace(3,"procpos : mode=%d\n",mode); /* 0=forward or backward, 1=forward and backward smoothing */
     
     rtcm_path[0]='\0';
+    vrs.idx=(PMODE_FIXED==popt->mode)?1:0; /* init vrs index */
 
     /* initialize GNSS sampling interval */
     if (!rtk->interval) gnss_intervel(rtk,&obss,&poss);
@@ -581,7 +600,10 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,546727,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,280884,2405); 
+
+        /* determine the position of the current reference station (vrs mode) */
+        if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode) vrs_pos(&rtk->opt,obs,&vrs);
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -635,7 +657,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, rtk_t 
         }
 
         /* GNSS outage simulation */
-        if (isoutage(rtk,Debug_Glo.tNow,outsim)||YES==rtk->nominal_upte||0==n) {
+        if ((outsim.valid_flag=isoutage(rtk,Debug_Glo.tNow,outsim))||YES==rtk->nominal_upte||0==n) {
             rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
                 rtk->lcgins.sol.stat=SOLQ_INS;
@@ -957,7 +979,7 @@ static int readobsnav(gtime_t ts, gtime_t te, double ti, const filopt_t *fopt, c
     /* read user rinex obs file */
     if (*fopt->obs_u&&(ext=strrchr(fopt->obs_u,'.'))) {
         if (ext[1]=='o'||ext[1]=='O'||ext[3]=='o'||ext[3]=='O')
-        if (readrnxt(fopt->obs_u,1,ts,te,ti,prcopt->rnxopt[0],obs,nav,sta)<0) {
+        if (readrnxt(fopt->obs_u,1,ts,te,ti,prcopt,obs,nav,sta)<0) {
             trace(1,"error : insufficient memory of user observation file!\n");
             return 0;
         }
@@ -971,7 +993,7 @@ static int readobsnav(gtime_t ts, gtime_t te, double ti, const filopt_t *fopt, c
     if (PMODE_DGPS<=prcopt->mode&&PMODE_MOVEB>=prcopt->mode) {
         if (*fopt->obs_b&&(ext=strrchr(fopt->obs_b,'.'))) {
             if (ext[1]=='o'||ext[1]=='O'||ext[3]=='o'||ext[3]=='O')
-            if (readrnxt(fopt->obs_b,2,ts,te,ti,prcopt->rnxopt[1],obs,nav,sta+1)<0) {
+            if (readrnxt(fopt->obs_b,2,ts,te,ti,prcopt,obs,nav,sta+1)<0) {
                 trace(1,"error : insufficient memory of base observation file!\n");
                 return 0;
             }
@@ -984,8 +1006,8 @@ static int readobsnav(gtime_t ts, gtime_t te, double ti, const filopt_t *fopt, c
    
     /* read nav file */
     if (*fopt->nav&&(ext=strrchr(fopt->nav,'.'))) {
-        if (ext[1]=='p'||ext[1]=='P'||ext[3]=='p'||ext[3]=='P'||ext[3]=='n')
-        if (readrnxt(fopt->nav,3,ts,te,ti,prcopt->rnxopt[1],obs,nav,NULL)<0) {
+        if (ext[1]=='p'||ext[1]=='P'||ext[1]=='n'||ext[3]=='p'||ext[3]=='P'||ext[3]=='n')
+        if (readrnxt(fopt->nav,3,ts,te,ti,prcopt,obs,nav,NULL)<0) {
             trace(1,"error : insufficient memory of navigation file!\n");
             return 0;
         }
@@ -1073,7 +1095,7 @@ static int avepos(double *ra, int rcv, const obs_t *obs, const nav_t *nav,
     return 1;
 }
 /* station position from file ------------------------------------------------*/
-static int getstapos(const char *file, const char *name, double *r)
+static int getstapos(const char *file, const char *name, vrs_t *vrs, int idx_sta)
 {
     FILE *fp;
     char buff[256],sname[256],*p;
@@ -1098,9 +1120,10 @@ static int getstapos(const char *file, const char *name, double *r)
             /* pos[0]*=D2R;
             pos[1]*=D2R;
             pos2ecef(pos,r); */
-            r[0]=pos[0];
-            r[1]=pos[1];
-            r[2]=pos[2];
+            vrs->pos[idx_sta][0]=pos[0];
+            vrs->pos[idx_sta][1]=pos[1];
+            vrs->pos[idx_sta][2]=pos[2];
+            vrs->nbase++;
             fclose(fp);
             return 1;
         }
@@ -1114,42 +1137,54 @@ static int antpos(prcopt_t *opt, int rcvno, const obs_t *obs, const nav_t *nav,
                   const sta_t *sta, const char *posfile)
 {
     double *rr=rcvno==1?opt->ru:opt->rb,del[3],pos[3],dr[3]={0};
-    int i,postype=rcvno==1?opt->rovpos:opt->refpos;
+    int i=0,j,k=(PMODE_FIXED==opt->mode&&rcvno==2)?1:0,postype=rcvno==1?opt->rovpos:opt->refpos;
     char *name;
 
     trace(3,"antpos  : rcvno=%d\n",rcvno);
 
-    if (postype==POSOPT_SINGLE) { /* average of single position */
+    if (postype==POSOPT_SINGLE) { /* average of single position ,don't support for vrs mode */
         if (!avepos(rr,rcvno,obs,nav,opt)) {
             showmsg("error : station pos computation");
             return 0;
         }
     }
     else if (postype==POSOPT_FILE) { /* read from position file */
-        name=stas[rcvno==1?0:1].name;
-        if (!getstapos(posfile,name,rr)) {
-            showmsg("error : no position of %s in %s",name,posfile);
-            return 0;
-        }
+        while (strlen(stas[rcvno==1?0:(i+1)].name)>0) {
+            name=stas[rcvno==1?0:(i+1)].name;
+            if (!getstapos(posfile,name,&vrs,k)) {
+                showmsg("error : no position of %s in %s",name,posfile);
+                return 0;
+            }
+            vrs.time[k]=stas[i+1].time;
+            i++;k++;                 
+        }     
+        for (j=0;j<3;j++) rr[j]=vrs.pos[0][j]; /* init pos for first station */
     }
     else if (postype==POSOPT_RINEX) { /* get from rinex header */
-        if (norm(stas[rcvno==1?0:1].pos,3)<=0.0) {
-            showmsg("error : no position in rinex header");
-            trace(1,"no position in rinex header\n");
-            return 0;
-        }
-        /* add antenna delta unless already done in antpcv() */
-        if (!strcmp(opt->anttype[rcvno],"*")) {
-            if (stas[rcvno==1?0:1].deltype==0) { /* enu */
-                for (i=0;i<3;i++) del[i]=stas[rcvno==1?0:1].del[i];
-                del[2]+=stas[rcvno==1?0:1].hgt;
-                ecef2pos(stas[rcvno==1?0:1].pos,pos);
-                enu2ecef(pos,del,dr);
-            }  else { /* xyz */
-                for (i=0;i<3;i++) dr[i]=stas[rcvno==1?0:1].del[i];
+        while (strlen(stas[rcvno==1?0:(i+1)].name)>0) {
+            if (norm(stas[rcvno==1?0:(i+1)].pos,3)<=0.0) {
+                showmsg("error : no position in rinex header");
+                trace(1,"no position in rinex header\n");
+                return 0;
             }
+            /* add antenna delta unless already done in antpcv() */
+            if (!strcmp(opt->anttype[rcvno],"*")) {
+                if (stas[rcvno==1?0:(i+1)].deltype==0) { /* enu */
+                    for (j=0;j<3;j++) del[j]=stas[rcvno==1?0:(i+1)].del[j];
+                    del[2]+=stas[rcvno==1?0:(i+1)].hgt;
+                    ecef2pos(stas[rcvno==1?0:(i+1)].pos,pos);
+                    enu2ecef(pos,del,dr);
+                }  else { /* xyz */
+                    for (j=0;j<3;j++) dr[j]=stas[rcvno==1?0:(i+1)].del[j];
+                }
+            }
+            for (j=0;j<3;j++) {
+                vrs.pos[k][j]=stas[rcvno==1?0:(i+1)].pos[j]+dr[j]; 
+                if (i==0) rr[j]=stas[rcvno==1?0:(i+1)].pos[j]+dr[j]; /* init pos for first station */ 
+            } 
+            vrs.time[k]=stas[i+1].time;
+            vrs.nbase++;i++;k++; 
         }
-        for (i=0;i<3;i++) rr[i]=stas[rcvno==1?0:1].pos[i]+dr[i];
     }
     return 1;
 }
@@ -1475,7 +1510,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     /* rover/reference fixed position */
-    if (popt->mode==PMODE_FIXED) {
+     if (popt->mode==PMODE_FIXED) {
         if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
             free(rtk);

@@ -357,7 +357,7 @@ static void convcode(double ver, int sys, const char *str, char *type)
     trace(3,"convcode: ver=%.2f sys=%2d type= %s -> %s\n",ver,sys,str,type);
 }
 /* decode RINEX observation data file header ---------------------------------*/
-static void decode_obsh(FILE *fp, char *buff, double ver, int *tsys,
+static void decode_obsh(FILE *fp, char *buff, int statype, int *vrs_flag, double ver, int *tsys,
                         char tobs[][MAXOBSTYPE][4], nav_t *nav, sta_t *sta)
 {
     /* default codes for unknown code */
@@ -380,6 +380,7 @@ static void decode_obsh(FILE *fp, char *buff, double ver, int *tsys,
 
     if      (strstr(label,"MARKER NAME"         )) {
         if (sta) setstr(sta->name,buff,60);
+        if (STA_VRS==statype&&vrs_flag) *vrs_flag=1; /* for vrs mode */
     }
     else if (strstr(label,"MARKER NUMBER"       )) { /* opt */
         if (sta) setstr(sta->marker,buff,20);
@@ -650,64 +651,6 @@ static void decode_hnavh(char *buff, nav_t *nav)
     else if (strstr(label,"D-UTC A0,A1,T,W,S,U" )) {} /* opt */
     else if (strstr(label,"LEAP SECONDS"        )) {} /* opt */
 }
-/* read RINEX file header ----------------------------------------------------*/
-static int readrnxh(FILE *fp, double *ver, char *type, int *sys, int *tsys,
-                    char tobs[][MAXOBSTYPE][4], nav_t *nav, sta_t *sta, int flag)
-{
-    char buff[MAXRNXLEN],*label=buff+60;
-    int i=0;
-
-    trace(3,"readrnxh:\n");
-
-    *ver=2.10; *type=' '; *sys=SYS_GPS; *tsys=TSYS_GPS;
-
-    while (fgets(buff,MAXRNXLEN,fp)) {
-
-        if (strlen(buff)<=60) {
-            continue;
-        }
-        else if (strstr(label,"RINEX VERSION / TYPE")) {
-            *ver=str2num(buff,0,9);
-            /* format change for clock files >=3.04 */
-            *type=(*ver<3.04||flag==0)?*(buff+20):*(buff+21);
-
-            /* satellite system */
-            switch (*(buff+40)) {
-                case ' ':
-                case 'G': *sys=SYS_GPS;  *tsys=TSYS_GPS; break;
-                case 'R': *sys=SYS_GLO;  *tsys=TSYS_UTC; break;
-                case 'E': *sys=SYS_GAL;  *tsys=TSYS_GAL; break; /* v.2.12 */
-                case 'S': *sys=SYS_SBS;  *tsys=TSYS_GPS; break;
-                case 'J': *sys=SYS_QZS;  *tsys=TSYS_QZS; break; /* v.3.02 */
-                case 'C': *sys=SYS_CMP;  *tsys=TSYS_CMP; break; /* v.2.12 */
-                case 'I': *sys=SYS_IRN;  *tsys=TSYS_IRN; break; /* v.3.03 */
-                case 'M': *sys=SYS_NONE; *tsys=TSYS_GPS; break; /* mixed */
-                default :
-                    trace(2,"not supported satellite system: %c\n",*(buff+40));
-                    break;
-            }
-            continue;
-        }
-        else if (strstr(label,"PGM / RUN BY / DATE")) {
-            continue;
-        }
-        else if (strstr(label,"COMMENT")) {
-            continue;
-        }
-        switch (*type) { /* file type */
-            case 'O': decode_obsh(fp,buff,*ver,tsys,tobs,nav,sta); break;
-            case 'N': decode_navh (buff,nav); break;
-            case 'G': decode_gnavh(buff,nav); break;
-            case 'H': decode_hnavh(buff,nav); break;
-            case 'J': decode_navh (buff,nav); break; /* extension */
-            case 'L': decode_navh (buff,nav); break; /* extension */
-        }
-        if (strstr(label,"END OF HEADER")) return 1;
-
-        if (++i>=MAXPOSHEAD&&*type==' ') break; /* no RINEX file */
-    }
-    return 0;
-}
 /* decode observation epoch --------------------------------------------------*/
 static int decode_obsepoch(FILE *fp, char *buff, double ver, gtime_t *time,
                            int *flag, int *sats)
@@ -739,7 +682,7 @@ static int decode_obsepoch(FILE *fp, char *buff, double ver, gtime_t *time,
                 if (!fgets(buff,MAXRNXLEN,fp)) break;
                 j=32;
             }
-            if (i<MAXOBS) {
+            if (i<MAXOBS&&sats) {
                 strncpy(satid,buff+j,3);
                 sats[i]=satid2no(satid);
             }
@@ -764,6 +707,78 @@ static int decode_obsepoch(FILE *fp, char *buff, double ver, gtime_t *time,
     }
     trace(3,"decode_obsepoch: time=%s flag=%d\n",time_str(*time,3),*flag);
     return n;
+}
+/* read RINEX file header ----------------------------------------------------*/
+static int readrnxh(FILE *fp, double *ver, char *type, int *sys, int *tsys,
+                    char tobs[][MAXOBSTYPE][4], nav_t *nav, sta_t *sta, int statype, int flag)
+{
+    gtime_t time={0.0};
+    char buff[MAXRNXLEN],*label=buff+60;
+    int i=0,nbase=0,nsat=0,flag_h=0,vrs_flag=0;
+
+    trace(3,"readrnxh:\n");
+
+    *ver=2.10; *type=' '; *sys=SYS_GPS; *tsys=TSYS_GPS;
+
+    while (fgets(buff,MAXRNXLEN,fp)) {
+
+        if (strlen(buff)<=60&&STA_SINGLE==statype) {
+            continue;
+        }
+        else if (strstr(label,"RINEX VERSION / TYPE")) {
+            *ver=str2num(buff,0,9);
+            /* format change for clock files >=3.04 */
+            *type=(*ver<3.04||flag==0)?*(buff+20):*(buff+21);
+
+            /* satellite system */
+            switch (*(buff+40)) {
+                case ' ':
+                case 'G': *sys=SYS_GPS;  *tsys=TSYS_GPS; break;
+                case 'R': *sys=SYS_GLO;  *tsys=TSYS_UTC; break;
+                case 'E': *sys=SYS_GAL;  *tsys=TSYS_GAL; break; /* v.2.12 */
+                case 'S': *sys=SYS_SBS;  *tsys=TSYS_GPS; break;
+                case 'J': *sys=SYS_QZS;  *tsys=TSYS_QZS; break; /* v.3.02 */
+                case 'C': *sys=SYS_CMP;  *tsys=TSYS_CMP; break; /* v.2.12 */
+                case 'I': *sys=SYS_IRN;  *tsys=TSYS_IRN; break; /* v.3.03 */
+                case 'M': *sys=SYS_NONE; *tsys=TSYS_GPS; break; /* mixed */
+                default :
+                    trace(7,"rinexc: not supported satellite system: %c\n",*(buff+40));
+                    return 0;
+            }
+            continue;
+        }
+        else if (strstr(label,"PGM / RUN BY / DATE")) {
+            continue;
+        }
+        else if (strstr(label,"COMMENT")) {
+            continue;
+        }
+        switch (*type) { /* file type */
+            case 'O': decode_obsh(fp,buff,statype,&vrs_flag,*ver,tsys,tobs,nav,sta+nbase); break;
+            case 'N': decode_navh (buff,nav); break;
+            case 'G': decode_gnavh(buff,nav); break;
+            case 'H': decode_hnavh(buff,nav); break;
+            case 'J': decode_navh (buff,nav); break; /* extension */
+            case 'L': decode_navh (buff,nav); break; /* extension */
+        }
+        if (STA_VRS==statype&&vrs_flag&&(nsat=decode_obsepoch(fp,buff,*ver,&time,&flag_h,NULL))>0) {
+            if (time.time) {
+                 sta[nbase].time=time; time.time=time.sec=0.0; 
+                 nbase++;vrs_flag=0;
+            }
+        }
+        if (strstr(label,"END OF HEADER")&&STA_SINGLE==statype) return 1;
+
+        if (++i>=MAXPOSHEAD&&*type==' ') return 0; /* no RINEX file */
+    }
+    /* move the file pointer to the end of the header file  */
+    if (STA_VRS==statype) {
+        rewind(fp); /* rewind to file head */
+        while (fgets(buff,MAXRNXLEN,fp)) {
+            if (strstr(label,"END OF HEADER")) break;
+        }
+    }
+    return 1;
 }
 /* decode observation data ---------------------------------------------------*/
 static int decode_obsdata(FILE *fp, char *buff, double ver, int mask,
@@ -1092,7 +1107,7 @@ static int readrnxobsb(FILE *fp, const char *opt, double ver, int *tsys,
         else if (*flag==3||*flag==4) { /* new site or header info follows */
 
             /* decode RINEX observation data file header */
-            decode_obsh(fp,buff,ver,tsys,tobs,NULL,sta);
+            decode_obsh(fp,buff,0,NULL,ver,tsys,tobs,NULL,sta);
         }
         if (++i>nsat) return n;
     }
@@ -1577,17 +1592,18 @@ static int readrnxclk(FILE *fp, const char *opt, double ver, int index, nav_t *n
 }
 /* read RINEX file -----------------------------------------------------------*/
 static int readrnxfp(FILE *fp, gtime_t ts, gtime_t te, double tint,
-                     const char *opt, int flag, int index, char *type,
+                     const prcopt_t *popt, int flag, int index, char *type,
                      obs_t *obs, nav_t *nav, sta_t *sta)
 {
     double ver;
-    int sys,tsys=TSYS_GPS;
+    int sys,tsys=TSYS_GPS,statype=(index==2)?popt->statype:STA_SINGLE;
     char tobs[RNX_NUMSYS][MAXOBSTYPE][4]={{""}};
-    
+    const char *opt=(index==1)?popt->rnxopt[0]:popt->rnxopt[1];
+
     trace(3,"readrnxfp: flag=%d index=%d\n",flag,index);
 
     /* read RINEX file header */
-    if (!readrnxh(fp,&ver,type,&sys,&tsys,tobs,nav,sta,flag)) return 0;
+    if (!readrnxh(fp,&ver,type,&sys,&tsys,tobs,nav,sta,statype,flag)) return 0;
 
     /* flag=0:except for clock,1:clock */
     if ((!flag&&*type=='C')||(flag&&*type!='C')) return 0;
@@ -1608,7 +1624,7 @@ static int readrnxfp(FILE *fp, gtime_t ts, gtime_t te, double tint,
 }
 /* uncompress and read RINEX file --------------------------------------------*/
 static int readrnxfile(const char *file, gtime_t ts, gtime_t te, double tint,
-                       const char *opt, int flag, int index, char *type,
+                       const prcopt_t *opt, int flag, int index, char *type,
                        obs_t *obs, nav_t *nav, sta_t *sta)
 {
     FILE *fp;
@@ -1712,7 +1728,7 @@ extern int rnxcomment(rnxopt_t *opt, const char *format, ...) {
 *
 *-----------------------------------------------------------------------------*/
 extern int readrnxt(const char *file, int rcv, gtime_t ts, gtime_t te,
-                    double tint, const char *opt, obs_t *obs, nav_t *nav,
+                    double tint, const prcopt_t *opt, obs_t *obs, nav_t *nav,
                     sta_t *sta)
 {
     int i,n,stat=0;
@@ -1748,14 +1764,14 @@ extern int readrnxt(const char *file, int rcv, gtime_t ts, gtime_t te,
 
     return stat;
 }
-extern int readrnx(const char *file, int rcv, const char *opt, obs_t *obs,
+extern int readrnx(const char *file, int rcv, const prcopt_t *popt, obs_t *obs,
                    nav_t *nav, sta_t *sta)
 {
     gtime_t t={0};
 
     trace(3,"readrnx : file=%s rcv=%d\n",file,rcv);
 
-    return readrnxt(file,rcv,t,t,0.0,opt,obs,nav,sta);
+    return readrnxt(file,rcv,t,t,0.0,popt,obs,nav,sta);
 }
 /* compare precise clock -----------------------------------------------------*/
 static int cmppclk(const void *p1, const void *p2)
@@ -1823,7 +1839,7 @@ extern int readrnxc(const char *file, nav_t *nav)
 
     /* read rinex clock files */
     for (i=0;i<n;i++) {
-        if (readrnxfile(files[i],t,t,0.0,"",1,index++,&type,NULL,nav,NULL)) {
+        if (readrnxfile(files[i],t,t,0.0,NULL,1,index++,&type,NULL,nav,NULL)) {
             continue;
         }
         stat=0;
@@ -1916,7 +1932,7 @@ extern int open_rnxctr(rnxctr_t *rnx, FILE *fp)
     trace(3,"open_rnxctr:\n");
 
     /* read RINEX header from file */
-    if (!readrnxh(fp,&ver,&type,&sys,&tsys,tobs,&rnx->nav,&rnx->sta,0)) {
+    if (!readrnxh(fp,&ver,&type,&sys,&tsys,tobs,&rnx->nav,&rnx->sta,0,0)) {
         trace(2,"open_rnxctr: rinex header read error\n");
         return 0;
     }

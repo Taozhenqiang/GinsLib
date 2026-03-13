@@ -68,12 +68,6 @@ extern "C"
     "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
 
 /* common option */
-#define diag_var 0       /* option: covariance */
-#define diag_wei 1       /* option: weights */
-
-#define TRUE  1          /* true */         
-#define FALSE 0          /* false */
-
 #define PI 3.1415926535897932  /* pi */
 #define D2R (PI / 180.0)       /* deg to rad */
 #define R2D (180.0 / PI)       /* rad to deg */
@@ -88,6 +82,15 @@ extern "C"
 #define FE_WGS84 (1.0 / 298.257223563) /* earth flattening (WGS84) */
 
 #define HION 350000.0 /* ionosphere height (m) */
+
+#define diag_var 0       /* option: covariance */
+#define diag_wei 1       /* option: weights */
+
+#define TRUE  1          /* true */         
+#define FALSE 0          /* false */
+
+#define STA_SINGLE 0     /* option: single base station */
+#define STA_VRS    1     /* option: vrs (multi base stations) */
 
 /* GNSS/INS options ---------------*/
 /* ins constants/macros */
@@ -1229,7 +1232,16 @@ extern "C"
         double hgt;            /* antenna height (m) */
         int glo_cp_align;      /* GLONASS code-phase alignment (0:no,1:yes) */
         double glo_cp_bias[4]; /* GLONASS code-phase biases {1C,1P,2C,2P} (m) */
+        gtime_t time;          /* initial observation time (GPST) */
     } sta_t;
+
+    typedef struct
+    {                           /* vrs (multi base stations in one file) parameters type*/
+        int nbase;              /* number of base stations */
+        gtime_t time[MAXRCV];   /* start epoch timestamps of each base station */
+        int idx;                /* index of base station in vrs file */
+        double pos[MAXRCV][3];  /* position of base station (ecef) (m) */
+    } vrs_t;
 
     typedef struct
     {                      /* solution type */
@@ -1420,6 +1432,7 @@ extern "C"
         int sbascorr;            /* SBAS correction options */
         int sbassatsel;          /* SBAS satellite selection (0:all) */
         int rovpos;              /* rover position for fixed mode */
+        int statype;             /* station type (0:single,1:vrs(multi station)) */
         int refpos;              /* base position for relative mode */
                                  /* (0:pos in prcopt,  1:average of single pos, */
                                  /*  2:read from file, 3:rinex header, 4:rtcm pos) */
@@ -1513,7 +1526,6 @@ extern "C"
         int datum;          /* datum (0:WGS84,1:Tokyo) */
         int height;         /* height (0:ellipsoidal,1:geodetic) */
         int geoid;          /* geoid model (0:EGM96,1:JGD2000) */
-        int solstatic;      /* solution of static mode (0:all,1:single) */
         int sstat;          /* solution statistics level (0:off,1:states,2:residuals) */
         int ipos;           /* solution information (0:off,1:on) */
         int azel;           /* azimuth/elevation angle (0:off,1:on) */
@@ -2192,10 +2204,10 @@ extern "C"
     EXPORT int jgd2tokyo(double *pos);
 
     /* rinex functions -----------------------------------------------------------*/
-    EXPORT int readrnx(const char *file, int rcv, const char *opt, obs_t *obs,
+    EXPORT int readrnx(const char *file, int rcv, const prcopt_t *popt, obs_t *obs,
                        nav_t *nav, sta_t *sta);
     EXPORT int readrnxt(const char *file, int rcv, gtime_t ts, gtime_t te,
-                        double tint, const char *opt, obs_t *obs, nav_t *nav,
+                        double tint, const prcopt_t *opt, obs_t *obs, nav_t *nav,
                         sta_t *sta);
     EXPORT int readrnxc(const char *file, nav_t *nav);
     EXPORT int outrnxobsh(FILE *fp, const rnxopt_t *opt, const nav_t *nav);

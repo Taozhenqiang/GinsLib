@@ -1408,7 +1408,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
                 tdcp_flag=0;trace(7,"tdcp lsq error info=%d\n!",info);
             }
 
-            tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,4,nv,P,H,rtk->P,NULL,v,dx,NULL);
+            /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,4,nv,P,H,rtk->P,NULL,v,dx,NULL); */
 
             /* calculate the posterior residuals */
             matmul("NN",nv,nx,1,H,dx,v,1.0,-1.0);

@@ -479,12 +479,7 @@ extern int lc_gins(rtk_t *rtk)
         trace(2,"lc_gins (%d) filter error info=%d\n",i+1,info);
         stat=SOLQ_NONE;
     }   
-    /* trace(12,"LC H=\n");tracemat(12,H,nv+nv_cons,nx,13,6,0);
-    trace(12,"LC P_pre=\n");tracemat(12,P,nx,nx,13,6,0);
-    trace(12,"LC R=\n"); tracemat(12,R,nv+nv_cons,nv+nv_cons,9,4,0);
-    trace(12,"LC Pk=\n"); tracemat(12,Pp,nx,nx,13,6,0);
-    trace(8,"LC measuremnet update: x=\n");tracemat(8,xp,1,nx,13,6,0); */
-    tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_cons,R,H,P,Pp,v,x,xp);
+    /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_cons,R,H,P,Pp,v,x,xp); */
 
     /* update state covariance matrix */
     matcpy(rtk->lcgins.P,Pp,nx,nx);

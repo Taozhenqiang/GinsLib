@@ -225,7 +225,7 @@ Debug_Glo_t Debug_Glo={
 };         
 
 outsim_t outsim={
-    1,       /* outage simulation flag (0:off, 1:on) */
+    0,       /* outage simulation flag (0:off, 1:on) */
     0,       /* Is the current epoch within the set interruption period? (0:no, 1:yes) */
     2188,    /* GPS week */
     600,     /* outage interval (s) = outage end time- outage start time */
@@ -281,7 +281,8 @@ const prcopt_t prcopt_default={
     0,
     0,/* niter,codesmooth,intpref,sbascorr,sbassatsel */
     0,
-    0,                                              /* rovpos,refpos */
+    0,
+    0,                                              /* rovpos,statype,refpos */
     {0},{0},
     {300.0,300.0,300.0},                          /* eratio[] */
     {100.0,0.003,0.003,0.0,1.0,52.0,0.0,0.0},/* err[-,base,el,bl,dop,snr_max,snr,rcverr] */
@@ -327,9 +328,8 @@ const solopt_t solopt_default={
     0,
     0,
     0,
-    0,
     {0},
-    0,         /* solstatic,sstat,ipos,azel,satdop,statopt,trace */
+    0,         /* sstat,ipos,azel,satdop,statopt,trace */
     {0.0,0.0},/* nmeaintv */
     " ",
     "" /* separator/program name */
@@ -557,11 +557,7 @@ extern int isoutage(rtk_t *rtk, gtime_t t, outsim_t outsim)
 
     for (i=0;i<MAXOUT;i++) {
         if (outsim.outage[i]&&time>=outsim.outage[i]&&time<=(outsim.outage[i]+outsim.interval)) {
-            outsim.valid_flag=1;
             return 1;
-        }
-        else {
-            outsim.valid_flag=0;
         }
     }
     
@@ -624,6 +620,7 @@ extern void diag_Cov(int nv, const double *var, double *P, int opt)
 /* calculate GNSS sampling interval -------------------------------------------
 *args  :  rtk_t    *rtk   IO   rtk structure
 *         obs_t    *obss  I   observation data
+*         pos_t    *poss  I   position data (LC mode)
 *return:none
 *-----------------------------------------------------------------------------*/
 extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
@@ -689,7 +686,7 @@ extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
     return 1;
 }
 
-/* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
+/* the sign of doppler observations is determined based on pseudorange variation between adjacent epochs */
 extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old)
 {   
     int i,j,fr,sys,nr,nr_old;
@@ -714,7 +711,7 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     /* pseudorange variation between adjacent epochs */
     dr=obs[i].P[fr]-obs_old[j].P[fr];
 
-    /* when the satellite is close to the receiver, the Doppler sign is positive; otherwise, it is negative */
+    /* when the satellite is close to the receiver, the doppler sign is positive; otherwise, it is negative */
     if (SGN(dr)==-SGN(obs[i].D[fr])) {
         rtk->dopsgn=-1.0;
     }
@@ -722,7 +719,7 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
         rtk->dopsgn=1.0;
     }
 
-    /* in both forward and backward processing modes, the sign of Doppler observations remains unchanged */
+    /* in both forward and backward processing modes, the sign of doppler observations remains unchanged ? */
     if (SOLTYPE_BACKWARD==rtk->opt.reverse) {
         rtk->dopsgn=-rtk->dopsgn;
     }
@@ -1888,7 +1885,7 @@ extern double quadratic(const double *v, const double *Q, int n)
         return 0.0;      
     }
 
-    free(A);free(vQ);
+    free(A); free(vQ);
 
     return dv;
 }

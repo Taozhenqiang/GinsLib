@@ -1684,7 +1684,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             break;
         }
 
-        tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,rtk->nx,nv,R,H,Pp,NULL,v,xp,NULL);
+        /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_v|TRAE_xpre,rtk->nx,nv,R,H,Pp,NULL,v,xp,NULL); */
 
         /* measurement update of ekf states */
         if ((info=filter_gins(rtk,xp,Pp,H,v,R,rtk->nx,nv,(GINS_TC==popt->GI_mode)?KF_GINS:KF_GNSS,mode))) {

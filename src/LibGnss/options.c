@@ -70,9 +70,9 @@ static char stat_[statopt];
 #define DFTOPT  "0:deg,1:dms"
 #define HGTOPT  "0:ellipsoidal,1:geodetic"
 #define GEOOPT  "0:internal,1:egm96,2:egm08_2.5,3:egm08_1,4:gsi2000"
-#define STAOPT  "0:all,1:single"
 #define STSOPT  "0:off,1:state,2:residual"
 #define ARMOPT  "0:off,1:continuous,2:instantaneous,3:fix-and-hold"
+#define STAOPT  "0:single,1:vrs"
 #define POSOPT  "0:llh,1:xyz,2:single,3:posfile,4:rinexhead,5:rtcm,6:raw"
 #define TIDEOPT "0:off,1:on,2:otl"
 #define PHWOPT  "0:off,1:on,2:precise"
@@ -195,7 +195,6 @@ EXPORT opt_t sysopts[]={
     {"out-maxsolstd",   1,  (void *)&solopt_.maxsolstd,  "m"    },
     {"out-height",      3,  (void *)&solopt_.height,     HGTOPT },
     {"out-geoid",       3,  (void *)&solopt_.geoid,      GEOOPT },
-    {"out-solstatic",   3,  (void *)&solopt_.solstatic,  STAOPT },
     {"out-nmeaintv1",   1,  (void *)&solopt_.nmeaintv[0],"s"    },
     {"out-nmeaintv2",   1,  (void *)&solopt_.nmeaintv[1],"s"    },
     {"out-outstat",     3,  (void *)&solopt_.sstat,      STSOPT },
@@ -234,6 +233,7 @@ EXPORT opt_t sysopts[]={
     {"ant1-antdeln",    1,  (void *)&prcopt_.antdel[0][1],"m"   },
     {"ant1-antdelu",    1,  (void *)&prcopt_.antdel[0][2],"m"   },
     
+    {"ant2-statype",    3,  (void *)&prcopt_.statype,    STAOPT },
     {"ant2-postype",    3,  (void *)&prcopt_.refpos,     POSOPT },
     {"ant2-pos1",       1,  (void *)&antpos_[1][0],      "deg|m"},
     {"ant2-pos2",       1,  (void *)&antpos_[1][1],      "deg|m"},

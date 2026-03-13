@@ -46,8 +46,8 @@ def main():
         solfile = SOLFILE_PATH
     else:
         # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230/result' #laptop
-        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328/result'
-        filename = 'GNSS_Vehicle_open_20190328_PPK_F.pos'
+        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20230102/result'
+        filename = 'GNSS_Vehicle_complex_20230102_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
@@ -55,7 +55,7 @@ def main():
         refile = REFFILE_PATH
     else:
         # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230' #laptop
-        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328'
+        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20230102'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 
@@ -133,7 +133,7 @@ def main():
             figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
-            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, False)
+            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, True)
             figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件

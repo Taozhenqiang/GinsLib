@@ -473,25 +473,9 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
 extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE) 
 {
     int i,j,vnum=num_candidate;
-    double gamma,sum_p;
-    double *db;
+    double sum_p,*db;
 
     db=mat(nb,1);
-
-    /* overall quality control, test threshold */
-    /* for (j=0;j<nb;j++) db[j]=y[j]-b[j];
-    gamma=2.0*quadratic(db,Qb,nb);
-    while (1) {
-        for (i=0,sum_p=0.0;i<vnum;i++) {
-            for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
-            sum_p+=quadratic(db,Qb,nb);
-        }
-        if (sum_p>gamma*vnum) {
-            vnum--;
-            continue;
-        }
-        else break;
-    } */
 
     /* BIE soluiton */
     for (i=0,sum_p=0.0;i<vnum;i++) {
