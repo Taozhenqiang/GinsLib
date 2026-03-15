@@ -1495,14 +1495,16 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
         for (i=0;i<ns;i++) {
             fr=sys2freid(rtk->ssat[sat[i]-1].sys,k,opt);
 
-            j=IB(sat[i],k,&rtk->opt);
-            
+            j=IB(sat[i],k,&rtk->opt);     
+           
             /* NOTE: stepwise relaxation of the random walk process */
-            if (rtk->ssat[i-1].lock[fr]<=0) alpha=20;
-            else if (abs(rtk->ssat[i-1].lock[fr])<120) alpha=20-abs(rtk->ssat[i-1].lock[fr])/120.0*20.0;
-            else alpha=1;
+#if 0            
+            if (rtk->ssat[sat[i]-1].lock[fr]<=0) alpha=20;
+            else if (abs(rtk->ssat[sat[i]-1].lock[fr])<120) alpha=20-abs(rtk->ssat[sat[i]-1].lock[fr])/120.0*20.0;
+            else alpha=1; 
+#endif
             rtk->P[j+j*rtk->nx]+=alpha*alpha*rtk->opt.prn[0]*rtk->opt.prn[0]*fabs(tt);
-            
+           
             slip=rtk->ssat[sat[i]-1].slip[fr];
 
             if (rtk->opt.ionoopt==IONOOPT_IFLC) {
@@ -2987,7 +2989,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
     int i,j,nb,nb1,info,nx=rtk->nx,na=rtk->na,sys,fr,num_candidate=(BIE==opt->artype)?10:2;
     double *DP,*y,*b,*b_BIE,*db,*Qb,*Qab,*QQ,s[10]={0.0};
     double *tcx,dx=0.0;
-    int *ix,*ixf,low_ix[2]={0},PAR_flag=1,iter=0,maxiter=25;/*25*/
+    int *ix,*ixf,low_ix[2]={-1},PAR_flag=1,iter=0,maxiter=25;/*25*/
     double det,p=0.0,coeff[3],temp[2]={0.0};
 
     trace(3,"resamb_LAMBDA : nx=%d\n",nx);

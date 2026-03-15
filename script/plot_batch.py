@@ -3,12 +3,12 @@ import numpy as np
 import logging
 from read_sol import read_solution
 from read_ref import read_ref
-from plot_trajectory import plot_trajectory
-from plot_position   import plot_position
-from plot_velocity   import plot_velocity
-from plot_attitude   import plot_attitude
-from plot_imubias    import plot_imubias
-from plot_err    import plot_err
+from plot_solution import plot_trajectory
+from plot_solution import plot_position
+from plot_solution import plot_velocity
+from plot_solution import plot_attitude
+from plot_solution import plot_imubias
+from plot_err import plot_err
 import matplotlib.pyplot as plt
 
 def batch_plot_analysis(sol_file_path, ref_file_path, process_mode):

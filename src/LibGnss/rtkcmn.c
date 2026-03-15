@@ -147,7 +147,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
-#ifndef _WIN32
+#ifndef WIN32
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -3168,7 +3168,7 @@ static double timeoffset_=0.0;/* time offset (s) */
 extern gtime_t timeget(void) {
     gtime_t time;
     double ep[6]={0};
-#ifdef _WIN32
+#ifdef WIN32
     SYSTEMTIME ts;
 
     GetSystemTime(&ts);/* utc */
@@ -3443,7 +3443,7 @@ extern int adjgpsweek(int week) {
 *return:current tick in ms
  *-----------------------------------------------------------------------------*/
 extern uint32_t tickget(void) {
-#ifdef _WIN32
+#ifdef WIN32
     return (uint32_t) timeGetTime();
 #else
     struct timespec tp={0};
@@ -3469,7 +3469,7 @@ extern uint32_t tickget(void) {
 *return:none
  *-----------------------------------------------------------------------------*/
 extern void sleepms(int ms) {
-#ifdef _WIN32
+#ifdef WIN32
     if (ms<5)
         Sleep(1);
     else
@@ -4895,7 +4895,7 @@ extern void freenav(nav_t *nav,int opt) {
 *return:execution status (0:ok,0>:error)
  *-----------------------------------------------------------------------------*/
 extern int execcmd(const char *cmd) {
-#ifdef _WIN32
+#ifdef WIN32
     PROCESS_INFORMATION info;
     STARTUPINFO si={0};
     DWORD stat;
@@ -4931,7 +4931,7 @@ extern int execcmd(const char *cmd) {
 extern int expath(const char *path,char *paths[],int nmax) {
     int i,j,n=0;
     char tmp[1024];
-#ifdef _WIN32
+#ifdef WIN32
     WIN32_FIND_DATA file;
     HANDLE h;
     char dir[1024]="",*p;
@@ -5008,7 +5008,7 @@ extern int expath(const char *path,char *paths[],int nmax) {
 static int mkdir_r(const char *dir) {
     char pdir[1024],*p;
 
-#ifdef _WIN32
+#ifdef WIN32
     HANDLE h;
     WIN32_FIND_DATA data;
 
@@ -5810,7 +5810,7 @@ extern int rtk_uncompress(const char *file,char *uncfile) {
         uncfile[p-tmpfile]='\0';
         strcpy(buff,tmpfile);
         fname=buff;
-#ifdef _WIN32
+#ifdef WIN32
         if ((p=strrchr(buff,'\\'))) {
             *p='\0';
             dir=fname;

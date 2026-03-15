@@ -7,14 +7,14 @@
 * history : 2015/01/11 1.0  separated from rtkrcv.c
 *           2016/09/19 1.1  change api vt_open()
 *-----------------------------------------------------------------------------*/
-#ifndef _WIN32
+#ifndef WIN32
 #define _POSIX_C_SOURCE 2
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef _WIN32
+#ifdef WIN32
 #include <winsock2.h>
 #else
 #include <unistd.h>
@@ -32,7 +32,7 @@
 #endif
 #include "vt.h"
 // 添加Windows平台的write和read宏定义
-#ifdef _WIN32
+#ifdef WIN32
 #define write(fd, buf, len) ({ \
     DWORD _bytes = 0; \
     WriteFile((HANDLE)(fd), buf, len, &_bytes, NULL) ? (int)_bytes : -1; \
@@ -69,7 +69,7 @@
 *          char   *dev      I   device ("": standard tty)
 * return : virtual console (NULL: error)
 *-----------------------------------------------------------------------------*/
-#ifdef _WIN32
+#ifdef WIN32
 // Windows 版本的 vt_open 函数
 extern vt_t *vt_open(int sock, const char *dev)
 {
@@ -349,7 +349,7 @@ static int seq_esc(vt_t *vt)
 * return : status (1:ok,0:error)
 * notes  : if no input, return ok with *c='\0'
 *-----------------------------------------------------------------------------*/
-#ifdef _WIN32
+#ifdef WIN32
 extern int vt_getc(vt_t *vt, char *c)
 {
     DWORD bytesRead;

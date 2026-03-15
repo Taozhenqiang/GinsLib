@@ -1236,7 +1236,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
 }
 
 /* TDCP-assisted motion alignment */
-extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
+extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
 {
     prcopt_t opt_=*opt;
     sol_t sol={0},sol_old={0};
@@ -1244,7 +1244,6 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
     double sgn=(SOLTYPE_BACKWARD==opt->reverse?-1.0:1.0);
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
-    double rr_[3]={0.0},ins_pos[3]={0.0},dpos[3]={0.0},thres_ins_ouj=50.0;
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
     int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,pos_flag=1,tdcp_flag=1,vel_flag=0,mode=Robust_RES;
     int vsat[MAXOBS]={0},vsat_old[MAXOBS]={0},svh[MAXOBS]={0},svh_old[MAXOBS]={0};
@@ -1278,37 +1277,15 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     stat=estpos(rtk,obs,n,rs,dts,vare,svh,nav,&opt_,NULL,&sol,azel,vsat,resp);
     stat_old=estpos(rtk,obs_old,n_old,rs_old,dts_old,vare_old,svh_old,nav,&opt_,NULL,&sol_old,azel_old,vsat_old,resp_old);
 
-    /* GNSS-assisted detection INS status count, used for INS reinitialization */
-    if (stat&&rtk->align&&(GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode))
-    {
-        if (rtk->outage<MAX_OUTIME&&!outsim.valid_flag) {
-            ins2gnss(opt,&rtk->ins,rr_,3);
-            pos2ecef(rr_,ins_pos);
-            for (i=0;i<3;i++) dpos[i]=ins_pos[i]-sol.rr[i];
-            if (norm(dpos,3)>thres_ins_ouj) {
-                rtk->gnss_aid_age++;
-            }
-            else rtk->gnss_aid_age=0;          
-        }
-        else rtk->gnss_aid_age=0;
-    }
-
-    /* check GNSS-assisted INS status */
-    if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE&&!outsim.valid_flag) {
-        rtk->outage+=(MAX_OUTIME+1); /* trigger INS reinitialization */
-        rtk->gnss_aid_age=0;         /* reset GNSS-assisted INS status count */
-        trace(7,"warning: The GNSS and INS positions differ too much!\n");
-    }
-
     /* check solution status */
     if (!stat||!stat_old) {
-        if (!stat) rtk->gnss_aid_age=0;
         pos_flag=tdcp_flag=0; trace(7,"tdcp_vel: estpos error stat=%d, stat_old=%d\n",stat,stat_old); 
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
         for (i=0;i<3;i++) {
-            rr[i]=sol.rr[i];
+            rtk->sol.stat=stat;
+            rr[i]=rtk->sol.rr[i]=sol.rr[i];
             rr_old[i]=sol_old.rr[i];
         }
     }
@@ -1445,7 +1422,7 @@ extern int tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n,
     }
 
     /* only the vehicle velocity exceeds the threshold, the alignment is considered complete */
-    if (!rtk->align&&vel_flag&&norm(rtk->sol.rr+3,3)<thres) {
+    if (!align&&vel_flag&&norm(rtk->sol.rr+3,3)<thres) {
         vel_flag=0;
     }
 
@@ -1496,7 +1473,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt)
 {
     ins_t *ins=&rtk->ins;
     sol_t *sol=(GINS_TC==popt->GI_mode)?&rtk->sol:&rtk->lcgins.sol;
-    int i,j,nx=ins->nx,nv=4,info;
+    int i,j,nx=ins->nx,nv=0,info;
     double zupt_time,vel,*xp,*Pp,*H,*v,*var,*R;
 
     /* detected vehicle stationary time (s) and GNSS velocity */

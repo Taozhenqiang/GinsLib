@@ -2,11 +2,11 @@
 import os
 from read_sol import read_solution
 from read_ref import read_ref
-from plot_trajectory import plot_trajectory
-from plot_position   import plot_position
-from plot_velocity   import plot_velocity
-from plot_attitude   import plot_attitude
-from plot_imubias    import plot_imubias
+from plot_solution import plot_trajectory
+from plot_solution import plot_position
+from plot_solution import plot_velocity
+from plot_solution import plot_attitude
+from plot_solution import plot_imubias
 from plot_err    import plot_err
 import matplotlib.pyplot as plt
 
@@ -41,21 +41,18 @@ def main():
         print("可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)")
         return
 
+    pathname = './GNSS_INS_Vehicle/IGM-A1_Vehicle_complex_20211217-ylh'
     # 提供文件路径和结果文件名
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230/result' #laptop
-        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20230102/result'
-        filename = 'GNSS_Vehicle_complex_20230102_PPK_F.pos'
+        filename = './result/GNSS_Vehicle_complex_20211217-ylh_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        # pathname = 'F:/Navigation_Learn/GNSS_INS/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20221230' #laptop
-        pathname = 'E:/opensource/GinsLib/data/GNSS_INS_Vehicle/STIM300_Vehicle_complex_20230102'
         filename = 'truth.truth'
         refile = os.path.join(pathname, filename)
 

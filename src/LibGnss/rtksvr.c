@@ -558,7 +558,7 @@ static void send_nmea(rtksvr_t *svr, uint32_t *tickreset)
     }
 }
 /* rtk server thread ---------------------------------------------------------*/
-#ifdef _WIN32
+#ifdef WIN32
 static DWORD WINAPI rtksvrthread(void *arg)
 #else
 static void *rtksvrthread(void *arg)
@@ -947,7 +947,7 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     }
 
     /* create rtk server thread */
-#ifdef _WIN32
+#ifdef WIN32
     if (!(svr->thread=CreateThread(NULL,0,rtksvrthread,svr,0,NULL))) {
 #else
     if (pthread_create(&svr->thread,NULL,rtksvrthread,svr)) {
@@ -984,7 +984,7 @@ extern void rtksvrstop(rtksvr_t *svr, const char **cmds)
     svr->state=0;
     
     /* free rtk server thread */
-#ifdef _WIN32
+#ifdef WIN32
     WaitForSingleObject(svr->thread,10000);
     CloseHandle(svr->thread);
 #else

@@ -687,7 +687,7 @@ static void udclk_spp(rtk_t *rtk)
 {
     prcopt_t *opt=&rtk->opt;
     double dtr;
-    int i,ic,sys=rtk->opt.navsys,dclk=GNSISB_RW;
+    int i,ic,sys=rtk->opt.navsys,dclk=GNSISB_WN;
     trace(3,"udclk_spp:\n");
 
     /* initialize GPS clock (white noise) */
@@ -947,7 +947,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
         diag_Cov(nv,var,P,diag_wei);
 
         /* least square estimation */
-        if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_RES))) {
+        if ((info=lsq_roubst(H,v,P,NX,nv,dx,Q,Robust_OFF))) {
             trace(7,"spp lsq error info=%d\n!",info); break;
         }
 
@@ -1212,6 +1212,8 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     
     /* estimate receiver position and time with pseudorange */
     stat=estpos(rtk,obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp);
+
+
 
     /* SPP/INS TC mode and GNSS unavailable, output INS solution */
     if (!stat&&rtk&&GINS_TC==opt->GI_mode) {

@@ -38,7 +38,7 @@
 *-----------------------------------------------------------------------------*/
 #define _POSIX_C_SOURCE 199506
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
@@ -1535,7 +1535,7 @@ static void accept_sock(int ssock, con_t **con)
 
 static void deamonise(void)
 {
-#ifndef _WIN32
+#ifndef WIN32
     /* In case we were not started in the background, fork and let the parent
      * exit.  Guarantees that the child is not a process group leader. */
     int childpid = fork();
@@ -1757,7 +1757,7 @@ int main(int argc, char **argv)
     signal(SIGINT, sigshut); /* keyboard interrupt */
     signal(SIGTERM,sigshut); /* external shutdown signal */
 
-#ifndef _WIN32
+#ifndef WIN32
     /* POSIX 特有信号处理，Windows 不支持 */
     signal(SIGUSR2,sigshut);
     signal(SIGHUP ,SIG_IGN);

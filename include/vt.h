@@ -9,7 +9,7 @@
 #ifndef VT_H
 #define VT_H
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <windows.h>
 #else
 #include <termios.h>
@@ -30,7 +30,7 @@ typedef struct vt_tag {                 /* virtual console type */
     int cur_h;                          /* current history */
     int brk;                            /* break status */
     int blind;                          /* blind inpu mode */
-#ifdef _WIN32
+#ifdef WIN32
     DWORD dwOriginalOutMode;           /* original console mode for Windows */
     DWORD dwOriginalInMode;            /* original console input mode */
 #else

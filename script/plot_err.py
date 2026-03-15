@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from xyz2blh import xyz2blh
+from coordinate_transformation import xyz2blh
 
 def calculate_cep(errors, percentage):
     """
@@ -220,7 +220,7 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
             y_max = np.max(delta1[:, 2])
             y_range = y_max - y_min
             # axes[2].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
-            axes[2].set_ylim(-5, 5)
+            axes[2].set_ylim(-10, 10)
 
         # Remove scientific notation for axis labels
         for ax in axes:

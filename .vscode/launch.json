@@ -8,10 +8,10 @@
             "type": "cppdbg",
             "request": "launch",
             "name": "GINSLIB_Window",
-            "program": "${workspaceFolder}\\build\\Bin\\GINSLIB.exe", //注意为可执行文件的完整路径+文件名
+            "program": "${workspaceFolder}/build/Bin/GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                // "CPT_Vehicle_open_20190328.conf",
+                "CPT_Vehicle_open_20190328.conf",
                 // "EG320N_Vehicle_complex_20250419.conf",
                 // "EG320N_Vehicle_open_20250418.conf",                
                 // "EG320N_Vehicle_open_20250418_campus1.conf",
@@ -39,20 +39,22 @@
                 // "KVH1750_Vehicle_open_20201210.conf",
                 // "Mti10_Vehicle_complex_20190428.conf",
                 // "STIM300_Vehicle_complex_20221230.conf",
+                // "POMS-G6615_Vehicle_complex_20221230.conf",
                 // "STIM300_Vehicle_complex_20230102.conf",
                 // "STIM300_Vehicle_complex_20230104.conf",
                 // "LCI_Marine_open_20150108.conf",                             
                 // "ADIS16465_Vehicle_open_20210114.conf",
                 // "ADIS16488_Vehicle_complex_20210728.conf",     
                 
-                "LG69T_GNSS_open_20260211.conf",
+                // "LG69T_Vehicle_complex_20260211.conf",
                
 
-                "-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","3","-solt","0", //spp/ins TC
+                "-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","1","-solt","0", 
+                // "-kml",
                 
-                // "-x","4240",//trace level:12,7,4
+                "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}\\data\\GNSS\\LG69T_GNSS_open_20260211" ,//配置文件
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328" ,
             
         },  
         {
@@ -88,7 +90,7 @@
                 "0",
                 "GNSS_GNSS_open_20260211_SPP_F.pos"
             ],
-            "cwd": "${workspaceFolder}/data/GNSS/LG69T_GNSS_open_20260211/result" ,//配置文件
+            "cwd": "${workspaceFolder}/data/GNSS/LG69T_GNSS_open_20260211/result" ,
             
         },    
         {
@@ -169,8 +171,8 @@
             "name":"plot_main",
             
             // for Windows
-            "program": "${workspaceFolder}\\script\\plot_main.py",
-            "cwd": "${workspaceFolder}\\data\\GNSS_INS_Vehicle", //工作路径,
+            "program": "${workspaceFolder}/script/plot_main.py",
+            "cwd": "${workspaceFolder}/data", //工作路径,
 
             // for Linux
             // "program": "${workspaceFolder}/script/excute.py",

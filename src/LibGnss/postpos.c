@@ -575,10 +575,50 @@ static int vrs_pos(prcopt_t *popt, const obsd_t *obs, vrs_t *vrs)
     return 1;
 }
 
+/* GNSS-assisted detection INS status */
+static int gnss_aid_ins(rtk_t *rtk, const int stat, const double *rr)
+{
+    prcopt_t *opt=&rtk->opt;
+    double rr_[3],ins_pos[3],dpos[3],thres_ins_ouj=50.0;
+    int i;
+
+    /* GNSS-assisted detection INS status count, used for INS reinitialization */
+    if (stat&&rtk->align&&(GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode))
+    {
+        if (rtk->outage<MAX_OUTIME&&!outsim.valid_flag) {
+            ins2gnss(opt,&rtk->ins,rr_,3);
+            pos2ecef(rr_,ins_pos);
+            for (i=0;i<3;i++) dpos[i]=ins_pos[i]-rr[i];
+            if (norm(dpos,3)>thres_ins_ouj) {
+                rtk->gnss_aid_age++;
+            }
+            else { rtk->gnss_aid_age=0; return 0; }       
+        }
+        else {
+            rtk->gnss_aid_age=0;
+            return 0;
+        }
+    }
+
+    /* check GNSS-assisted INS status */
+    if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE&&!outsim.valid_flag) {
+        rtk->outage+=(MAX_OUTIME+1); /* trigger INS reinitialization */
+        rtk->gnss_aid_age=0;         /* reset GNSS-assisted INS status count */
+        trace(7,"warning: The GNSS and INS positions differ too much!\n");
+        return 0;
+    }
+
+    if (!stat) {
+        rtk->gnss_aid_age=0;
+        return 0;
+    }
+}
+
 /* process positioning -------------------------------------------------------*/
 static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, int mode)
 {
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
+    rtk_t *rtk_tdcp=(rtk_t *)malloc(sizeof(rtk_t));   /* for tdcp module */
     obsd_t *obs=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2);     /* observations at the current epoch for rover and base */
     obsd_t *obs_old=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2); /* observations at the previous epoch for rover and base */
     imud_t *imu=(imud_t *)malloc(sizeof(imud_t)*MAXINS);
@@ -591,6 +631,9 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     rtcm_path[0]='\0';
     vrs.idx=(PMODE_FIXED==popt->mode)?1:0; /* init vrs index */
 
+    /* initialize rtk_tdcp */
+    if (GINS_OFF!=popt->GI_mode) rtkinit(rtk_tdcp,popt,NULL);
+
     /* initialize GNSS sampling interval */
     if (!rtk->interval) gnss_intervel(rtk,&obss,&poss);
 
@@ -600,10 +643,10 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,280884,2405); 
+        DebugTime(rtk,Debug_Glo.tNow,464662,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
-        if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode) vrs_pos(&rtk->opt,obs,&vrs);
+        if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
@@ -631,9 +674,14 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
                 /* determine the number of satellites of rover in the current epoch and the previous epoch */
                 for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
                 for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
+                /* initialize rtk_tdcp parameters */
+                rtk_tdcp->interval=rtk->interval; rtk_tdcp->dopsgn=rtk->dopsgn;
                 /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
-                if (nr_old&&nr) vel_flag=tdcp_vel(rtk,obs,obs_old,nr,nr_old,&navs,popt);                    
-                /* save the GNSS observations of the previous epoch */
+                if (nr_old&&nr) vel_flag=tdcp_vel(rtk_tdcp,rtk->align,obs,obs_old,nr,nr_old,&navs,popt);
+                if (norm(rtk_tdcp->sol.rr+3,3)>0.0) matcpy(rtk->sol.rr+3,rtk_tdcp->sol.rr+3,3,1); /* copy TDCP estimated velocity to rtk struct */
+                /* GNSS-assisted detection INS status */  
+                gnss_aid_ins(rtk,rtk_tdcp->sol.stat,rtk_tdcp->sol.rr);     
+                /* save the GNSS observations of the previous epoch */              
                 n_old=n; 
                 for (i=0;i<n;i++) obs_old[i]=obs[i];                 
             }  
@@ -728,6 +776,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     }
 
     /* obs and obs_old point to the same memory and only need to free once */
+    rtkfree(rtk_tdcp);
     free(obs); free(imu); 
     obs=obs_old=NULL; /* free obs_old to avoid memory leak */
 }
@@ -1100,7 +1149,8 @@ static int getstapos(const char *file, const char *name, vrs_t *vrs, int idx_sta
     FILE *fp;
     char buff[256],sname[256],*p;
     const char *q;
-    double pos[3];
+    double pos[3],llh[3],data[7];
+    int flag=-1;
 
     trace(3,"getstapos: file=%s name=%s\n",file,name);
 
@@ -1111,19 +1161,42 @@ static int getstapos(const char *file, const char *name, vrs_t *vrs, int idx_sta
     while (fgets(buff,sizeof(buff),fp)) {
         if ((p=strchr(buff,'%'))) *p='\0';
         
-        if (sscanf(buff,"%lf %lf %lf %255s",pos,pos+1,pos+2,sname)<4) continue;
+        /* geodetic position (lat(dd mm ss.ss),lon(dd mm ss.ss),height(m)) */
+        if (sscanf(buff,"%lf %lf %lf %lf %lf %lf %lf %255s",data,data+1,data+2,data+3,data+4,data+5,data+6,sname)==8) flag=3; 
+        /* ecef/llh(lat(dd.dd),lon(dd.dd),height(m)) position */
+        else if (sscanf(buff,"%lf %lf %lf %255s",pos,pos+1,pos+2,sname)==4) flag=0;  
+        else continue;
         
         for (p=sname,q=name;*p&&*q;p++,q++) {
             if (toupper((int)*p)!=toupper((int)*q)) break;
         }
         if (!*p) {
-            /* pos[0]*=D2R;
-            pos[1]*=D2R;
-            pos2ecef(pos,r); */
-            vrs->pos[idx_sta][0]=pos[0];
-            vrs->pos[idx_sta][1]=pos[1];
-            vrs->pos[idx_sta][2]=pos[2];
-            vrs->nbase++;
+            if (0==flag) {
+                if (fabs(pos[0])<90&&fabs(pos[1])<180) flag=2; /* llh */
+                else flag=1; /* ecef */ 
+            } 
+
+            if (1==flag) {
+                vrs->pos[idx_sta][0]=pos[0];
+                vrs->pos[idx_sta][1]=pos[1];
+                vrs->pos[idx_sta][2]=pos[2];
+                vrs->nbase++;                
+            }
+            else if (2==flag) {
+                llh[0]=pos[0]*D2R;
+                llh[1]=pos[1]*D2R;
+                llh[2]=pos[2];
+                pos2ecef(llh,vrs->pos[idx_sta]);
+                vrs->nbase++;
+            }
+            else if (3==flag) {
+                llh[0]=data[0]*D2R+data[1]*D2R/60.0+data[2]*D2R/3600.0;
+                llh[1]=data[3]*D2R+data[4]*D2R/60.0+data[5]*D2R/3600.0;
+                llh[2]=data[6];
+                pos2ecef(llh,vrs->pos[idx_sta]);
+                vrs->nbase++;
+            }
+
             fclose(fp);
             return 1;
         }
@@ -1297,7 +1370,7 @@ static int opentrace(const prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
     };
 
     /* set path separator */
-    #ifdef _WIN32
+    #ifdef WIN32
         sep = "\\";
     #else
         sep = "/";

@@ -761,11 +761,10 @@ static int readrnxh(FILE *fp, double *ver, char *type, int *sys, int *tsys,
             case 'J': decode_navh (buff,nav); break; /* extension */
             case 'L': decode_navh (buff,nav); break; /* extension */
         }
-        if (STA_VRS==statype&&vrs_flag&&(nsat=decode_obsepoch(fp,buff,*ver,&time,&flag_h,NULL))>0) {
-            if (time.time) {
-                 sta[nbase].time=time; time.time=time.sec=0.0; 
-                 nbase++;vrs_flag=0;
-            }
+        if (STA_VRS==statype&&vrs_flag&&((nsat=decode_obsepoch(fp,buff,*ver,&time,&flag_h,NULL))>0&&time.time)) {
+            sta[nbase].time=time; 
+            time.time=time.sec=0.0; 
+            nbase++;vrs_flag=0;
         }
         if (strstr(label,"END OF HEADER")&&STA_SINGLE==statype) return 1;
 

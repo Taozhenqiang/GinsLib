@@ -482,7 +482,7 @@ static void periodic_cmd(int cycle, const char *cmd, stream_t *stream)
     }
 }
 /* stearm server thread ------------------------------------------------------*/
-#ifdef _WIN32
+#ifdef WIN32
 static DWORD WINAPI strsvrthread(void *arg)
 #else
 static void *strsvrthread(void *arg)
@@ -708,7 +708,7 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, const char **paths,
     svr->state=1;
     
     /* create stream server thread */
-#ifdef _WIN32
+#ifdef WIN32
     if (!(svr->thread=CreateThread(NULL,0,strsvrthread,svr,0,NULL))) {
 #else
     if (pthread_create(&svr->thread,NULL,strsvrthread,svr)) {
@@ -743,7 +743,7 @@ extern void strsvrstop(strsvr_t *svr, const char **cmds)
     }
     svr->state=0;
     
-#ifdef _WIN32
+#ifdef WIN32
     WaitForSingleObject(svr->thread,10000);
     CloseHandle(svr->thread);
 #else

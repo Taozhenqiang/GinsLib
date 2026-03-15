@@ -40,7 +40,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
 #include <direct.h>
@@ -712,7 +712,7 @@ extern "C"
 
 /* end */
 
-#ifdef _WIN32
+#ifdef WIN32
 #define rtklib_thread_t HANDLE
 #define rtklib_lock_t CRITICAL_SECTION
 #define rtklib_initlock(f) InitializeCriticalSection(f)
@@ -2507,7 +2507,7 @@ extern "C"
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag);
-    EXPORT int  tdcp_vel(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
+    EXPORT int  tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
     EXPORT int  motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);

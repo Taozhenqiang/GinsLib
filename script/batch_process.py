@@ -300,7 +300,7 @@ def batch_process_gins(exe_path_input):
     all_error_stats = []
 
     # for folder_name in sub_folders:  
-    for folder_name in sub_folders[16:17]:  # 处理单个子文件夹用于测试
+    for folder_name in sub_folders[0:1]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
@@ -328,7 +328,7 @@ def batch_process_gins(exe_path_input):
             
             # 4. 定义处理模式 (保持原有逻辑)
             # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
-            mode = ["PPK TC"]
+            mode = ["PPK LC"]
             
             # 命令列表
             commands = [
@@ -341,9 +341,9 @@ def batch_process_gins(exe_path_input):
                 # [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd
                 # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
                 # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
-                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk
-                # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins LC
-                [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","2","-solt","0"], #ppk/ins TC
+                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","1","-solt","0"], #ppk
+                [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","2","-solt","0"], #ppk/ins LC
+                # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","1","-ambt","1","-solt","0"], #ppk/ins TC
             ]
 
             # 5. 循环执行命令

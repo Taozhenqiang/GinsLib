@@ -72,7 +72,6 @@ set(ROOT ${PROJECT_SOURCE_DIR}) #将项目路径${PROJECT_SOURCE_DIR}存到变�
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT}/build/Lib) #设置动态库输出路径
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT}/build/Lib) #设置静态库输出路径
-# set(EXECUTABLE_OUTPUT_PATH ${ROOT}/build/Bin) #设置可执行文件输出路径
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT}/build/Bin) #设置可执行文件输出路径
 
 # 根据构建类型设置编译配置
@@ -140,7 +139,7 @@ include_directories(include) #添加包含路径
 #     add_definitions(-DWIN32)
 # endif()
 # add_definitions(-DENAGLO -DENAGAL -DENACMP -DENAQZS -DENAIRN -DNEXOBS=3 -DNFREQ=7 -DTRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
-add_compile_definitions(ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
+add_compile_definitions(WIN32 ENAGLO ENAGAL ENACMP ENAQZS ENAIRN NEXOBS=3 NFREQ=7 TRACE)#添加预处理器定义，这些定义在编译时会被添加到源代码中的宏定义中
 
 # global value
 # set lib name
@@ -161,12 +160,6 @@ add_subdirectory(${libFusionSrc} ${ROOT}/build/${libFusion})
 #CUI APP
 set(App GINSLIB)
 add_subdirectory(${ROOT}/src/app ${ROOT}/build/${App}) 
-
-# group
-# SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON) #启用目标文件分组功能，即将生成的目标文件按照指定的文件夹进行组织
-# SET_PROPERTY(TARGET ${libGnss}    PROPERTY FOLDER "LIB") #将名为 ${libGnss} 的目标文件放入名为 "LIB" 的文件夹中
-# SET_PROPERTY(TARGET ${libIns}     PROPERTY FOLDER "LIB")
-# SET_PROPERTY(TARGET ${libFusion}  PROPERTY FOLDER "LIB")
 
 #Output Messages for debug the Cmake
 message(STATUS "operation system is : ${CMAKE_SYSTEM}") #向控制台打印信息
