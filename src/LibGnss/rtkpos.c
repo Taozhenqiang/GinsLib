@@ -1048,7 +1048,7 @@ static void udpos(rtk_t *rtk, double tt)
     }
     /* initialize position for first epoch */
     if (norm(rtk->x,3)<=0.0) {
-        trace(3,"udpos   : rr_init=");tracemat(3,rtk->sol.rr,1,6,15,6,0);
+        trace(3,"udpos   : rr_init=");tracemat(3,rtk->sol.rr,1,6,15,6);
         for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);
         if (popt->dynamics) {
             for (i=3;i<6;i++) initx(rtk,rtk->sol.rr[i],VAR_VEL,i);
@@ -1760,7 +1760,7 @@ static int zdres(int post, rtk_t *rtk, int base, const obsd_t *obs, int n, const
               obs[i].sat,rs[i*6],rs[1+i*6],rs[2+i*6],dts[i*2],azel[i*2]*R2D,
               azel[1+i*2]*R2D);
     }
-    trace(8,"zdres   : undifferenced phase/code residuals y=\n"); tracemat(8,y,nf*2,n,13,3,0);
+    trace(8,"zdres   : undifferenced phase/code residuals y=\n"); tracemat(8,y,nf*2,n,13,3);
 
     return 1;
 }
@@ -1792,7 +1792,7 @@ static void ddcov(const int *nb, int n, const double *Ri, const double *Rj,
             R[k+i+(k+j)*nv]=Ri[k+i]+(i==j?Rj[k+i]:0.0);
         }
     }
-    trace(8,"R=\n"); tracemat(8,R,nv,nv,8,6,0);
+    trace(8,"R=\n"); tracemat(8,R,nv,nv,8,6);
 }
 /* baseline length constraint ------------------------------------------------*/
 static int constbl(rtk_t *rtk, const double *x, const double *P, double *v,
@@ -2065,7 +2065,7 @@ static int ddres_tc(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc
                     if (x[ID(0,ix[0],f,opt)]||x[ID(1,ix[0],f,opt)]) { 
              
                         trancdisb(rtk,x,P,ID(0,ix[1],f,opt),ID(0,ix[0],f,opt));
-                        /* tracemat(12,P,rtk->nx,rtk->nx,12,5,0); */
+                        /* tracemat(12,P,rtk->nx,rtk->nx,12,5); */
  
                         initdisb(rtk,x,P,0.0,0.0,ID(0,ix[0],f,opt));
                         initdisb(rtk,x,P,0.0,0.0,ID(1,ix[0],f,opt));
@@ -2288,7 +2288,7 @@ static int ddres_tc(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc
         vflg[nv++]=3<<4;
         nb[b++]++;
     }
-    if (H) {trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4,0);}
+    if (H) {trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4);}
 
     /* double-differenced measurement error covariance */
     ddcov(nb,b,Ri,Rj,nv,R);
@@ -2594,7 +2594,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
         }        
     }       
 
-    if (H) {trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4,0);}
+    if (H) {trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4);}
 
     /* double-differenced measurement error covariance */
     ddcov(nb,b,Ri,Rj,nv,R);
@@ -2743,8 +2743,8 @@ static int ddidx(rtk_t *rtk, int *ix, int *lower_ix, int gps, int glo, int sbs)
     }
 
     if (nb>0) {
-        trace(3,"refSats=");tracemat(3,ref,1,nb,7,0,0);
-        trace(3,"fixSats=");tracemat(3,fix,1,nb,7,0,0);
+        trace(3,"refSats=");tracemat(3,ref,1,nb,7,0);
+        trace(3,"fixSats=");tracemat(3,fix,1,nb,7,0);
     }
     return nb;
 }
@@ -3042,15 +3042,15 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
             Qab[i+j*nb]=rtk->P[ix[i*2]+j*nx]-rtk->P[ix[i*2+1]+j*nx];
         }
         
-        /* trace(12,"P=\n"); tracemat(12,rtk->P,nx,nx,7,2,0);
-        trace(12,"Qab=\n"); tracemat(12,Qab,na,nb,7,2,0);
-        trace(12,"Qb=\n"); tracemat(12,Qb,nb,nb,10,6,0); */
+        /* trace(12,"P=\n"); tracemat(12,rtk->P,nx,nx,7,2);
+        trace(12,"Qab=\n"); tracemat(12,Qab,na,nb,7,2);
+        trace(12,"Qb=\n"); tracemat(12,Qb,nb,nb,10,6); */
 
     /* #ifdef TRACE
         double QQb[MAXSAT];
         for (i=0;i<nb;i++) QQb[i]=1000*Qb[i+i*nb];
-        trace(3,"N(0)=     "); tracemat(3,y,1,nb,7,2,0);
-        trace(3,"Qb*1000=  "); tracemat(3,QQb,1,nb,7,4,0);
+        trace(3,"N(0)=     "); tracemat(3,y,1,nb,7,2);
+        trace(3,"Qb*1000=  "); tracemat(3,QQb,1,nb,7,4);
     #endif */
 
         /* lambda/mlambda integer least-square estimation */
@@ -3061,8 +3061,9 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
         if (!(info=lambda(rtk,nb,num_candidate,y,Qb,b,s,ix,ixf,low_ix))) {
 
             /* optimal and suboptimal integer ambiguities */
-            /* for (i=0;i<num_candidate;i++) { trace(12,"N(%3d)=    ",i+1); tracemat(12,b+i*nb   ,1,nb,7,2,0); } */               
+            /* for (i=0;i<num_candidate;i++) { trace(12,"N(%3d)=    ",i+1); tracemat(12,b+i*nb   ,1,nb,7,2); } */               
             /* for (i=0;i<nb;i++) trace(11,"   %s-%s  %10.3f\n",rtk->ssat[ix[i*2]-rtk->na].id,rtk->ssat[ix[i*2+1]-rtk->na].id,b[i]); */
+            trace(12,"Residual quadratic form of candidate: "); tracemat(12,s,1,num_candidate,7,2);
 
             /* BIE method */
             if (BIE==opt->artype||(PAR_BIE==opt->artype&&!PAR_flag)) {
@@ -3151,7 +3152,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                     
                     trace(11,"resamb : validation ok (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)\n",
                         nb,s[0]==0.0?0.0:s[1]/s[0],rtk->sol.thres,s[0],s[1]);
-                    trace(11,"fix=\n"); tracemat(11,b,1,nb,7,2,0);
+                    trace(11,"fix=\n"); tracemat(11,b,1,nb,7,2);
 
                     /* translate double diff fixed phase-bias values to single diff fix phase-bias values, result in xa */
                     restamb(rtk,bias,nb,xa,ix);
@@ -3167,7 +3168,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa, int gps, int glo,
                 }
                 else {
                     /* validation failed */
-                    trace(11,"float=\n"); tracemat(11,y,1,nb,7,2,0);
+                    trace(11,"float=\n"); tracemat(11,y,1,nb,7,2);
                     trace(10,"ambiguity validation failed (nb=%d ratio=%.2f thresh=%.2f s=%.2f/%.2f)!\n",nb,s[1]/s[0],rtk->sol.thres,s[0],s[1]);
                     nb=0;break;                    
                 }
@@ -3468,7 +3469,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         }
 
     }
-    trace(8,"sol_rr= ");tracemat(8,sol->rr,1,6,15,3,0);
+    trace(8,"sol_rr= ");tracemat(8,sol->rr,1,6,15,3);
 
     /* save phase measurements */
     for (i=0;i<n;i++) {
@@ -3555,9 +3556,9 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     }
 
     /* update kalman filter states (pos, vel, acc, ionosp, troposp, sat phase biases) */
-    /* trace(8,"before udstate: x="); tracemat(8,rtk->x,1,NR(opt),13,4,0); */
+    /* trace(8,"before udstate: x="); tracemat(8,rtk->x,1,NR(opt),13,4); */
     udstate(rtk,obs,sat,iu,ir,ns,nav);
-    /* trace(8,"after udstate x="); tracemat(8,rtk->x,1,NR(opt),13,4,0); */
+    /* trace(8,"after udstate x="); tracemat(8,rtk->x,1,NR(opt),13,4); */
 
     /* save snr of common satellites for rover and base receiver */
     for (i=0;i<ns;i++) {
@@ -3688,7 +3689,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
         }
     }
 
-    /* for tightly coupled mode, reset ins related state after feedback */
+    /* NOTE: for tightly coupled mode, reset ins related state after feedback */
     if (GINS_TC==opt->GI_mode) {
         for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0; 
     }
@@ -3957,7 +3958,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
         /* time-synchronized position of base station */
         /* single position velocity solution too noisy to be helpful */
         /*for (i=0;i<3;i++) rtk->rb[i]+=rtk->rb[i+3]*rtk->sol.age; */
-        trace(3,"base pos: "); tracemat(3,rtk->rb,1,3,13,4,0);
+        trace(3,"base pos: "); tracemat(3,rtk->rb,1,3,13,4);
     }
 
     /* relative potitioning */

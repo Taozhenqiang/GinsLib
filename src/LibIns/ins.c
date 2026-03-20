@@ -1047,7 +1047,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
         else if(i>=9&&i<12)  ins->Q[i+i*nx]=ins->psd_bg*ins->discretime;
         else if(i>=12&&i<15) ins->Q[i+i*nx]=ins->psd_ba*ins->discretime;
     }
-    /* trace(12,"Q=\n"); tracemat(12,ins->Q,nx,nx,20,16,0); */ /*ok*/
+    /* trace(12,"Q=\n"); tracemat(12,ins->Q,nx,nx,20,16); */ /*ok*/
 
     for (i=0;i<3;i++)
     {
@@ -1216,8 +1216,8 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
                 for (j=0;j<rtk->nx;j++) rtk->P[j+(i+6)*rtk->nx]=0.0;
                 rtk->P[(i+6)+(i+6)*rtk->nx]=100.0;
             } */
-            /* trace(12,"P=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,16,8,0); */
-            /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,rtk->lcgins.nx,rtk->lcgins.nx,16,8,0); */
+            /* trace(12,"P=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,16,8); */
+            /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,rtk->lcgins.nx,rtk->lcgins.nx,16,8); */
 
             trace(12,"INS reinitialization completed: %s!\n",Debug_Glo.chTime);
             showerr("INS reinitialization completed: %s!",Debug_Glo.chTime);   
@@ -1558,15 +1558,15 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     /* determine constraint model */
     if (CONS_NHC==mode) {
         inv=2;
-        trace(12,"nhc_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4,0);
+        trace(12,"nhc_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4);
     }
     else if (CONS_ZUPT==mode) {
         inv=3;
-        trace(12,"zupt_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4,0);
+        trace(12,"zupt_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4);
     }
     else if (CONS_ZIHR==mode) {
         inv=1;
-        trace(12,"zihr_constraints: yaw=\n");tracemat(12,ins->att,3,1,9,4,0);
+        trace(12,"zihr_constraints: yaw=\n");tracemat(12,ins->att,3,1,9,4);
     }
 
     for (i=0;i<inv;i++) {
@@ -1958,9 +1958,9 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
 
     /* discretization of the state transition matrix Phi */
     matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
-    /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16,0);
-    trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16,0);
-    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4,0); */ /*ok*/
+    /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16);
+    trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16);
+    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4); */ /*ok*/
 
     free(Fg);free(I);free(I3);
 }

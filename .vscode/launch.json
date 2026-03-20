@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/Bin/GINSLIB.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-k",
-                "CPT_Vehicle_open_20190328.conf",
+                // "CPT_Vehicle_open_20190328.conf",
                 // "EG320N_Vehicle_complex_20250419.conf",
                 // "EG320N_Vehicle_open_20250418.conf",                
                 // "EG320N_Vehicle_open_20250418_campus1.conf",
@@ -47,14 +47,16 @@
                 // "ADIS16488_Vehicle_complex_20210728.conf",     
                 
                 // "LG69T_Vehicle_complex_20260211.conf",
+                "LG69T_Vehicle_complex_20250414.conf",
                
 
-                "-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","1","-solt","0", 
-                // "-kml",
+                "-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","3","-solt","0", 
+                "-ref","./truth.truth",
+                "-kml",
                 
                 "-x","4240",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/CPT_Vehicle_open_20190328" ,
+            "cwd": "${workspaceFolder}/data/GNSS/LG69T_Vehicle_complex_20250414",
             
         },  
         {
@@ -79,7 +81,10 @@
             "program": "${workspaceFolder}/build/Bin/POS2KML.exe", //注意为可执行文件的完整路径+文件名
             "args": [
                 "-o",
-                "GNSS_GNSS_open_20260211_SPP_F.pos.kml",                              
+                "GNSS_Vehicle_complex_20250414_PPK_F.kml",  
+                "-ref",
+                "./../truth.truth",
+                "-e",                            
                 "-c",
                 "2",
                 "-p",
@@ -88,9 +93,10 @@
                 "1",
                 "-q",
                 "0",
-                "GNSS_GNSS_open_20260211_SPP_F.pos"
+                "-e",
+                "GNSS_Vehicle_complex_20250414_PPK_F.pos"
             ],
-            "cwd": "${workspaceFolder}/data/GNSS/LG69T_GNSS_open_20260211/result" ,
+            "cwd": "${workspaceFolder}/data/GNSS/LG69T_Vehicle_complex_20250414/result" ,
             
         },    
         {
@@ -147,10 +153,10 @@
             
             // for Windows
             "program": "${workspaceFolder}/script/batch_process.py",
-            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle", //工作路径,
+            "cwd": "${workspaceFolder}/data/GNSS", //工作路径,
             "console": "externalTerminal",
         },
-     {
+        {
             "type":"debugpy",
             "request": "launch",
             "name":"convert_ref",

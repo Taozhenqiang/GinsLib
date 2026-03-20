@@ -193,7 +193,7 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
             y_range = y_max - y_min
             # 设置y轴范围，留出10%的边距
             # axes[0].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
-            axes[0].set_ylim(-2, 2)
+            axes[0].set_ylim(-5, 5)
 
         axes[1].plot(t, delta1[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[1].set_ylabel('N [m]')
@@ -206,7 +206,7 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
             y_max = np.max(delta1[:, 1])
             y_range = y_max - y_min
             # axes[1].set_ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
-            axes[1].set_ylim(-2, 2)
+            axes[1].set_ylim(-5, 5)
 
         axes[2].plot(t, delta1[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
         axes[2].set_xlabel('GPS Time [s]')

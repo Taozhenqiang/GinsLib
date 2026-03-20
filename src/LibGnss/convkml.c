@@ -27,6 +27,10 @@
 #define SIZR     0.3            /* mark size of reference position */
 #define TINT     60.0           /* time label interval (sec) */
 
+
+static ref_t ref={0};
+static err_t err={0};
+
 static const char *head1="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 static const char *head2="<kml xmlns=\"http://earth.google.com/kml/2.1\">";
 static const char *mark="http://maps.google.com/mapfiles/kml/pal2/icon18.png";
@@ -62,11 +66,13 @@ static void outtrack(FILE *f, const solbuf_t *solbuf, const char *color,
 static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const double *pos,
                      const char *label, int style, int outalt, int outtime)
 {
+    const err_t *err=NULL;
     const sol_t *sol=NULL;
     double ep[6],alt=0.0;
     char str[256]="", name_str[256]="", desc_str[4096]="";
-    double pos_ref[3], pos_deg[3], vel_enu[3], att_deg[3], pos_sig[3], vel_sig[3], att_sig[3];
     int i;
+    double pos_ref[3], pos_deg[3], vel_enu[3], att_deg[3], pos_sig[3], vel_sig[3], att_sig[3];
+    double pos_err[3],vel_err[3]; 
     
     fprintf(fp,"<Placemark>\n");
 
@@ -80,6 +86,7 @@ static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const doubl
     fprintf(fp,"<Snippet maxLines=\"0\"></Snippet>\n");
 
     if (solbuf) {
+        err=solbuf->err;
         /* convert position to degree-minute-second format */
         pos_deg[0]=pos[0]*R2D;  /* latitude */
         pos_deg[1]=pos[1]*R2D;  /* longitude */
@@ -103,13 +110,17 @@ static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const doubl
             }
             
             /* attitude */
-            if (norm(sol->att,3)>0) {
+            if (sol->att[2]>0) {
                 att_deg[0]=sol->att[0];  /* pitch */
                 att_deg[1]=sol->att[1];  /* roll */
                 att_deg[2]=sol->att[2];  /* yaw */
             } else {
                 att_deg[0]=att_deg[1]=att_deg[2]=0.0;
             }
+
+            /* error analysis */
+            ecef2enu(pos,err->data[i].pos,pos_err);
+            ecef2enu(pos,err->data[i].vel,vel_err);
             
             /* position accuracy */
             pos_sig[0]=sqrt(sol->qr[0]);  /* E */
@@ -144,6 +155,9 @@ static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const doubl
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Position</TD><TD>%.0f %.0f %.6f</TD><TD>%.0f %.0f %.6f</TD><TD>%.3f</TD><TD>(DMS,m)</TD></TR>\n"
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Velocity</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m/s)</TD></TR>\n"
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Attitude</TD><TD>%.5f</TD><TD>%.5f</TD><TD>%.5f</TD><TD>(deg)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Poserr</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Velerr</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m/s)</TD></TR>\n"
+                "<TR ALIGN=RIGHT><TD ALIGN=LEFT>Atterr</TD><TD>%.5f</TD><TD>%.5f</TD><TD>%.5f</TD><TD>(deg)</TD></TR>\n"
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>PosSig</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m)</TD></TR>\n"
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>VelSig</TD><TD>%.3f</TD><TD>%.3f</TD><TD>%.3f</TD><TD>(m/s)</TD></TR>\n"
                 "<TR ALIGN=RIGHT><TD ALIGN=LEFT>AttSig</TD><TD>%.5f</TD><TD>%.5f</TD><TD>%.5f</TD><TD>(deg)</TD></TR>\n"
@@ -158,6 +172,9 @@ static void outpoint(FILE *fp, gtime_t time, const solbuf_t *solbuf, const doubl
                 pos_deg[2],
                 vel_enu[0], vel_enu[1], vel_enu[2],
                 att_deg[0], att_deg[1], att_deg[2],
+                norm(pos_err,2),pos_err[2],norm(pos_err,3),
+                norm(vel_err,2),vel_err[2],norm(vel_err,3),
+                err->data[i].att[0],err->data[i].att[1],err->data[i].att[2],
                 pos_sig[0], pos_sig[1], pos_sig[2],
                 vel_sig[0], vel_sig[1], vel_sig[2],
                 att_sig[0], att_sig[1], att_sig[2],
@@ -262,14 +279,14 @@ static int savekml(const char *file, const solbuf_t *solbuf, int tcolor,
 * return : status (0:ok,-1:file read,-2:file format,-3:no data,-4:file write)
 * notes  : see ref [1] for google earth kml file format
 *-----------------------------------------------------------------------------*/
-extern int convkml(const char *infile, const char *outfile, gtime_t ts,
-                   gtime_t te, double tint, int qflg, double *offset,
-                   int tcolor, int pcolor, int outalt, int outtime)
+extern int convkml(const char *infile, const char *refile, const char *outfile, gtime_t ts,
+                   gtime_t te, solopt_t *sopt, double tint, int qflg, double *offset,
+                   int tcolor, int pcolor, int outerr, int outalt, int outtime)
 {
     solbuf_t solbuf={0};
     double rr[3]={0},pos[3],dr[3];
-    int i,j,nfile,stat;
-    char *p,file[1024],*files[MAXEXFILE]={0};
+    int i,j,nfile,stat,stat2,r;
+    char *p,file[1024],errfile[1024],*files[MAXEXFILE]={0};
     
     trace(3,"convkml : infile=%s outfile=%s\n",infile,outfile);
     
@@ -292,9 +309,29 @@ extern int convkml(const char *infile, const char *outfile, gtime_t ts,
         else sprintf(file,"%s.kml",infile);
     }
     else strcpy(file,outfile);
+
+    /* output error file name */
+    if (p=strrchr(infile,'.')) {
+        strncpy(errfile,infile,p-infile);
+        strcpy(errfile+(p-infile),".err");
+    }
+    else sprintf(errfile,"%s.err",infile);
     
     /* read solution file */
     stat=readsolt((const char **)files,nfile,ts,te,tint,qflg,&solbuf);
+
+    /* read reference file */
+    if (refile&&outerr) {
+        if (readref(refile,&ref)<0) {
+            trace(7,"convkml: readref error %s\n",refile);
+            return -1;
+        }  
+        /* navigation error analysis */
+        err_analysis(&ref,sopt,&solbuf,&err);
+        solbuf.err=&err; /* assign err to solbuf */
+        /* save error file */
+        saverr(&solbuf,&err,errfile);
+    }
     
     for (i=0;i<MAXEXFILE;i++) free(files[i]);
     
@@ -316,7 +353,7 @@ extern int convkml(const char *infile, const char *outfile, gtime_t ts,
         for (i=0;i<3;i++) solbuf.rb[i]+=dr[i];
     }
     /* save kml file */
-    int r = savekml(file,&solbuf,tcolor,pcolor,outalt,outtime)?0:-4;
+    r=savekml(file,&solbuf,tcolor,pcolor,outalt,outtime)?0:-4;
     freesolbuf(&solbuf);
     return r;
 }

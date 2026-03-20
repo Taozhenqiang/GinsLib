@@ -95,25 +95,25 @@ extern void tracefilter(int level, int type, int nx, int nv, const double *R, co
                         const double *v, const double *x_pre, const double *xp)
 {
     if (TRAE_R&type) {
-        trace(level,"R=\n"); tracemat(level,R,nv,nv,13,6,0);
+        trace(level,"R=\n"); tracemat(level,R,nv,nv,13,6);
     }
     if (TRAE_H&type) {
-        trace(level,"H=\n"); tracemat(level,H,nv,nx,13,6,0);
+        trace(level,"H=\n"); tracemat(level,H,nv,nx,13,6);
     }
     if (TRAE_Ppre&type) {
-        trace(level,"P_pre=%f\n",P_pre); tracemat(level,Pp,nx,nx,13,6,0);
+        trace(level,"P_pre=%f\n",P_pre); tracemat(level,Pp,nx,nx,13,6);
     }
     if (TRAE_Pp&type) {
-        trace(level,"Pp=\n"); tracemat(level,Pp,nx,nx,13,6,0);
+        trace(level,"Pp=\n"); tracemat(level,Pp,nx,nx,13,6);
     }
     if (TRAE_v&type) {
-        trace(level,"v=\n"); tracemat(level,v,nv,1,13,6,0);
+        trace(level,"v=\n"); tracemat(level,v,nv,1,13,6);
     }
     if (TRAE_xpre&type) {
-        trace(level,"x_pre=\n"); tracemat(level,x_pre,nx,1,13,6,0);
+        trace(level,"x_pre=\n"); tracemat(level,x_pre,nx,1,13,6);
     }
     if (TRAE_xp&type) {
-        trace(level,"xp=\n"); tracemat(level,xp,nx,1,13,6,0);
+        trace(level,"xp=\n"); tracemat(level,xp,nx,1,13,6);
     }
 }
 
@@ -129,10 +129,10 @@ extern void tracet(int level, const char *format, ...)
     va_end(ap);
     fflush(fp_trace);
 }
-extern void tracemat(int level, const double *A, int n, int m, int p, int q, int flag)
+extern void tracemat(int level, const double *A, int n, int m, int p, int q)
 {
     if (!fp_trace||!((int)pow(2,level)&level_trace)) return;
-    matfprint(A,n,m,p,q,fp_trace,flag);
+    matfprint(A,n,m,p,q,fp_trace);
     fflush(fp_trace);
 }
 extern void traceobs(int level,const obsd_t *obs,int n)

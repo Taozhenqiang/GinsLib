@@ -51,13 +51,17 @@ static void printhelp(void)
 /* pos2kml main --------------------------------------------------------------*/
 int main(int argc, char **argv)
 {
-    int i,j,n,outalt=0,outtime=0,qflg=0,tcolor=5,pcolor=5;
-    char *infile[32],*outfile="";
+    solopt_t sopt=solopt_default;
+    int i,j,n,outerr=0,outalt=0,outtime=0,qflg=0,tcolor=5,pcolor=5;
+    char *infile[32],*refile="",*outfile="";
     double offset[3]={0.0},tint=0.0,es[6]={2000,1,1},ee[6]={2000,1,1};
     gtime_t ts={0},te={0};
+
+    sopt.posf=SOLF_XYZ;
     
     for (i=1,n=0;i<argc;i++) {
         if      (!strcmp(argv[i],"-o")&&i+1<argc) outfile=argv[++i];
+        else if (!strcmp(argv[i],"-ref")&&i+1<argc) refile=argv[++i];
         else if (!strcmp(argv[i],"-ts")&&i+2<argc) {
             sscanf(argv[++i],"%lf/%lf/%lf",es  ,es+1,es+2);
             sscanf(argv[++i],"%lf:%lf:%lf",es+3,es+4,es+5);
@@ -73,6 +77,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-f")&&i+3<argc) {
             for (j=0;j<3;j++) offset[j]=atof(argv[++i]);
         }
+        else if (!strcmp(argv[i],"-e")&&i+1<argc) outerr=1;
         else if (!strcmp(argv[i],"-a")) outalt=1;
         else if (!strcmp(argv[i],"-ag")) outalt=2;
         else if (!strcmp(argv[i],"-tg")) outtime=1;
@@ -91,8 +96,8 @@ int main(int argc, char **argv)
         return -1;
     }
     for (i=0;i<n;i++) {
-        switch (convkml(infile[i],outfile,ts,te,tint,qflg,offset,tcolor,pcolor,
-                        outalt,outtime)) {
+        switch (convkml(infile[i],refile,outfile,ts,te,&sopt,tint,qflg,offset,tcolor,pcolor,
+                        outerr,outalt,outtime)) {
         case -1: fprintf(stderr,"pos2kml : file read error (%d)\n",i+1);   break;
         case -2: fprintf(stderr,"pos2kml : file format error (%d)\n",i+1); break;
         case -3: fprintf(stderr,"pos2kml : no input data (%d)\n",i+1);     break;

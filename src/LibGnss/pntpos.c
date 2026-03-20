@@ -1213,8 +1213,6 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     /* estimate receiver position and time with pseudorange */
     stat=estpos(rtk,obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp);
 
-
-
     /* SPP/INS TC mode and GNSS unavailable, output INS solution */
     if (!stat&&rtk&&GINS_TC==opt->GI_mode) {
         rtk->outage++;

@@ -33,7 +33,7 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             else                  P[i]=popt->init_ba_unc*popt->init_ba_unc; */
         }
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
-        /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4,0); */
+        /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4); */
     } 
     if (GINS_TC==popt->GI_mode) {
         nx=15; 
@@ -63,7 +63,7 @@ extern void update_crosscov(rtk_t *rtk)
     P_IG=zeros(ns,nx-ns);P_IG_=zeros(ns,nx-ns);P_GI_=zeros(ns,nx-ns);
 
     pmatcpy(P_IG,ns,nx-ns,0,0,ns,nx-ns,rtk->P,nx,nx,0,ns,ns,nx);
-    /* trace(12,"P_IG(k-1)=\n"); tracemat(12,P_IG,ns,nx-ns,13,6,0); */
+    /* trace(12,"P_IG(k-1)=\n"); tracemat(12,P_IG,ns,nx-ns,13,6); */
 
     matmul("NN",ns,ns,nx-ns,rtk->ins.Phi,P_IG,P_IG_,1.0,0.0);
     /* MatirxT(P_IG_,P_GI_,ns,nx-ns); */
@@ -72,8 +72,8 @@ extern void update_crosscov(rtk_t *rtk)
     pmatcpy(rtk->P,nx,nx,0,ns,ns,nx,P_IG_,ns,nx-ns,0,0,ns,nx-ns);
     pmatcpy(rtk->P,nx,nx,ns,0,nx,ns,P_GI_,nx-ns,ns,0,0,nx-ns,ns);
 
-    /* trace(12,"P_IG(k)=\n"); tracemat(12,P_IG_,ns,nx-ns,13,6,0);
-    trace(12,"P_GI(k)=\n"); tracemat(12,P_GI_,nx-ns,ns,13,6,0); */
+    /* trace(12,"P_IG(k)=\n"); tracemat(12,P_IG_,ns,nx-ns,13,6);
+    trace(12,"P_GI(k)=\n"); tracemat(12,P_GI_,nx-ns,ns,13,6); */
 
     free(P_IG);free(P_IG_);free(P_GI_);
 }
@@ -97,8 +97,8 @@ extern int ins_update(rtk_t *rtk)
     if (GINS_TC==rtk->opt.GI_mode) pmatcpy(P,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx);
     else matcpy(P,rtk->lcgins.P,nx,nx);
 
-    /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"Pk-1=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2,0); */
-    /* trace(12,"Pk-1=\n"); tracemat(12,P,nx,nx,9,2,0); */
+    /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"Pk-1=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2); */
+    /* trace(12,"Pk-1=\n"); tracemat(12,P,nx,nx,9,2); */
 
     /* time update */
     matmul("NN",nx,nx,nx,ins->Phi,P,FP,1.0,0.0);          /* FP=F*P */
@@ -113,8 +113,8 @@ extern int ins_update(rtk_t *rtk)
     /* NOTE: update GNSS/INS cross-covariance!!! */
     if (GINS_TC==rtk->opt.GI_mode) update_crosscov(rtk);
 
-    /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"P_pre=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2,0); */
-    /* trace(12,"P_pre=\n"); tracemat(12,P,nx,nx,9,2,0); */
+    /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"P_pre=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2); */
+    /* trace(12,"P_pre=\n"); tracemat(12,P,nx,nx,9,2); */
 
     free(FP); free(GQ); free(P);
 }

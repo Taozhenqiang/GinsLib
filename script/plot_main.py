@@ -41,12 +41,12 @@ def main():
         print("可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)")
         return
 
-    pathname = './GNSS_INS_Vehicle/IGM-A1_Vehicle_complex_20211217-ylh'
+    pathname = './GNSS/LG69T_Vehicle_complex_20250414'
     # 提供文件路径和结果文件名
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        filename = './result/GNSS_Vehicle_complex_20211217-ylh_PPK_F.pos'
+        filename = './result/GNSS_Vehicle_complex_20250414_PPK_F.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名

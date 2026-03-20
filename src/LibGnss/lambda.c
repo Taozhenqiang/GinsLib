@@ -38,11 +38,14 @@ static int LD(int n, const double *Q, double *L, double *D)
         for (j=0;j<=i-1;j++) for (k=0;k<=j;k++) A[j+k*n]-=L[i+k*n]*L[i+j*n];
         for (j=0;j<=i;j++) L[i+j*n]/=L[i+i*n];
     }
-    /* trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
-    trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0);
-    trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0); */
+    /* trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5);
+    trace(12,"D=\n"); tracemat(12,D,n,1,10,5);
+    trace(12,"L=\n"); tracemat(12,L,n,n,10,5); */
     free(A);
-    if (info) fprintf(stderr,"%s : LD factorization error\n",__FILE__);
+    if (info) {
+        trace(7,"LAMBDA: LD factorization error\n");
+        fprintf(stderr,"%s : LD factorization error\n",__FILE__);  
+    }
     return info;
 }
 /* integer gauss transformation ----------------------------------------------*/
@@ -133,7 +136,7 @@ static int search(int n, int m, const double *L, const double *D,
                     if (nn==0||newdist>s[imax]) imax=nn;
                     for (i=0;i<n;i++) zn[i+nn*n]=z[i];
                     s[nn++]=newdist;
-                    /* if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5,0); } */
+                    /* if (nn==m-1) { trace(12,"initial integer candidates Zn:\n"); tracemat(12,zn,nn,n,10,5); } */
                 }
                 else {
                     if (newdist<s[imax]) {
@@ -173,11 +176,11 @@ static int search(int n, int m, const double *L, const double *D,
     if (c>=LOOPMAX) {
         /* fprintf(stderr,"%s : search loop count overflow\n",__FILE__); */
         trace(12,"search loop count overflow\n");
-        /* trace(12,"not ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */
+        /* trace(12,"not ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5); */
         return -1;
     }
     else {
-        /* trace(12,"ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5,0); */        
+        /* trace(12,"ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5); */        
     }
 
     return 0;
@@ -215,12 +218,12 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         /* decorrelated ambiguity covariance matrix */
         matmul("NN",n,n,n,Z,Q,zQ,1.0,0.0);
         matmul("NT",n,n,n,zQ,Z,Qz,1.0,0.0);
-        /* trace(12,"Qz=\n");tracemat(12,Qz,n,n,10,5,0); */
+        /* trace(12,"Qz=\n");tracemat(12,Qz,n,n,10,5); */
 
-        /* trace(12,"Z'=\n");tracemat(12,Z,n,n,10,5,0);
-        trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5,0);
-        trace(12,"L=\n"); tracemat(12,L,n,n,10,5,0);
-        trace(12,"D=\n"); tracemat(12,D,n,1,10,5,0); */
+        /* trace(12,"Z'=\n");tracemat(12,Z,n,n,10,5);
+        trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5);
+        trace(12,"L=\n"); tracemat(12,L,n,n,10,5);
+        trace(12,"D=\n"); tracemat(12,D,n,1,10,5); */
         
         /* the ambiguity covariance after decorrelation is used as a screening criterion for PAR */
         for (i=0;i<n;i++) dQz[i]=Qz[i+i*n]; /* dQz=diag(Qz) */
@@ -232,7 +235,7 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         /* low_ix[0]=ix[2*idx[j]+1]-(ixf[2*idx[j]]*MAXSAT+rtk->na); low_ix[1]=ixf[2*idx[j]+1]; */ 
 
         matmul("NN",n,n,1,Z,a,z,1.0,0.0);
-        /* trace(12,"z=\n"); tracemat(12,z,n,1,7,2,0); */
+        /* trace(12,"z=\n"); tracemat(12,z,n,1,7,2); */
         /* matmul("TN",n,1,n,Z,a,z); */ /* z=Z'*a */
         
         /* mlambda search 
@@ -454,7 +457,7 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
     }  
     temp[1]=quadratic(db,Qb,nb)+res_da;
 
-    /* trace(12,"BIE/chi=%.4f BIE/ILS=%.3f BIE=\n",temp[0]/chisqr[na+nb-1],temp[0]/temp[1]); tracemat(12,b_BIE,1,nb,7,2,0); */ 
+    /* trace(12,"BIE/chi=%.4f BIE/ILS=%.3f BIE=\n",temp[0]/chisqr[na+nb-1],temp[0]/temp[1]); tracemat(12,b_BIE,1,nb,7,2); */ 
 
     free(QaIb); free(IQb); free(Qa); free(db); free(da);
 
@@ -473,19 +476,36 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
 extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE) 
 {
     int i,j,vnum=num_candidate;
-    double sum_p,*db;
+    double sum_p=0.0,*db,weight;
 
     db=mat(nb,1);
 
+#if 1
     /* BIE soluiton */
     for (i=0,sum_p=0.0;i<vnum;i++) {
         for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
         sum_p+=exp(-0.5*quadratic(db,Qb,nb));
+    }    
+    /* The large residual of the quadratic form in the candidate solution causes the exp to tend to infinity */
+    if (sum_p==0.0) {
+        for (i=0;i<vnum;i++) {
+            for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*1.0/vnum;
+        }
+        return 1;
+        /* trace(12,"amb_BIE: sum_p=0.0\n");
+        trace(12,"weight of first candidate=float\n");
+        return 0; */
     }
     for (i=0;i<vnum;i++) {
         for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
         for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*quadratic(db,Qb,nb))/sum_p;
+
+        if (i==0) {
+            weight=exp(-0.5*quadratic(db,Qb,nb))/sum_p;
+            trace(12,"weight of first candidate=%.3f\n",weight);
+        }
     }
+#endif
 
     free(db);
 

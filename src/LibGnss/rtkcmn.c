@@ -2173,9 +2173,9 @@ extern int solve(const char *tr,const double *A,const double *Y,int n,
     if (!(info=matinv(B,n)))
         matmul(tr[0]=='N'?"NN":"NT",m,n,n,Y,B,X,1.0,0.0);
         /* matmul(tr[0]=='N'?"NN":"TN",n,m,n,B,Y,X); */
-        /* trace(12,"Z=\n"); tracemat(12,B,n,n,7,2,0);
-        trace(12,"Y=\n"); tracemat(12,Y,m,n,7,2,0);
-        trace(12,"N=\n"); tracemat(12,X,m,n,7,2,0); */
+        /* trace(12,"Z=\n"); tracemat(12,B,n,n,7,2);
+        trace(12,"Y=\n"); tracemat(12,Y,m,n,7,2);
+        trace(12,"N=\n"); tracemat(12,X,m,n,7,2); */
     free(B);
     return info;
 }
@@ -2208,8 +2208,8 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
     /* lsq*/
     matmul("TN",n,m,1,A,y,Ay,1.0,0.0); /* Ay=A'*y */
     matmul("TN",n,m,n,A,A,Q,1.0,0.0);  /* Q=A'*A */
-    /* trace(12,"L=\n"); tracemat(12,Ay,n,1,9,4,0);
-    trace(12,"Q=\n"); tracemat(12,Q,n,n,9,4,0); */
+    /* trace(12,"L=\n"); tracemat(12,Ay,n,1,9,4);
+    trace(12,"Q=\n"); tracemat(12,Q,n,n,9,4); */
     if (!(info=matinv(Q,n))) {
         matmul("NN",n,n,1,Q,Ay,x,1.0,0.0); /* x=Q^-1*Ay */
     }
@@ -2332,8 +2332,8 @@ extern int chol(const double *R, double *sR, int n)
         sR[i+i*n]=sqrt(sR[i+i*n]);
     }
 
-    trace(12,"R=\n");tracemat(12,R,n,n,16,9,0);
-    trace(12,"sR=\n");tracemat(12,sR,n,n,16,9,0);
+    trace(12,"R=\n");tracemat(12,R,n,n,16,9);
+    trace(12,"sR=\n");tracemat(12,sR,n,n,16,9);
 
     if (info) showmsg("Cholesky decomposition error\n");
 
@@ -2448,7 +2448,8 @@ extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const doub
     /* avoid sqrt negative value */
     for (i=0;i<m;i++) {
         if (Pv[i+i*m]<=0.0) {
-            showerr("Time=%s ,the innovation vector covariance matrix or the error covariance matrix is not positive definite!",Debug_Glo.chTime);
+            trace(7,"The innovation vector covariance matrix or the error covariance matrix is not positive definite!\n");
+            showerr("%s: The innovation vector covariance matrix or the error covariance matrix is not positive definite!",Debug_Glo.chTime);
             free(dV);
             free(W); free(sR); free(sRW);
             free(Q_);free(vP);
@@ -2569,7 +2570,7 @@ extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const doub
                 /* variance lower bound constraint*/
                 if (W[i+i*m]<low_weight) W[i+i*m]=low_weight;
             }
-            /* trace(12,"W=\n");tracemat(12,W,m,m,14,9,0); */
+            /* trace(12,"W=\n");tracemat(12,W,m,m,14,9); */
 
             /* modified measurement noise covariance matrix based on double factor equivalent weights */
             for (i=0;i<m;i++) {
@@ -2601,7 +2602,7 @@ extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const doub
         matcpy(Q,R_,m,m);
         matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */ 
     }
-    /* trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4,0); */
+    /* trace(12,"Q=\n"); tracemat(12,Q,m,m,9,4); */
 
     free(dV);
     free(W); free(sR); free(sRW);
@@ -2649,9 +2650,6 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
     matmul("NT",n,n,m,P,H,F,1.0,0.0); /* F=PH' */
     matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */
 
-    /* trace(12,"H=\n"); tracemat(12,H,m,n,15,9,0);
-    trace(12,"P=\n"); tracemat(12,P,n,n,15,9,0);
-    trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0); */
 
     for (i=0;i<iter;i++) {
 
@@ -2686,9 +2684,9 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
             /* matmul("NN",n,m,m,K,R,KR,1.0,0.0); */   /* KR=K*R */
             /* matmul("NT",n,m,n,KR,K,Pp,1.0,1.0); */  /* Pp=(I-K*H)*P_pre*(I-K*H)'+K*R*K' */
 
-            /* trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0); */
-            /* trace(12,"Kk=\n"); tracemat(12,K,n,m,15,9,0); */
-            /* trace(12,"Pp=\n"); tracemat(12,Pp,n,n,15,9,0); */            
+            /* trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9); */
+            /* trace(12,"Kk=\n"); tracemat(12,K,n,m,15,9); */
+            /* trace(12,"Pp=\n"); tracemat(12,Pp,n,n,15,9); */            
         }
         
         /* NOTE: robust filter based on a posteriori residuals */
@@ -2705,10 +2703,10 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
             matmul("NN",m,m,m,R_,Q,D,1.0,0.0);   /* D=R_*Q^-1 */
             matmul("NT",m,m,m,D,R_,Pv,1.0,0.0);  /* Pv=R_*Q^-1*R_' */
 
-            /* trace(12,"R_=\n"); tracemat(12,R_,m,m,15,9,0);
-            trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9,0);
-            trace(12,"D=\n"); tracemat(12,D,m,m,15,9,0);
-            trace(12,"Pv=\n"); tracemat(12,Pv,m,m,15,9,0); */
+            /* trace(12,"R_=\n"); tracemat(12,R_,m,m,15,9);
+            trace(12,"Q=\n"); tracemat(12,Q,m,m,15,9);
+            trace(12,"D=\n"); tracemat(12,D,m,m,15,9);
+            trace(12,"Pv=\n"); tracemat(12,Pv,m,m,15,9); */
             /* for (j=0;j<m;j++) trace(12,"Iter=%d, Pv(%d)=%.10f\n",i,j,Pv[j+j*m]); */
 
             /* robust weight function */
@@ -2726,6 +2724,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
             for(j=0;j<n;j++) {
                 if ((i==j)&&Pp[i+j*n]<0.0) {
                     info=-1;
+                    trace(7,"The error covariance matrix is not positive definite!\n");
                     showerr("%s: The error covariance matrix is not positive definite!",Debug_Glo.chTime);
                 }
             }
@@ -2796,10 +2795,10 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
             H_[i+j*k]=H[ix[i]+j*n];
     }
 
-    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4,0); */
-    /* trace(12,"H=\n"); tracemat(12,H_,m,k,9,4,0);
-    trace(12,"P=\n"); tracemat(12,P_,k,k,15,9,0);
-    trace(12,"R=\n"); tracemat(12,R,m,m,9,4,0); */
+    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4); */
+    /* trace(12,"H=\n"); tracemat(12,H_,m,k,9,4);
+    trace(12,"P=\n"); tracemat(12,P_,k,k,15,9);
+    trace(12,"R=\n"); tracemat(12,R,m,m,9,4); */
 
     /* do kalman filter state update on compressed arrays */
     info=filter_(rtk,x_,P_,H_,v,R,k,m,xp_,Pp_,mode);
@@ -2912,28 +2911,18 @@ extern int smoother_att(const double *qnb_f,const double *Qf,const double *qnb_b
 *return:none
 *notes :matrix stored by column-major order (fortran convention)
  *-----------------------------------------------------------------------------*/
-extern void matfprint(const double A[],int n,int m,int p,int q,FILE *fp,int flag) {
+extern void matfprint(const double A[],int n,int m,int p,int q,FILE *fp) 
+{
     int i,j;
 
-    if (flag) {
-        for (i=0;i<n;i++) {
-            for (j=0;j<m;j++){
-                if (fabs(A[j+i*m])) fprintf(fp," %*.*f",p,q,A[j+i*m]);
-            }
-            fprintf(fp,"\n");
-        }
-    }
-    else {
-        for (i=0;i<n;i++) {
-            for (j=0;j<m;j++)
-                fprintf(fp," %*.*f",p,q,A[j+i*m]);
-            fprintf(fp,"\n");
-        }        
-    }
-
+    for (i=0;i<n;i++) {
+        for (j=0;j<m;j++)
+            fprintf(fp," %*.*f",p,q,A[j+i*m]);
+        fprintf(fp,"\n");
+    }        
 }
 extern void matprint(const double A[],int n,int m,int p,int q) {
-    matfprint(A,n,m,p,q,stdout,0);
+    matfprint(A,n,m,p,q,stdout);
 }
 /* string to number ------------------------------------------------------------
 *convert substring in string to number
@@ -3891,13 +3880,13 @@ extern void eci2ecef(gtime_t tutc,const double *erpv,double *U,double *gmst) {
 
     trace(9,"gmst=%.12f gast=%.12f\n",gmst_,gast);
     trace(9,"P=\n");
-    tracemat(9,P,3,3,15,12,0);
+    tracemat(9,P,3,3,15,12);
     trace(9,"N=\n");
-    tracemat(9,N,3,3,15,12,0);
+    tracemat(9,N,3,3,15,12);
     trace(9,"W=\n");
-    tracemat(9,W,3,3,15,12,0);
+    tracemat(9,W,3,3,15,12);
     trace(9,"U=\n");
-    tracemat(9,U,3,3,15,12,0);
+    tracemat(9,U,3,3,15,12);
 }
 /* decode antenna parameter field --------------------------------------------*/
 static int decodef(char *p,int n,double *v) {
@@ -4698,8 +4687,8 @@ extern int sortobs(obs_t *obs) {
 *return:1:on condition,0:not on condition
  *-----------------------------------------------------------------------------*/
 extern int screent(gtime_t time,gtime_t ts,gtime_t te,double tint) {
-    return (tint <=0.0||fmod(time2gpst(time,NULL)+DTTOL,tint) <=DTTOL*2.0) &&
-           (ts.time==0||timediff(time,ts) >=-DTTOL) &&
+    return (tint<=0.0||fmod(time2gpst(time,NULL)+DTTOL,tint)<=DTTOL*2.0)&&
+           (ts.time==0||timediff(time,ts)>=-DTTOL)&&
            (te.time==0||timediff(time,te)<DTTOL);
 }
 /* read/save navigation data ---------------------------------------------------
@@ -5290,7 +5279,7 @@ extern void dops(int ns,const double *azel,double elmin,double *dop) {
         return;
 
     matmul("TN",4,n,4,H,H,Q,1.0,0.0); /* Q=H'*H */
-    /* trace(12,"H=\n"); tracemat(12,H,n,4,9,4,0); */
+    /* trace(12,"H=\n"); tracemat(12,H,n,4,9,4); */
     if (!matinv(Q,4)) {
         dop[0]=SQRT(Q[0]+Q[5]+Q[10]+Q[15]);      /* GDOP */
         dop[1]=SQRT(Q[0]+Q[5]+Q[10]);            /* PDOP */

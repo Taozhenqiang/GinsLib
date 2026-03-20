@@ -11,7 +11,7 @@ from time_conversion import epoch2time, utc2gpst, time2gpst, GTimeT
 # 在这里修改配置参数
 
 # 输入文件路径
-INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20260211/ref.csv"  
+INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/ref.xlsx"  
 
 # 要跳过的行数（通常是表头或注释行）
 SKIP_LINES = 1
@@ -38,7 +38,7 @@ VELOCITY_COEFFICIENTS = [1, 1, 1]  # 速度系数 [x系数, y系数, z系数]
 ATTITUDE_COLS = [12, 13, 14]  # [pitch, roll, heading]
 
 # 输出文件路径（如果为None，则自动生成）
-OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20260211/truth.truth"
+OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/truth.truth"
 
 # 是否显示详细信息
 VERBOSE = True
@@ -121,42 +121,97 @@ def convert_time_format(time_data, input_format, time_system, output_format="wee
     """
     converted_time = []
     
-    for time_row in time_data:
-        if input_format == "calendar":
-            # 输入为格里高利历格式 [年, 月, 日, 时, 分, 秒]
-            if len(time_row) >= 6:
-                # 将日历时间转换为计算机时
-                t_epoch = epoch2time(time_row[:6])
-                
-                # 根据时间系统转换为GPS时间
-                if time_system == "UTC":
-                    t_gps = utc2gpst(t_epoch)
-                else:  # GPST
-                    t_gps = t_epoch
-                
-                # 转换为周和周内秒
-                week = [0]
-                tow = time2gpst(t_gps, week)
-                converted_time.append([week[0], tow])
+    for i, time_row in enumerate(time_data):
+        try:
+            if input_format == "calendar":
+                # 输入为格里高利历格式 [年, 月, 日, 时, 分, 秒]
+                if len(time_row) >= 6:
+                    # 检查数据有效性
+                    if not all(isinstance(x, (int, float)) for x in time_row[:6]):
+                        print(f"警告: 第{i+1}行包含非数字时间数据: {time_row[:6]}")
+                        converted_time.append([0.0, 0.0])
+                        continue
+                    
+                    # 将日历时间转换为计算机时
+                    t_epoch = epoch2time(time_row[:6])
+                    
+                    # 检查时间转换是否有效
+                    if t_epoch.time == 0:
+                        print(f"警告: 第{i+1}行时间转换失败: {time_row[:6]}")
+                        converted_time.append([0.0, 0.0])
+                        continue
+                    
+                    # 根据时间系统转换为GPS时间
+                    if time_system == "UTC":
+                        t_gps = utc2gpst(t_epoch)
+                    else:  # GPST
+                        t_gps = t_epoch
+                    
+                    # 转换为周和周内秒
+                    week = [0]
+                    tow = time2gpst(t_gps, week)
+                    
+                    # 检查转换结果
+                    if week[0] == 0 and tow == 0:
+                        print(f"警告: 第{i+1}行GPS时间转换异常: {time_row[:6]} -> 周:{week[0]}, 秒:{tow}")
+                        converted_time.append([0.0, 0.0])
+                    else:
+                        converted_time.append([week[0], tow])
+                else:
+                    print(f"警告: 第{i+1}行数据不足6个时间元素: {time_row}")
+                    converted_time.append([0.0, 0.0])  # 无效数据
+                    
+            elif input_format == "week_tow":
+                # 输入已经是周/周内秒格式
+                if len(time_row) >= 2:
+                    # 检查数据有效性
+                    if not all(isinstance(x, (int, float)) for x in time_row[:2]):
+                        print(f"警告: 第{i+1}行包含非数字周/秒数据: {time_row[:2]}")
+                        converted_time.append([0.0, 0.0])
+                        continue
+                    
+                    converted_time.append(time_row[:2])
+                else:
+                    print(f"警告: 第{i+1}行数据不足2个时间元素: {time_row}")
+                    converted_time.append([0.0, 0.0])  # 无效数据
+                    
             else:
-                converted_time.append([0.0, 0.0])  # 无效数据
+                print(f"错误: 第{i+1}行未知输入时间格式: {input_format}")
+                converted_time.append([0.0, 0.0])  # 未知格式
                 
-        elif input_format == "week_tow":
-            # 输入已经是周/周内秒格式
-            if len(time_row) >= 2:
-                converted_time.append(time_row[:2])
-            else:
-                converted_time.append([0.0, 0.0])  # 无效数据
-                
-        else:
-            converted_time.append([0.0, 0.0])  # 未知格式
+        except Exception as e:
+            print(f"错误: 第{i+1}行时间转换异常 - 行内容: {time_row}, 错误: {e}")
+            converted_time.append([0.0, 0.0])
+    
+    # 统计转换结果
+    valid_count = sum(1 for item in converted_time if item != [0.0, 0.0])
+    invalid_count = len(converted_time) - valid_count
+    
+    if invalid_count > 0:
+        print(f"时间格式转换完成: 有效{valid_count}行, 无效{invalid_count}行")
+    else:
+        print(f"时间格式转换完成: 全部{valid_count}行有效")
     
     return np.array(converted_time)
 
 def read_csv_file(file_path, skip_lines=0):
     """读取CSV文件并返回所有数据"""
     try:
-        df = pd.read_csv(file_path, skiprows=skip_lines, header=None)
+        # 强制将所有列转换为数字类型，无法转换的设为NaN
+        df = pd.read_csv(file_path, skiprows=skip_lines, header=None, dtype=str)
+        
+        # 将所有数据转换为浮点数，无法转换的设为NaN
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # 检查是否有NaN值
+        nan_count = df.isna().sum().sum()
+        if nan_count > 0:
+            print(f"警告: CSV文件中发现{nan_count}个无法转换为数字的值，已设为NaN")
+        
+        # 将NaN替换为0或删除包含NaN的行
+        df = df.fillna(0)  # 或者使用 df = df.dropna() 删除包含NaN的行
+        
         return df.to_numpy()
     except Exception as e:
         print(f"读取CSV文件错误: {e}")
@@ -165,7 +220,26 @@ def read_csv_file(file_path, skip_lines=0):
 def read_excel_file(file_path, skip_lines=0, sheet_name=0):
     """读取Excel文件并返回所有数据"""
     try:
-        df = pd.read_excel(file_path, skiprows=skip_lines, header=None, sheet_name=sheet_name)
+        # 强制将所有列转换为字符串，然后转换为数字
+        df = pd.read_excel(file_path, skiprows=skip_lines, header=None, sheet_name=sheet_name, dtype=str)
+        
+        # 将所有数据转换为浮点数，无法转换的设为NaN
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # 检查是否有NaN值
+        nan_count = df.isna().sum().sum()
+        if nan_count > 0:
+            print(f"警告: Excel文件中发现{nan_count}个无法转换为数字的值，已设为NaN")
+            
+            # 显示包含NaN的具体位置
+            nan_rows = df.isna().any(axis=1)
+            if nan_rows.any():
+                print("包含NaN值的行号:", df[nan_rows].index.tolist())
+        
+        # 将NaN替换为0
+        df = df.fillna(0)
+        
         return df.to_numpy()
     except Exception as e:
         print(f"读取Excel文件错误: {e}")
@@ -396,11 +470,17 @@ def convert_reference_file():
         elif file_ext in ['.xlsx', '.xls']:
             data_array = read_excel_file(input_file, skip_lines)
         else:
+            # 默认为文本文件
             data_array = read_text_file(input_file, skip_lines)
         
         if data_array is None:
             print("错误: 无法读取文件数据")
             return False
+        
+        # 检查数据数组中的数据类型
+        if verbose:
+            print(f"数据数组形状: {data_array.shape}")
+            print(f"数据数组数据类型: {data_array.dtype}")
         
         if verbose:
             print(f"读取数据成功，数据维度: {data_array.shape}")

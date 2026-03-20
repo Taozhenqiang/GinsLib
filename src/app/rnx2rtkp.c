@@ -93,7 +93,7 @@ int main(int argc, char **argv)
     gtime_t ts={0},te={0};
     double tint=0.0,es[]={2000,1,1,0,0,0},ee[]={2000,12,31,23,59,59},pos[3],offset[3]={0.0};
     int i,j,n,stat,pos2kml=0;
-    const char *infile[MAXFILE],*outfile="",*p;
+    char *refile="",*outfile="",*p;
 
     clock_t start_time, end_time;
     double total_time;
@@ -140,6 +140,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-ambt")&&i+1<argc) prcopt.artype=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-solt")&&i+1<argc) prcopt.soltype=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-kml"))            pos2kml=1;
+        else if (!strcmp(argv[i],"-ref")&&i+1<argc)  refile=argv[++i];
         else if (!strcmp(argv[i],"-sys")&&i+1<argc) 
         {
             prcopt.navsys=SYS_NONE;
@@ -202,7 +203,7 @@ int main(int argc, char **argv)
 
     /* convert solution to kml file */
     if (pos2kml) {
-        convkml(filopt.sol,outfile,ts,te,tint,0,offset,2,4,0,0);   
+        convkml(filopt.sol,refile,outfile,ts,te,&solopt,tint,0,offset,2,4,1,0,0);   
     }    
 
     end_time=clock(); /* end time */

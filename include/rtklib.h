@@ -96,6 +96,8 @@ extern "C"
 /* ins constants/macros */
 #define NINCIMU     100000        /* incremental number of imu data */
 #define NMAXPOS     10000         /* max number of pos data */
+#define NMAXREF     1000          /* max number of ref data */
+#define NMAXERR     1000          /* max number of err data */
 #define MAXINS      2             /* maximum number of samples */
 
 /* GNSS/INS mode */
@@ -395,6 +397,7 @@ extern "C"
 #define MAXSTRRTK 8           /* max number of stream in RTK server */
 #define MAXSBSMSG 32          /* max number of SBAS msg in RTK server */
 #define MAXSOLMSG 8191        /* max length of solution message */
+#define MAXREFMSG 1024        /* max length of reference message */
 #define MAXRAWLEN 16384       /* max length of receiver raw message */
 #define MAXERRMSG 4096        /* max length of error/warning message */
 #define MAXANT 64             /* max length of station name/antenna type */
@@ -693,22 +696,22 @@ extern "C"
 #define RTK_update 9    /* update ssat status for rtk*/
 
 /* output file type */
-#define OUTFILE_STAT 0 /* output solution status file (.stat) */
-#define OUTFILE_IPOS 1 /* output solution ipos file (.ipos) */
-#define OUTFILE_FILE 2 /* output solution file (azel/dop) */
+#define OUTFILE_STAT 1 /* output solution status file (.stat) */
+#define OUTFILE_IPOS 2 /* output solution ipos file (.ipos) */
+#define OUTFILE_FILE 4 /* output solution file (azel/dop) */
 
 /* output type */
-#define OUT_AZEL   0    /* output azel file */
-#define OUT_SATDOP 1    /* output satdop file */
+#define OUT_AZEL   1    /* output azel file */
+#define OUT_SATDOP 2    /* output satdop file */
 
 /* trace output type of filter */
-#define TRAE_R    0     /* measurement noise matrix R */
-#define TRAE_H    1     /* measurement matrix H */
-#define TRAE_Ppre 2     /* pre-filter covariance matrix Ppre */
-#define TRAE_Pp   3     /* post-filter covariance matrix Pp */
-#define TRAE_v    4     /* innovation vector v */
-#define TRAE_xpre 5     /* pre-filter state vector xpre */
-#define TRAE_xp   6     /* post-filter state vector xp */
+#define TRAE_R    1     /* measurement noise matrix R */
+#define TRAE_H    2     /* measurement matrix H */
+#define TRAE_Ppre 4     /* pre-filter covariance matrix Ppre */
+#define TRAE_Pp   8     /* post-filter covariance matrix Pp */
+#define TRAE_v    16    /* innovation vector v */
+#define TRAE_xpre 32    /* pre-filter state vector xpre */
+#define TRAE_xp   64    /* post-filter state vector xp */
 
 /* end */
 
@@ -1282,12 +1285,41 @@ extern "C"
     } sol_t;
 
     typedef struct
+    {                      /* reference type */
+        gtime_t time;      /* time (GPST) */
+        double pos[3];     /* reference position (ecef) (m) */
+        double vel[3];     /* reference velocity (ecef) (m/s) */
+        double att[3];     /* reference attitude (deg) [pitch,roll,yaw] */
+    } refd_t;
+
+    typedef struct 
+    {
+        int n,nmax;        /* number of reference data/max number of buffer */
+        refd_t *data;      /* reference data buffer */
+    } ref_t;
+
+    typedef struct 
+    {                      /* error analysis */
+        gtime_t time;      /* time (GPST) */
+        double pos[3];     /* position error of enu frame (m) */
+        double vel[3];     /* velocity error of enu frame (m/s) */
+        double att[3];     /* attitude error (deg) [pitch,roll,yaw] */
+    } errd_t;
+
+    typedef struct
+    {
+        int n,nmax;        /* number of error data/max number of buffer */
+        errd_t *data;      /* error data buffer */   
+    } err_t;
+
+    typedef struct
     {                                /* solution buffer type */
         int n, nmax;                 /* number of solution/max number of buffer */
         int cyclic;                  /* cyclic buffer flag */
         int start, end;              /* start/end index */
         gtime_t time;                /* current solution time */
         sol_t *data;                 /* solution data */
+        err_t *err;                  /* error analysis data */
         double rb[3];                /* reference position {x,y,z} (ecef) (m) */
         uint8_t buff[MAXSOLMSG + 1]; /* message buffer */
         int nb;                      /* number of byte in message buffer */
@@ -1964,7 +1996,7 @@ extern "C"
     EXPORT int smoother_att(const double *qnb_f,const double *Qf,const double *qnb_b,
                         const double *Qb,int n,double *xs,double *Qs);                    
     EXPORT void matprint(const double *A, int n, int m, int p, int q);
-    EXPORT void matfprint(const double *A, int n, int m, int p, int q, FILE *fp, int flag);
+    EXPORT void matfprint(const double *A, int n, int m, int p, int q, FILE *fp);
 
     EXPORT void add_fatal(fatalfunc_t *func);
 
@@ -2114,7 +2146,7 @@ extern "C"
     EXPORT void tracet(int level, const char *format, ...);
     EXPORT void tracefilter(int level, int type, int nx, int nv, const double *R, const double *H, const double *P_pre, const double *Pp, 
                         const double *v, const double *x_pre, const double *xp);
-    EXPORT void tracemat(int level, const double *A, int n, int m, int p, int q, int flag);
+    EXPORT void tracemat(int level, const double *A, int n, int m, int p, int q);
     EXPORT void traceobs(int level, const obsd_t *obs, int n);
     EXPORT void tracenav(int level, const nav_t *nav);
     EXPORT void tracegnav(int level, const nav_t *nav);
@@ -2360,6 +2392,11 @@ extern "C"
                             double tint, solstatbuf_t *statbuf);
     EXPORT int inputsol(uint8_t data, gtime_t ts, gtime_t te, double tint,
                         int qflag, const solopt_t *opt, solbuf_t *solbuf);
+    EXPORT int addrefdata(ref_t *ref, const refd_t *data);
+    EXPORT int adderrdata(err_t *err, const errd_t *data);
+    EXPORT int readref(const char *refile, ref_t *ref);
+    EXPORT int err_analysis(ref_t *ref, solopt_t *opt, solbuf_t *solbuf, err_t *err);
+    EXPORT int saverr(solbuf_t *solbuf, err_t *err, const char *errfile);
 
     EXPORT int outprcopts(uint8_t *buff, const prcopt_t *opt);
     EXPORT int outsolheads(uint8_t *buff, const prcopt_t *popt, const solopt_t *opt);
@@ -2382,9 +2419,9 @@ extern "C"
                            const ssat_t *ssat);
 
     /* google earth kml converter ------------------------------------------------*/
-    EXPORT int convkml(const char *infile, const char *outfile, gtime_t ts,
-                       gtime_t te, double tint, int qflg, double *offset,
-                       int tcolor, int pcolor, int outalt, int outtime);
+    EXPORT int convkml(const char *infile, const char *refile, const char *outfile, gtime_t ts,
+                       gtime_t te, solopt_t *sopt, double tint, int qflg, double *offset,
+                       int tcolor, int pcolor, int outerr, int outalt, int outtime);
 
     /* gpx converter -------------------------------------------------------------*/
     EXPORT int convgpx(const char *infile, const char *outfile, gtime_t ts,
