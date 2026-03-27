@@ -171,10 +171,12 @@ static int search(int n, int m, const double *L, const double *D,
             for (l=0;l<n;l++) SWAP(zn[l+i*n],zn[l+j*n]);
         }
     }
+
+    /* free memory */
     free(S); free(dist); free(zb); free(z); free(step);
     
     if (c>=LOOPMAX) {
-        /* fprintf(stderr,"%s : search loop count overflow\n",__FILE__); */
+        fprintf(stderr,"%s : search loop count overflow\n",__FILE__);
         trace(12,"search loop count overflow\n");
         /* trace(12,"not ok, integer candidates Zn:\n"); tracemat(12,zn,m,n,10,5); */
         return -1;
@@ -224,15 +226,17 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
         trace(12,"Q=\n"); tracemat(12,Q,n,n,10,5);
         trace(12,"L=\n"); tracemat(12,L,n,n,10,5);
         trace(12,"D=\n"); tracemat(12,D,n,1,10,5); */
-        
-        /* the ambiguity covariance after decorrelation is used as a screening criterion for PAR */
+
+#if 0        
+        /* the ambiguity covariance after decorrelation is used as a screening criterion for PAR */      
         for (i=0;i<n;i++) dQz[i]=Qz[i+i*n]; /* dQz=diag(Qz) */
         for (i=1,j=0;i<n;i++) {
             if (dQz[i]>dQz[j]) j=i;
         }
 
         /* index of maximum variance */
-        /* low_ix[0]=ix[2*idx[j]+1]-(ixf[2*idx[j]]*MAXSAT+rtk->na); low_ix[1]=ixf[2*idx[j]+1]; */ 
+        low_ix[0]=ix[2*idx[j]+1]-(ixf[2*idx[j]]*MAXSAT+rtk->na); low_ix[1]=ixf[2*idx[j]+1]; 
+#endif
 
         matmul("NN",n,n,1,Z,a,z,1.0,0.0);
         /* trace(12,"z=\n"); tracemat(12,z,n,1,7,2); */
@@ -243,12 +247,15 @@ extern int lambda(rtk_t *rtk, int n, int m, const double *a, const double *Q, do
             L,D = transformed covariance matrix */
         if (!(info=search(n,m,L,D,z,E,s))) {  /* returns 0 if no error */
             
+            /* trace(12,"E'=\n");tracemat(12,E,m,n,10,5); */
+
             /* transform the fixed integer ambiguity to the original space, F=Z'\E */
             /* the fixed solution here is the row vector, so F(mxn)=(Z'\E)'=E'*Z^-1 */
             info=solve("T",Z,E,n,m,F); 
         }
     }
-    free(L); free(D); free(Z); free(z); free(E); free(zQ); free(Qz); free(dQz);
+    free(L); free(D); free(Z); free(z); free(E); free(zQ); free(Qz); free(dQz); free(idx);
+
     return info;
 }
 /* lambda reduction ------------------------------------------------------------
@@ -476,29 +483,72 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
 extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE) 
 {
     int i,j,vnum=num_candidate;
-    double sum_p=0.0,*db,weight;
+    double sum_p=0.0,*db,weight,thres;
+    double lambda=2.0; /* for laplace distribution */
+    double dof=2.0;    /* for student's t distribution */
 
     db=mat(nb,1);
+
+#if 0
+    /* quality control */
+    /* thres=chisqr[nb-1]; */ /* absolute threshold based on chi-square test */
+    for (j=0;j<nb;j++) db[j]=y[j]-b[j];
+    thres=3.0*quadratic(db,Qb,nb); /* relative threshold based on the first set of candidate solutions */
+    for (i=vnum-2,sum_p=0.0;i>=0;i--) {
+        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
+        sum_p=quadratic(db,Qb,nb);
+        if (sum_p>thres) {
+            vnum--;
+            continue;
+        }
+        else break;
+    }
+
+    /* if no candidate solution is qualified, return 0 */
+    if (vnum==0) {
+        trace(12,"amb_BIE: no qualified candidate solution\n");
+        return 0;
+    }
+#endif 
+       
+    /* for (i=0;i<vnum;i++) {
+        for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*1.0/vnum;
+    } */
 
 #if 1
     /* BIE soluiton */
     for (i=0,sum_p=0.0;i<vnum;i++) {
         for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
-        sum_p+=exp(-0.5*quadratic(db,Qb,nb));
+        /* Gaussian distribution weighted  */
+        /* sum_p+=exp(-0.5*quadratic(db,Qb,nb)); */
+
+        /* laplace distribution weighted  */
+        sum_p+=exp(-0.5*sqrt(quadratic(db,Qb,nb)));
+
+        /* student's t distribution weighted  */
+        /* sum_p+=pow(1.0+quadratic(db,Qb,nb)/dof,-0.5*(nb+dof)); */
+
     }    
     /* The large residual of the quadratic form in the candidate solution causes the exp to tend to infinity */
     if (sum_p==0.0) {
-        for (i=0;i<vnum;i++) {
+        /* for (i=0;i<vnum;i++) {
             for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*1.0/vnum;
         }
-        return 1;
-        /* trace(12,"amb_BIE: sum_p=0.0\n");
+        return 1; */
+        trace(12,"amb_BIE: sum_p=0.0\n");
         trace(12,"weight of first candidate=float\n");
-        return 0; */
+        return 0;
     }
     for (i=0;i<vnum;i++) {
         for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
-        for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*quadratic(db,Qb,nb))/sum_p;
+        /* Gaussian distribution weighted  */
+        /* for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*quadratic(db,Qb,nb))/sum_p; */
+
+        /* laplace distribution weighted  */
+        for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*exp(-0.5*sqrt(quadratic(db,Qb,nb)))/sum_p;
+
+        /* student's t distribution weighted  */
+        /* for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*pow(1.0+quadratic(db,Qb,nb)/dof,-0.5*(nb+dof))/sum_p */;
 
         if (i==0) {
             weight=exp(-0.5*quadratic(db,Qb,nb))/sum_p;

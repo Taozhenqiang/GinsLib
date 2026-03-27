@@ -1605,29 +1605,51 @@ static int test_hold_amb(rtk_t *rtk)
     return ++rtk->nfix>=rtk->opt.minfix;
 }
 
-/* PPP observation value pre-check*/
-extern void obsScan_ppp(const prcopt_t *opt, obsd_t *obs, const int nobs, int *ns)
+/* observation pre-check*/
+extern int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr)
 {
-	int i,n,sat,sys,fr2[2];
+	int i,ns,sat,sys,fr2[2],prn;
+    double threshold=100;
+    char id[4];
 
-	for (i=n=0;i<nobs&&i<MAXOBS;i++) {
+	for (i=ns=0;i<nu&&i<MAXOBS;i++) {
 		sat=obs[i].sat;
-        sys=satsys(sat,NULL);
+        sys=satsys(sat,&prn);
         fr2[0]=sys2freid(sys,0,opt);
         fr2[1]=sys2freid(sys,1,opt);
 
+        /* carrier integrity check for ppp */
         if (opt->mode>=PMODE_PPP_KINEMA) {
-            if ((fabs(obs[i].L[fr2[0]])==0.0)&&(fabs(obs[i].L[fr2[1]])==0.0)) continue;
+            if ((fabs(obs[i].L[fr2[0]])==0.0)&&(fabs(obs[i].L[fr2[1]])==0.0)) {
+                continue;
+            }
         }
 
         /* pseudorange outlier detection */
-        if (fabs(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])>=200.0) continue;
+        if ((obs[i].P[fr2[0]]!=0.0&&fabs(obs[i].P[fr2[0]])<19e6)||(obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[1]])<19e6)) {
+            satno2id(sat,id);
+            trace(7,"obsScan: abnormal pseudorange observations, less than 19000 km, sat=%s\n",id);
+            continue;            
+        }
+        if (obs[i].P[fr2[0]]!=0.0&&obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])>=threshold) {
+            satno2id(sat,id);
+            trace(7,"obsScan: dual-frequency pseudorange difference exceeded the limit, sat=%s\n",id);
+            continue;
+        }
 
-        obs[n]=obs[i];
-        n++;   
+        obs[ns]=obs[i];
+        ns++;
 	}
 
-	if (ns) *ns=n;
+    if (!ns) return 0;
+    
+    /* overwrite the excluded satellites in the obs structure */
+    if (ns<nu) {
+        /* append base station data */
+        for (i=nu;i<nu+nr;i++) obs[ns+i]=obs[i];
+    }
+
+    return ns;
 }
 
 /* precise point positioning -------------------------------------------------*/

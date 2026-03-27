@@ -92,6 +92,9 @@ extern "C"
 #define STA_SINGLE 0     /* option: single base station */
 #define STA_VRS    1     /* option: vrs (multi base stations) */
 
+#define MODE_PRIOR 0     /* option: prior */
+#define MODE_POST  1     /* option: posterior */
+
 /* GNSS/INS options ---------------*/
 /* ins constants/macros */
 #define NINCIMU     100000        /* incremental number of imu data */
@@ -187,7 +190,7 @@ extern "C"
 /* end */
 
 /* GNSS option */
-#define MAXITR  10      /* max number of iteration for spp */
+#define MAXITR  20      /* max number of iteration for spp */
 #define MAXSYS  6       /* max system */
 #define MAXFREQ 7       /* max NFREQ */
 #define THRES_MW_JUMP 10.0 /* threshold for mw jump detection */
@@ -1422,6 +1425,8 @@ extern "C"
     {                            /* processing options type */
         int GI_mode;             /* GNSS/INS positioning mode (GINS_???) */    
         int mode;                /* GNSS positioning mode (PMODE_???) */
+        int mfspp;               /* multi-frequency SPP enable flag (0:off,1:on) */
+        int respp;               /* LS robust estimation enable flag (0:off,1:on) */
         int soltype;             /* solution type (0:forward,1:backward,2:combined) */
         int reverse;             /* analysis direction (0:forward,1:backward) */
         int nf;                  /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
@@ -1494,7 +1499,7 @@ extern "C"
         uint8_t exsats[MAXSAT];  /* excluded satellites (1:excluded,2:included) */
         int maxaveep;            /* max averaging epochs */
         int initrst;             /* initialize by restart */
-        int outsingle;           /* output single by dgps/float/fix/ppp outage */
+        int outsingle;           /* when the solution fails in DGPS/PPK/PPP mode, output the SPP solution */
         char rnxopt[2][256];     /* rinex options {rover,base} */
         int posopt[6];           /* positioning options [0]sat pcv [1]rec pcv and pco [2]phase windup [3]block IIA [4]RAIM PDE [5]clock jump*/
         double odisp[2][6*11];   /* ocean tide loading parameters {rov,base} */
@@ -1975,7 +1980,7 @@ extern "C"
     EXPORT int solve(const char *tr, const double *A, const double *Y, int n,
                      int m, double *X);
     EXPORT int outrej_spp(int nv, int nx, double thres, double *v, double *H, double *var,
-                      const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it);                 
+                      const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it, int *clock_idx);                 
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
     EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
     EXPORT int chol(const double *R, double *sR, int n);
@@ -2489,6 +2494,8 @@ extern "C"
                              double *F, double *s);
 
     /* standard positioning ------------------------------------------------------*/
+    EXPORT int spp_sys(const prcopt_t *popt, int *clock_idx);
+    EXPORT int maxobsat(const int *vsat, int n, int nf);
     EXPORT int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
                       const prcopt_t *opt, sol_t *sol, double *azel, ssat_t *ssat);
     EXPORT int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
@@ -2520,7 +2527,7 @@ extern "C"
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
     /* precise point positioning -------------------------------------------------*/
-    EXPORT void obsScan_ppp(const prcopt_t *opt, obsd_t *obs, const int nobs, int *ns);
+    EXPORT int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr);
     EXPORT void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav);
     EXPORT int pppnx(const prcopt_t *opt);
     EXPORT int pppoutstat(rtk_t *rtk, char *buff);

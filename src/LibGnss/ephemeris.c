@@ -777,6 +777,7 @@ extern void satposs(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
     gtime_t time[2*MAXOBS]={{0}};
     double dt=0,pr;
     int i,j;
+    char id[4];
 
     trace(3,"satposs : teph=%s n=%d ephopt=%d\n",time_str(teph,3),n,ephopt);
 
@@ -830,8 +831,9 @@ extern void satposs(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
 
     }
     for (i=0;i<n&&i<2*MAXOBS;i++) {
-        trace(3,"%s sat=%2d rs=%13.3f %13.3f %13.3f dts=%12.3f var=%7.3f svh=%02X\n",
-              time_str(time[i],9),obs[i].sat,rs[i*6],rs[1+i*6],rs[2+i*6],
+        satno2id(obs[i].sat,id);
+        trace(3,"%s sat=%s rs=%13.3f %13.3f %13.3f dts=%12.3f var=%7.3f svh=%02X\n",
+              time_str(time[i],9),id,rs[i*6],rs[1+i*6],rs[2+i*6],
               dts[i*2]*1E9,var[i],svh[i]);
     }
 }

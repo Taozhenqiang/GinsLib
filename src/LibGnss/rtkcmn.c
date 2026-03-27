@@ -236,7 +236,9 @@ const prcopt_t prcopt_default={
     /* defaults processing options */
     GINS_OFF,
     PMODE_KINEMA,
-    SOLTYPE_FORWARD,/* mode,soltype */
+    0,
+    0,
+    SOLTYPE_FORWARD,/* GNSS/INS mode, GNSS mode, mfspp flag, respp flag,soltype */
     0,              /* reverse, analysis direction (0:forward,1:backward)*/
     2,              /*nf*/
     {{0,1,2,3,4,5,6},
@@ -2173,9 +2175,11 @@ extern int solve(const char *tr,const double *A,const double *Y,int n,
     if (!(info=matinv(B,n)))
         matmul(tr[0]=='N'?"NN":"NT",m,n,n,Y,B,X,1.0,0.0);
         /* matmul(tr[0]=='N'?"NN":"TN",n,m,n,B,Y,X); */
-        /* trace(12,"Z=\n"); tracemat(12,B,n,n,7,2);
+#if 0        
+        trace(12,"Z=\n"); tracemat(12,B,n,n,7,2);
         trace(12,"Y=\n"); tracemat(12,Y,m,n,7,2);
-        trace(12,"N=\n"); tracemat(12,X,m,n,7,2); */
+        trace(12,"N=\n"); tracemat(12,X,m,n,7,2);
+#endif        
     free(B);
     return info;
 }
@@ -2208,12 +2212,13 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
     /* lsq*/
     matmul("TN",n,m,1,A,y,Ay,1.0,0.0); /* Ay=A'*y */
     matmul("TN",n,m,n,A,A,Q,1.0,0.0);  /* Q=A'*A */
-    /* trace(12,"L=\n"); tracemat(12,Ay,n,1,9,4);
-    trace(12,"Q=\n"); tracemat(12,Q,n,n,9,4); */
+
     if (!(info=matinv(Q,n))) {
         matmul("NN",n,n,1,Q,Ay,x,1.0,0.0); /* x=Q^-1*Ay */
     }
-    else {trace(7,"spp lsq error! measurement matrix rank deficiency.\n");}
+    else {
+        trace(7,"spp lsq error! measurement matrix rank deficiency.\n");
+    }
         
     free(Ay);
     return info;
@@ -2221,7 +2226,7 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
 extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode) 
 {
     double *AP,*Ay,*AQ,*D,*vx,*xp_pre;
-    double dv,alpha,k0=1.5,k1=2.5;
+    double dv,alpha,k0=1.5,k1=2.5; /* factors for robust estimation */
     int info,i,j,k,iter=(mode==Robust_OFF)?1:MAXITR_ROBUST;
 
     if (m<n) {
@@ -2256,17 +2261,18 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
             matmul("NN",n,n,1,Q,Ay,x,1.0,0.0);  /* x=Q^-1*Ay */
 
             if (mode==Robust_RES&&i<iter-1) {
-
                 /* iteration termination judgment */
                 if (i>0&&iter_judge(x,xp_pre,n,ITR_TOL)) {
                     break; 
                 }   
                 
                 /* compute the posterior residuals and the corresponding error covariance matrix */
-                matmul("NN",m,n,1,A,x,vx,-1.0,1.0); /* vx=z-A*x */          
+                matmul("NN",m,n,1,A,x,vx,-1.0,1.0); /* vx=z-A*x */    
+#if 0           
+                /* TODO: for numerical stability, MNCM is used here instead of posterior residual covariance */
                 matmul("NN",m,n,n,A,Q,AQ,1.0,0.0);  /* AQ=A*Q */
-                /* matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); */ /* D=R-A*Q*A' */
-
+                matmul("NT",m,n,m,AQ,A,D,-1.0,1.0); /* D=R-A*Q*A' */
+#endif
                 for (k=0;k<m;k++) for (j=0;j<m;j++) {
                     if (k==j) {
                         /* remove auxiliary quantities that prevent least squares rank deficiency */
@@ -2288,12 +2294,20 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
 
                         /* modified weight matrix */
                         P[k+j*m]*=alpha; 
+                        /* variance lower bound constraint */
+                        if (P[k+j*m]<1e-8) P[k+j*m]=1e-8;
                     }
                 }       
             }
         }
         else {
+#if 1            
+            trace(12,"H=\n"); tracemat(12,A,m,n,9,4);
+            trace(12,"P=\n"); tracemat(12,P,m,m,9,4);
+            trace(12,"Q=\n"); tracemat(12,Q,n,n,9,4);
+#endif            
             trace(7,"spp lsq error! measurement matrix rank deficiency.\n");
+            return -1;
         }        
     }
 
@@ -2794,11 +2808,6 @@ extern int filter_gins(rtk_t *rtk, double *x, double *P, const double *H, const 
         for (j=0;j<m;j++)
             H_[i+j*k]=H[ix[i]+j*n];
     }
-
-    /* trace(12,"x=\n"); tracemat(12,x_,k,1,9,4); */
-    /* trace(12,"H=\n"); tracemat(12,H_,m,k,9,4);
-    trace(12,"P=\n"); tracemat(12,P_,k,k,15,9);
-    trace(12,"R=\n"); tracemat(12,R,m,m,9,4); */
 
     /* do kalman filter state update on compressed arrays */
     info=filter_(rtk,x_,P_,H_,v,R,k,m,xp_,Pp_,mode);

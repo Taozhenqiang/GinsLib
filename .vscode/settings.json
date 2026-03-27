@@ -24,4 +24,13 @@
         "*.rh": "c",
         "math.h": "c"
     },
+      // 自定义标签列表，插件会自动匹配这些关键词
+    "todo-tree.general.tags": [
+        "TODO",
+        "FIXME",
+        "NOTE",
+    ],
+    // 不区分大小写（推荐）
+    "todo-tree.regex.regexCaseSensitive": false,
+    "todo-tree.tree.showCountsInTree": false,
 }
