@@ -238,7 +238,8 @@ const prcopt_t prcopt_default={
     PMODE_KINEMA,
     0,
     0,
-    SOLTYPE_FORWARD,/* GNSS/INS mode, GNSS mode, mfspp flag, respp flag,soltype */
+    0,
+    SOLTYPE_FORWARD,/* GNSS/INS mode, GNSS mode, mfspp flag, respp flag, cdspp flag, soltype */
     0,              /* reverse, analysis direction (0:forward,1:backward)*/
     2,              /*nf*/
     {{0,1,2,3,4,5,6},
@@ -729,6 +730,19 @@ extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int 
     return 1;
 }
 
+/* sliding window average */
+extern void slid_windows(int N, double *data1, uint16_t *data2, int n)
+{
+    /* init, idx<window size */
+    if (n<=N) {
+        if (n<N) *data1+=(*data2*SNR_UNIT);
+        else *data1/=N;
+    }
+    else { /* update, idx>=window size */
+        *data1=*data1*(N-1)/N+(*data2*SNR_UNIT)/N;
+    }
+}
+
 /* init ssat structure (SPP/RTK/PPP) ----------------------------------------
 * args  :  rtk_t    *rtk   IO   rtk structure
            obsd_t   *obs   I   observation struct
@@ -741,7 +755,9 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
 {
     prcopt_t *opt=&rtk->opt;
     ssat_t *ssat=rtk->ssat;
-    int i,j,sys,fr,nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf;
+    int i,j,sys,sat,fr,nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf;
+    int snr_window=SNR_WINDOW;
+    double dsnr=0.0,snr_thres=5.0;
 
     /* reset fix and par_ivsat flag for all sats (RTK) */
     if (SPP_ssat==mode) {
@@ -761,10 +777,25 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
         }
         for (i=0;i<n;i++) {
             sys=satsys(obs[i].sat,NULL); 
+            sat=obs[i].sat-1;
             for (j=0;j<nf;j++) {
-                fr=sys2freid(sys,j,opt);
-                ssat[obs[i].sat-1].snr_rover[fr]=obs[i].SNR[fr];
-                ssat[obs[i].sat-1].maxsnr_rover[fr]=MAX((SNR_UNIT*obs[i].SNR[fr]),ssat[obs[i].sat-1].maxsnr_rover[fr]);                
+                fr=sys2freid(sys,j,opt); 
+                ssat[sat].snr_rover[fr]=obs[i].SNR[fr];
+                /* control the lower limit of the pushed SNR within the initial window */
+                if (ssat[sat].window_size[fr]<=snr_window) {
+                    if (SNR_UNIT*ssat[sat].snr_rover[fr]>25.0) ssat[sat].snruna_rover[fr]=0;
+                    else ssat[sat].snruna_rover[fr]=1;
+                }
+                else {
+                    dsnr=ssat[sat].snr_slidr[fr]-SNR_UNIT*ssat[sat].snr_rover[fr];
+                    if (dsnr>=snr_thres) ssat[sat].snruna_rover[fr]=1; /* do not push the sliding window when SNR decreases more than 5dB */  
+                    else ssat[sat].snruna_rover[fr]=0;                      
+                }
+
+                if (!ssat[sat].snruna_rover[fr]) {
+                    slid_windows(snr_window,&ssat[sat].snr_slidr[fr],&ssat[sat].snr_rover[fr],ssat[sat].window_size[fr]);    
+                    ssat[sat].window_size[fr]++; /* update window size for next epoch */
+                }                
             }         
         }
     }

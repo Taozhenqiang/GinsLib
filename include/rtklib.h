@@ -83,6 +83,13 @@ extern "C"
 
 #define HION 350000.0 /* ionosphere height (m) */
 
+#define SNR_UNIT 0.001 /* SNR unit (dBHz) */
+#define SNR_WINDOW 600 /* SNR window (epoch) */
+
+#define SPP_C  0  /* spp based on pseudorange*/
+#define SPP_D  1  /* velocity estimation based on Doppler */
+#define SPP_CD 2  /* spp based on pseudorange and Doppler */
+
 #define diag_var 0       /* option: covariance */
 #define diag_wei 1       /* option: weights */
 
@@ -273,8 +280,6 @@ extern "C"
 #ifndef NEXOBS
 #define NEXOBS 0 /* number of extended obs codes */
 #endif
-
-#define SNR_UNIT 0.001 /* SNR unit (dBHz) */
 
 #define MINPRNGPS 1                         /* min satellite PRN number of GPS */
 #define MAXPRNGPS 32                        /* max satellite PRN number of GPS */
@@ -1255,6 +1260,7 @@ extern "C"
         gtime_t eventime;  /* time of event (GPST) */
         double rr[6];      /* position/velocity (m|m/s) */
                            /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
+        double rr_old[6];  /* previous position/velocity (m|m/s) */
         double vel[3];     /* ins velocity in ecef frame (m/s) */
         double att[3];     /* attitude [pitch,roll,yaw] (deg) */
         double qnb[4];     /* attitude quaternion (qnb) */
@@ -1427,6 +1433,7 @@ extern "C"
         int mode;                /* GNSS positioning mode (PMODE_???) */
         int mfspp;               /* multi-frequency SPP enable flag (0:off,1:on) */
         int respp;               /* LS robust estimation enable flag (0:off,1:on) */
+        int cdspp;               /* spp based on pseudorange and Doppler (0:off,1:on) */
         int soltype;             /* solution type (0:forward,1:backward,2:combined) */
         int reverse;             /* analysis direction (0:forward,1:backward) */
         int nf;                  /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
@@ -1671,8 +1678,9 @@ extern "C"
         uint8_t par_ivsat[MAXFREQ];  /* invalid satellite flag for par */
         uint16_t snr_rover[MAXFREQ]; /* rover signal strength (0.25 dBHz) */
         uint16_t snr_base[MAXFREQ];  /* base signal strength (0.25 dBHz) */
-        double maxsnr_rover[MAXFREQ]; /* rover max signal strength (dBHz) */
-        double maxsnr_base[MAXFREQ];  /* base max signal strength (dBHz) */
+        int window_size[MAXFREQ];    /* window size */
+        int snruna_rover[MAXFREQ];   /* snr_rover unavailable flag */
+        double snr_slidr[MAXFREQ];   /* rover snr of sliding windows (dBHz) */
         uint8_t fix[MAXFREQ];        /* ambiguity fix flag (1:float,2:fix,3:hold) */
         uint8_t slip[MAXFREQ];       /* cycle-slip flag */
         uint8_t half[MAXFREQ];       /* half-cycle valid flag */
@@ -1979,7 +1987,7 @@ extern "C"
     EXPORT int matinv(double *A, int n);
     EXPORT int solve(const char *tr, const double *A, const double *Y, int n,
                      int m, double *X);
-    EXPORT int outrej_spp(int nv, int nx, double thres, double *v, double *H, double *var,
+    EXPORT int outrej_spp(int nv, int nx, int nx_code, double thres, double *v, double *H, double *var,
                       const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it, int *clock_idx);                 
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
     EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
@@ -2503,7 +2511,7 @@ extern "C"
                       const prcopt_t *opt, ssat_t *ssat, sol_t *sol, double *azel,
                       int *vsat, double *resp); 
     EXPORT int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
-                      const nav_t *nav, const prcopt_t *opt, sol_t *sol, const double *azel, const int *vsat);  
+                      const nav_t *nav, const prcopt_t *opt, sol_t *sol, const double *azel, int *vsat);  
     EXPORT double varerr_spp(const prcopt_t *opt, const ssat_t *ssat, const obsd_t *obs, double el, int sys); 
     EXPORT int valsol(sol_t *sol, const double *azel, const int *vsat, int n, const prcopt_t *opt, const double *v, double *P, int nv, int nx);                 
 
@@ -2513,6 +2521,7 @@ extern "C"
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
     EXPORT void covtodiag(double *P, int n);
     EXPORT void diag_Cov(int nv, const double *var, double *P, int opt);
+    EXPORT void slid_windows(int N, double *data1, uint16_t *data2, int n);
     EXPORT int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat);
     EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt);

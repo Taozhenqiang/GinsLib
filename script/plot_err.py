@@ -156,25 +156,33 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
         horizontal_errors = delta11[:, :2]  # 只取东和北方向
         cep50_horizontal = calculate_cep(horizontal_errors, 50)
         cep68_horizontal = calculate_cep(horizontal_errors, 68)
+        cep80_horizontal = calculate_cep(horizontal_errors, 80)
         cep95_horizontal = calculate_cep(horizontal_errors, 95)
+        cep99_horizontal = calculate_cep(horizontal_errors, 99)
         
         # 高程方向（天向）
         vertical_errors = delta11[:, 2:3]  # 只取天向
         cep50_vertical = np.percentile(np.abs(vertical_errors), 50)
         cep68_vertical = np.percentile(np.abs(vertical_errors), 68)
+        cep80_vertical = np.percentile(np.abs(vertical_errors), 80)
         cep95_vertical = np.percentile(np.abs(vertical_errors), 95)
+        cep99_vertical = np.percentile(np.abs(vertical_errors), 99)
         
         # 存储位置误差CEP值
         cep_stats['position'] = {
             'horizontal': {
                 'CEP50': cep50_horizontal,
                 'CEP68': cep68_horizontal,
-                'CEP95': cep95_horizontal
+                'CEP80': cep80_horizontal,
+                'CEP95': cep95_horizontal,
+                'CEP99': cep99_horizontal
             },
             'vertical': {
                 'CEP50': cep50_vertical,
                 'CEP68': cep68_vertical,
-                'CEP95': cep95_vertical
+                'CEP80': cep80_vertical,
+                'CEP95': cep95_vertical,
+                'CEP99': cep99_vertical
             }
         }
         
@@ -254,25 +262,33 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
         horizontal_errors = delta2[:, :2]  # 只取东和北方向
         cep50_horizontal = calculate_cep(horizontal_errors, 50)
         cep68_horizontal = calculate_cep(horizontal_errors, 68)
+        cep80_horizontal = calculate_cep(horizontal_errors, 80)
         cep95_horizontal = calculate_cep(horizontal_errors, 95)
+        cep99_horizontal = calculate_cep(horizontal_errors, 99)
         
         # 高程方向（天向）
         vertical_errors = delta2[:, 2:3]  # 只取天向
         cep50_vertical = np.percentile(np.abs(vertical_errors), 50)
         cep68_vertical = np.percentile(np.abs(vertical_errors), 68)
+        cep80_vertical = np.percentile(np.abs(vertical_errors), 80)
         cep95_vertical = np.percentile(np.abs(vertical_errors), 95)
+        cep99_vertical = np.percentile(np.abs(vertical_errors), 99)
         
         # 存储速度误差CEP值
         cep_stats['velocity'] = {
             'horizontal': {
                 'CEP50': cep50_horizontal,
                 'CEP68': cep68_horizontal,
-                'CEP95': cep95_horizontal
+                'CEP80': cep80_horizontal,
+                'CEP95': cep95_horizontal,
+                'CEP99': cep99_horizontal
             },
             'vertical': {
                 'CEP50': cep50_vertical,
                 'CEP68': cep68_vertical,
-                'CEP95': cep95_vertical
+                'CEP80': cep80_vertical,
+                'CEP95': cep95_vertical,
+                'CEP99': cep99_vertical
             }
         }
         
@@ -352,32 +368,44 @@ def plot_err(solution, reference, flag, manual_yaxis=False):
         # 对于姿态，我们计算每个轴的CEP50、CEP68和CEP95
         pitch_cep50 = np.percentile(np.abs(delta3[:, 0]), 50)
         pitch_cep68 = np.percentile(np.abs(delta3[:, 0]), 68)
+        pitch_cep80 = np.percentile(np.abs(delta3[:, 0]), 80)
         pitch_cep95 = np.percentile(np.abs(delta3[:, 0]), 95)
+        pitch_cep99 = np.percentile(np.abs(delta3[:, 0]), 99)
         
         roll_cep50 = np.percentile(np.abs(delta3[:, 1]), 50)
         roll_cep68 = np.percentile(np.abs(delta3[:, 1]), 68)
+        roll_cep80 = np.percentile(np.abs(delta3[:, 1]), 80)
         roll_cep95 = np.percentile(np.abs(delta3[:, 1]), 95)
+        roll_cep99 = np.percentile(np.abs(delta3[:, 1]), 99)
         
         yaw_cep50 = np.percentile(np.abs(delta3[:, 2]), 50)
         yaw_cep68 = np.percentile(np.abs(delta3[:, 2]), 68)
+        yaw_cep80 = np.percentile(np.abs(delta3[:, 2]), 80)
         yaw_cep95 = np.percentile(np.abs(delta3[:, 2]), 95)
+        yaw_cep99 = np.percentile(np.abs(delta3[:, 2]), 99)
         
         # 存储姿态误差CEP值
         cep_stats['attitude'] = {
             'pitch': {
                 'CEP50': pitch_cep50,
                 'CEP68': pitch_cep68,
-                'CEP95': pitch_cep95
+                'CEP80': pitch_cep80,
+                'CEP95': pitch_cep95,
+                'CEP99': pitch_cep99
             },
             'roll': {
                 'CEP50': roll_cep50,
                 'CEP68': roll_cep68,
-                'CEP95': roll_cep95
+                'CEP80': roll_cep80,
+                'CEP95': roll_cep95,
+                'CEP99': roll_cep99
             },
             'yaw': {
                 'CEP50': yaw_cep50,
                 'CEP68': yaw_cep68,
-                'CEP95': yaw_cep95
+                'CEP80': yaw_cep80,
+                'CEP95': yaw_cep95,
+                'CEP99': yaw_cep99
             }
         }
         

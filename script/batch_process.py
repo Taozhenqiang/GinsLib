@@ -120,17 +120,25 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
             pos_cep = stats['position_cep']
             row_data['Horizontal CEP50 (m)'] = pos_cep['horizontal']['CEP50']
             row_data['Horizontal CEP68 (m)'] = pos_cep['horizontal']['CEP68']
+            row_data['Horizontal CEP80 (m)'] = pos_cep['horizontal']['CEP80']
             row_data['Horizontal CEP95 (m)'] = pos_cep['horizontal']['CEP95']
+            row_data['Horizontal CEP99 (m)'] = pos_cep['horizontal']['CEP99']
             row_data['Vertical CEP50 (m)'] = pos_cep['vertical']['CEP50']
             row_data['Vertical CEP68 (m)'] = pos_cep['vertical']['CEP68']
+            row_data['Vertical CEP80 (m)'] = pos_cep['vertical']['CEP80']
             row_data['Vertical CEP95 (m)'] = pos_cep['vertical']['CEP95']
+            row_data['Vertical CEP99 (m)'] = pos_cep['vertical']['CEP99']
         else:
             row_data['Horizontal CEP50 (m)'] = None
             row_data['Horizontal CEP68 (m)'] = None
+            row_data['Horizontal CEP80 (m)'] = None
             row_data['Horizontal CEP95 (m)'] = None
+            row_data['Horizontal CEP99 (m)'] = None
             row_data['Vertical CEP50 (m)'] = None
             row_data['Vertical CEP68 (m)'] = None
+            row_data['Vertical CEP80 (m)'] = None
             row_data['Vertical CEP95 (m)'] = None
+            row_data['Vertical CEP99 (m)'] = None
         
         # 速度误差（仅GNSS/INS模式）
         if 'LC' in stats['process_mode'] or 'TC' in stats['process_mode']:
@@ -151,17 +159,25 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
                 vel_cep = stats['velocity_cep']
                 row_data['Horizontal CEP50 (m/s)'] = vel_cep['horizontal']['CEP50']
                 row_data['Horizontal CEP68 (m/s)'] = vel_cep['horizontal']['CEP68']
+                row_data['Horizontal CEP80 (m/s)'] = vel_cep['horizontal']['CEP80']
                 row_data['Horizontal CEP95 (m/s)'] = vel_cep['horizontal']['CEP95']
+                row_data['Horizontal CEP99 (m/s)'] = vel_cep['horizontal']['CEP99']
                 row_data['Vertical CEP50 (m/s)'] = vel_cep['vertical']['CEP50']
                 row_data['Vertical CEP68 (m/s)'] = vel_cep['vertical']['CEP68']
+                row_data['Vertical CEP80 (m/s)'] = vel_cep['vertical']['CEP80']
                 row_data['Vertical CEP95 (m/s)'] = vel_cep['vertical']['CEP95']
+                row_data['Vertical CEP99 (m/s)'] = vel_cep['vertical']['CEP99']
             else:
                 row_data['Horizontal CEP50 (m/s)'] = None
                 row_data['Horizontal CEP68 (m/s)'] = None
+                row_data['Horizontal CEP80 (m/s)'] = None
                 row_data['Horizontal CEP95 (m/s)'] = None
+                row_data['Horizontal CEP99 (m/s)'] = None
                 row_data['Vertical CEP50 (m/s)'] = None
                 row_data['Vertical CEP68 (m/s)'] = None
+                row_data['Vertical CEP80 (m/s)'] = None
                 row_data['Vertical CEP95 (m/s)'] = None
+                row_data['Vertical CEP99 (m/s)'] = None
 
             # 姿态误差（仅GNSS/INS模式）
             if stats['attitude_rms']:
@@ -179,23 +195,35 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
                 att_cep = stats['attitude_cep']
                 row_data['pitch CEP50 (deg)'] = att_cep['pitch']['CEP50']
                 row_data['pitch CEP68 (deg)'] = att_cep['pitch']['CEP68']
+                row_data['pitch CEP80 (deg)'] = att_cep['pitch']['CEP80']
                 row_data['pitch CEP95 (deg)'] = att_cep['pitch']['CEP95']
+                row_data['pitch CEP99 (deg)'] = att_cep['pitch']['CEP99']
                 row_data['roll CEP50 (deg)'] = att_cep['roll']['CEP50']
                 row_data['roll CEP68 (deg)'] = att_cep['roll']['CEP68']
+                row_data['roll CEP80 (deg)'] = att_cep['roll']['CEP80']
                 row_data['roll CEP95 (deg)'] = att_cep['roll']['CEP95']
+                row_data['roll CEP99 (deg)'] = att_cep['roll']['CEP99']
                 row_data['yaw CEP50 (deg)'] = att_cep['yaw']['CEP50']
                 row_data['yaw CEP68 (deg)'] = att_cep['yaw']['CEP68']
+                row_data['yaw CEP80 (deg)'] = att_cep['yaw']['CEP80']
                 row_data['yaw CEP95 (deg)'] = att_cep['yaw']['CEP95']
+                row_data['yaw CEP99 (deg)'] = att_cep['yaw']['CEP99']
             else:
                 row_data['pitch CEP50 (deg)'] = None
                 row_data['pitch CEP68 (deg)'] = None
+                row_data['pitch CEP80 (deg)'] = None
                 row_data['pitch CEP95 (deg)'] = None
+                row_data['pitch CEP99 (deg)'] = None
                 row_data['roll CEP50 (deg)'] = None
                 row_data['roll CEP68 (deg)'] = None
+                row_data['roll CEP80 (deg)'] = None
                 row_data['roll CEP95 (deg)'] = None
+                row_data['roll CEP99 (deg)'] = None
                 row_data['yaw CEP50 (deg)'] = None
                 row_data['yaw CEP68 (deg)'] = None
+                row_data['yaw CEP80 (deg)'] = None
                 row_data['yaw CEP95 (deg)'] = None
+                row_data['yaw CEP99 (deg)'] = None
         else:
             # GNSS模式，速度误差CEP为空
             row_data['E (m/s)'] = None
@@ -205,10 +233,14 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
 
             row_data['Horizontal CEP50 (m/s)'] = None
             row_data['Horizontal CEP68 (m/s)'] = None
+            row_data['Horizontal CEP80 (m/s)'] = None
             row_data['Horizontal CEP95 (m/s)'] = None
+            row_data['Horizontal CEP99 (m/s)'] = None
             row_data['Vertical CEP50 (m/s)'] = None
             row_data['Vertical CEP68 (m/s)'] = None
+            row_data['Vertical CEP80 (m/s)'] = None
             row_data['Vertical CEP95 (m/s)'] = None
+            row_data['Vertical CEP99 (m/s)'] = None
 
             # GNSS模式，姿态误差为空
             row_data['pitch (deg)'] = None
@@ -216,13 +248,20 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
             row_data['yaw (deg)'] = None
             row_data['pitch CEP50 (deg)'] = None
             row_data['pitch CEP68 (deg)'] = None
+            row_data['pitch CEP80 (deg)'] = None
             row_data['pitch CEP95 (deg)'] = None
+            row_data['pitch CEP99 (deg)'] = None
             row_data['roll CEP50 (deg)'] = None
             row_data['roll CEP68 (deg)'] = None
+            row_data['roll CEP80 (deg)'] = None
             row_data['roll CEP95 (deg)'] = None
+            row_data['roll CEP99 (deg)'] = None
             row_data['yaw CEP50 (deg)'] = None
             row_data['yaw CEP68 (deg)'] = None
+            row_data['yaw CEP80 (deg)'] = None
             row_data['yaw CEP95 (deg)'] = None
+            row_data['yaw CEP99 (deg)'] = None
+            row_data['yaw CEP959 (deg)'] = None
         
         data_rows.append(row_data)
     
@@ -233,15 +272,22 @@ def save_error_stats_to_excel(all_error_stats, save_path, mode):
     columns_order = [
         '数据', '模式', 
         'E (m)', 'N (m)', 'U (m)', '3D (m)',
-        'Horizontal CEP50 (m)', 'Horizontal CEP68 (m)', 'Horizontal CEP95 (m)',
-        'Vertical CEP50 (m)', 'Vertical CEP68 (m)', 'Vertical CEP95 (m)',
+        'Horizontal CEP50 (m)', 'Horizontal CEP68 (m)', 'Horizontal CEP80 (m)', 
+        'Horizontal CEP95 (m)', 'Horizontal CEP99 (m)',
+        'Vertical CEP50 (m)', 'Vertical CEP68 (m)', 'Vertical CEP80 (m)', 
+        'Vertical CEP95 (m)', 'Vertical CEP99 (m)',
         'E (m/s)', 'N (m/s)', 'U (m/s)', '3D (m/s)',
-        'Horizontal CEP50 (m/s)', 'Horizontal CEP68 (m/s)', 'Horizontal CEP95 (m/s)',
-        'Vertical CEP50 (m/s)', 'Vertical CEP68 (m/s)', 'Vertical CEP95 (m/s)',
+        'Horizontal CEP50 (m/s)', 'Horizontal CEP68 (m/s)', 'Horizontal CEP80 (m/s)',
+        'Horizontal CEP95 (m/s)', 'Horizontal CEP99 (m/s)',
+        'Vertical CEP50 (m/s)', 'Vertical CEP68 (m/s)', 'Vertical CEP80 (m/s)',
+        'Vertical CEP95 (m/s)', 'Vertical CEP99 (m/s)',
         'pitch (deg)', 'roll (deg)', 'yaw (deg)',
-        'pitch CEP50 (deg)', 'pitch CEP68 (deg)', 'pitch CEP95 (deg)',
-        'roll CEP50 (deg)', 'roll CEP68 (deg)', 'roll CEP95 (deg)',
-        'yaw CEP50 (deg)', 'yaw CEP68 (deg)', 'yaw CEP95 (deg)'
+        'pitch CEP50 (deg)', 'pitch CEP68 (deg)', 'pitch CEP80 (deg)',
+        'pitch CEP95 (deg)', 'pitch CEP99 (deg)',
+        'roll CEP50 (deg)', 'roll CEP68 (deg)', 'roll CEP80 (deg)',
+        'roll CEP95 (deg)', 'roll CEP99 (deg)',
+        'yaw CEP50 (deg)', 'yaw CEP68 (deg)', 'yaw CEP80 (deg)',
+        'yaw CEP95 (deg)', 'yaw CEP99 (deg)',
     ]
     
     # 重新排列列的顺序
@@ -300,7 +346,7 @@ def batch_process_gins(exe_path_input):
     all_error_stats = []
 
     # for folder_name in sub_folders:  
-    for folder_name in sub_folders[0:1]:  # 处理单个子文件夹用于测试
+    for folder_name in sub_folders[1:2]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
@@ -332,7 +378,7 @@ def batch_process_gins(exe_path_input):
             
             # 命令列表
             commands = [
-                [exe_path,"-k",conf_file,"-p","0","-gins","0","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
+                [exe_path,"-k",conf_file,"-p","0","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp
                 # [exe_path,"-k",conf_file,"-p","0","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins LC
                 # [exe_path,"-k",conf_file,"-p","0","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #spp/ins TC
                 # [exe_path,"-k",conf_file,"-p","8","-gins","0","-ion","4","-tro","3","-eph","1","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppp
@@ -341,7 +387,7 @@ def batch_process_gins(exe_path_input):
                 # [exe_path,"-k",conf_file,"-p","1","-gins","0","-ion","1","-tro","1","-eph","0","-flt","1","-amb","0","-ambt","0","-solt","0"], #ppd
                 # [exe_path,"-k",conf_file,"-p","1","-gins","1","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins LC
                 # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
-                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GEC","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","3","-solt","0"], #ppk
+                # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","2","-amb","0","-ambt","3","-solt","0"], #ppk
                 # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","1","-solt","0"], #ppk/ins LC
                 # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
             ]

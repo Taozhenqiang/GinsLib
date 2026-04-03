@@ -147,19 +147,19 @@ def batch_plot_analysis(sol_file_path, ref_file_path, process_mode):
             # 将cep_stats信息赋值给error_stats
             if 'position' in cep_stats:
                 error_stats['position_cep'] = cep_stats['position']
-                logging.info(f"位置误差CEP: 水平CEP50={cep_stats['position']['horizontal']['CEP50']:.4f}m, 水平CEP68={cep_stats['position']['horizontal']['CEP68']:.4f}m, 水平CEP95={cep_stats['position']['horizontal']['CEP95']:.4f}m")
-                logging.info(f"位置误差CEP: 垂直CEP50={cep_stats['position']['vertical']['CEP50']:.4f}m, 垂直CEP68={cep_stats['position']['vertical']['CEP68']:.4f}m, 垂直CEP95={cep_stats['position']['vertical']['CEP95']:.4f}m")
+                logging.info(f"位置误差CEP: 水平CEP50={cep_stats['position']['horizontal']['CEP50']:.4f}m, 水平CEP68={cep_stats['position']['horizontal']['CEP68']:.4f}m, 水平CEP80={cep_stats['position']['horizontal']['CEP80']:.4f}m, 水平CEP95={cep_stats['position']['horizontal']['CEP95']:.4f}m, 水平CEP99={cep_stats['position']['horizontal']['CEP99']:.4f}m")
+                logging.info(f"位置误差CEP: 垂直CEP50={cep_stats['position']['vertical']['CEP50']:.4f}m, 垂直CEP68={cep_stats['position']['vertical']['CEP68']:.4f}m, 垂直CEP80={cep_stats['position']['vertical']['CEP80']:.4f}m, 垂直CEP95={cep_stats['position']['vertical']['CEP95']:.4f}m, 垂直CEP99={cep_stats['position']['vertical']['CEP99']:.4f}m")
             
             if 'velocity' in cep_stats:
                 error_stats['velocity_cep'] = cep_stats['velocity']
-                logging.info(f"速度误差CEP: 水平CEP50={cep_stats['velocity']['horizontal']['CEP50']:.4f}m/s, 水平CEP68={cep_stats['velocity']['horizontal']['CEP68']:.4f}m/s, 水平CEP95={cep_stats['velocity']['horizontal']['CEP95']:.4f}m/s")
-                logging.info(f"速度误差CEP: 垂直CEP50={cep_stats['velocity']['vertical']['CEP50']:.4f}m/s, 垂直CEP68={cep_stats['velocity']['vertical']['CEP68']:.4f}m/s, 垂直CEP95={cep_stats['velocity']['vertical']['CEP95']:.4f}m/s")
+                logging.info(f"速度误差CEP: 水平CEP50={cep_stats['velocity']['horizontal']['CEP50']:.4f}m/s, 水平CEP68={cep_stats['velocity']['horizontal']['CEP68']:.4f}m/s, 水平CEP80={cep_stats['velocity']['horizontal']['CEP80']:.4f}m/s, 水平CEP95={cep_stats['velocity']['horizontal']['CEP95']:.4f}m/s, 水平CEP99={cep_stats['velocity']['horizontal']['CEP99']:.4f}m/s")
+                logging.info(f"速度误差CEP: 垂直CEP50={cep_stats['velocity']['vertical']['CEP50']:.4f}m/s, 垂直CEP68={cep_stats['velocity']['vertical']['CEP68']:.4f}m/s, 垂直CEP80={cep_stats['velocity']['vertical']['CEP80']:.4f}m/s, 垂直CEP95={cep_stats['velocity']['vertical']['CEP95']:.4f}m/s, 垂直CEP99={cep_stats['velocity']['vertical']['CEP99']:.4f}m/s")
             
             if 'attitude' in cep_stats:
                 error_stats['attitude_cep'] = cep_stats['attitude']
-                logging.info(f"姿态误差CEP: Pitch CEP50={cep_stats['attitude']['pitch']['CEP50']:.4f}°, Pitch CEP68={cep_stats['attitude']['pitch']['CEP68']:.4f}°, Pitch CEP95={cep_stats['attitude']['pitch']['CEP95']:.4f}°")
-                logging.info(f"姿态误差CEP: Roll CEP50={cep_stats['attitude']['roll']['CEP50']:.4f}°, Roll CEP68={cep_stats['attitude']['roll']['CEP68']:.4f}°, Roll CEP95={cep_stats['attitude']['roll']['CEP95']:.4f}°")
-                logging.info(f"姿态误差CEP: Yaw CEP50={cep_stats['attitude']['yaw']['CEP50']:.4f}°, Yaw CEP68={cep_stats['attitude']['yaw']['CEP68']:.4f}°, Yaw CEP95={cep_stats['attitude']['yaw']['CEP95']:.4f}°")
+                logging.info(f"姿态误差CEP: Pitch CEP50={cep_stats['attitude']['pitch']['CEP50']:.4f}°, Pitch CEP68={cep_stats['attitude']['pitch']['CEP68']:.4f}°, Pitch CEP80={cep_stats['attitude']['pitch']['CEP80']:.4f}°, Pitch CEP95={cep_stats['attitude']['pitch']['CEP95']:.4f}°, Pitch CEP99={cep_stats['attitude']['pitch']['CEP99']:.4f}°")
+                logging.info(f"姿态误差CEP: Roll CEP50={cep_stats['attitude']['roll']['CEP50']:.4f}°, Roll CEP68={cep_stats['attitude']['roll']['CEP68']:.4f}°, Roll CEP80={cep_stats['attitude']['roll']['CEP80']:.4f}°, Roll CEP95={cep_stats['attitude']['roll']['CEP95']:.4f}°, Roll CEP99={cep_stats['attitude']['roll']['CEP99']:.4f}°")
+                logging.info(f"姿态误差CEP: Yaw CEP50={cep_stats['attitude']['yaw']['CEP50']:.4f}°, Yaw CEP68={cep_stats['attitude']['yaw']['CEP68']:.4f}°, Yaw CEP80={cep_stats['attitude']['yaw']['CEP80']:.4f}°, Yaw CEP95={cep_stats['attitude']['yaw']['CEP95']:.4f}°, Yaw CEP99={cep_stats['attitude']['yaw']['CEP99']:.4f}°")
     
     # 构建保存路径：ref_file_path的相对路径
     ref_dir = os.path.dirname(ref_file_path)        

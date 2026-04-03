@@ -83,6 +83,7 @@ EXPORT opt_t sysopts[]={
     {"pos1-week",       0,  (void *)&prcopt_.week,       ""     },
     {"pos1-mfspp",      3,  (void *)&prcopt_.mfspp,      SWTOPT },
     {"pos1-respp",      3,  (void *)&prcopt_.respp,      SWTOPT },
+    {"pos1-cdspp",      3,  (void *)&prcopt_.cdspp,      SWTOPT },
     {"pos1-posmode",    3,  (void *)&prcopt_.mode,       MODOPT },
     {"pos1-frequency",  0,  (void *)&prcopt_.nf,         ""     },    
     {"pos1-ts",         2,  (void *)&time_[0],           ""     },

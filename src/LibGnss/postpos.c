@@ -643,7 +643,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,118221,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,113800,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
         if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);

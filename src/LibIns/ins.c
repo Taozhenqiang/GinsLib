@@ -1375,7 +1375,7 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
         }
         else {
             /* mode=(max_vnv>nx)?Robust_OFF:Robust_RES; */
-            nv=outrej_spp(nv,4,thres_ouj,v,H,var,NULL,NULL,NULL,vsat,0,NULL);
+            nv=outrej_spp(nv,4,0,thres_ouj,v,H,var,NULL,NULL,NULL,vsat,0,NULL);
 
             /* calculate the weight matrix */
             diag_Cov(nv,var,P,diag_wei);

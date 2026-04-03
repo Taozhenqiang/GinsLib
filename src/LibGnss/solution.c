@@ -2109,7 +2109,7 @@ extern int outsols(uint8_t *buff, sol_t *sol, const double *rb, const prcopt_t *
 {
     gtime_t time,ts={0};
     double gpst;
-    int week,timeu;
+    int week,timeu,i;
     const char *sep=opt2sep(opt);
     char s[64];
     uint8_t *p=buff;   

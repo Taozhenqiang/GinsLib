@@ -50,7 +50,7 @@
                 "LG69T_Vehicle_complex_20250414.conf",
                
 
-                "-p","0","-gins","0","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0", 
+                "-p","0","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0", 
                 "-ref","./truth.truth",
                 // "-kml",
                 "-pcolor","2",

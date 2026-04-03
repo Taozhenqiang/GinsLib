@@ -1608,7 +1608,7 @@ static int test_hold_amb(rtk_t *rtk)
 /* observation pre-check*/
 extern int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr)
 {
-	int i,ns,sat,sys,fr2[2],prn;
+	int i,ns,_ns,sat,sys,fr2[2],prn;
     double threshold=100;
     char id[4];
 
@@ -1644,9 +1644,10 @@ extern int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr)
     if (!ns) return 0;
     
     /* overwrite the excluded satellites in the obs structure */
+    _ns=ns;
     if (ns<nu) {
         /* append base station data */
-        for (i=nu;i<nu+nr;i++) obs[ns+i]=obs[i];
+        for (i=nu;i<nu+nr;i++) obs[_ns++]=obs[i];
     }
 
     return ns;
