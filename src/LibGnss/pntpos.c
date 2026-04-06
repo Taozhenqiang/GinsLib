@@ -644,7 +644,7 @@ static int rescode_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs
     return nv;
 }
 /* outlier rejection for spp ---------------------------------------------------------*/
-extern int outrej_spp(int nv, int nx, int nx_code, double thres, double *v, double *H, double *var,
+extern int outrej_spp(int nv, int nv_code, int nx, int nx_code, double thres, double *v, double *H, double *var,
                       const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it, int *clock_idx) 
 {
     double mean,std,dv;
@@ -662,8 +662,8 @@ extern int outrej_spp(int nv, int nx, int nx_code, double thres, double *v, doub
         /* standardized residuals */
         else dv=fabs(v[j]-mean)/std;     
 
-        /* threshold for outlier detection */     
-        if (dv<thres) {
+        /* threshold for outlier detection (only for code) */     
+        if ((nv_code>0&&j>=nv_code)||dv<thres) {
             v_[m]=v[j];
             for (k=0;k<nx;k++) {
                 H_[k+m*nx]=H[k+j*nx];
@@ -950,8 +950,9 @@ static int resdop_filter(rtk_t *rtk, const obsd_t *obs, int m, int n, const doub
                 vs[j]=rs[j+3+i*6]-x[j];
             }
             /* range rate with earth rotation correction */
-            rate=dot3(vs,e)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
-                                        rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
+            rate=dot3(vs,e); /* neglect earth rotation correction (maximum quantity is mm/s ) */
+            /* rate=dot3(vs,e)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
+                                        rs[3+i*6]*rr[1]-rs[  i*6]*x[1]); */
             /* trace(7,"delta=%.7f\n",OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
                                         rs[3+i*6]*rr[1]-rs[  i*6]*x[1])); */                                    
             
@@ -1019,7 +1020,7 @@ extern int estvel(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 #if 1 
         /* outlier reject based on normal distribution*/       
         if (i>=2&&nv>=nx) {
-            nv=outrej_spp(nv,nx,0,thres,v,H,var,NULL,NULL,vi,vsat,i,NULL);
+            nv=outrej_spp(nv,0,nx,0,thres,v,H,var,NULL,NULL,vi,vsat,i,NULL);
         }
 #endif
 
@@ -1114,7 +1115,7 @@ static int dopvel_cons(rtk_t *rtk, int nx, int nx_code, const double *x_pre, con
                 H[k+nx_code+nv*nx]=-interval; 
             }
         } 
-        var[nv++]=MIN(sol->qv[j],1.0);
+        var[nv++]=5.0;
     }  
 
     return nv;
@@ -1127,11 +1128,11 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
                   int *vsat, double *resp)
 {
     double x[NX]={0},dx[NX],Q[NX*NX],x_pre[3]={0.0},*v,*H,*var,sig;
-    double *P,*R,interval=rtk->interval,thres=2.0,zupt_time;
+    double *P,*R,interval=rtk->interval,thres=3.0,zupt_time,velvar_thres=5.0,dpos[3]={0.0},ave_vel[3]={0.0}; 
     double *xp,*Pp,vx[4];
     int i,j,k,m,info,nx=0,nx_code=0,stat=SOLQ_NONE,LS_mode=opt->respp?Robust_RES:Robust_OFF,mode,nv=0,ns,*sati,*vi,nf=opt->mfspp?(IONOOPT_IFLC==opt->ionoopt?1:opt->nf):1;
     int max_sat,mask[NX-3]={0},clock_idx[NX-3]={0},spp_mode=opt->cdspp?SPP_CD:SPP_C,dop_cons_flag=0;
-    int nv_dop=0,nv_cons=0,spp_tc_flag=0; /* spp/ins tc flag */
+    int nv_code=0,nv_dop=0,nv_cons=0,spp_tc_flag=0; /* spp/ins tc flag */
     
     trace(8,"estpos  : n=%d\n",n);
     
@@ -1161,21 +1162,29 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
 
     for (i=0;i<MAXITR;i++) {
         /* pseudorange residuals (m) */
-        nv=rescode(i,obs,n,nx_code,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,nx,mask,clock_idx,azel,vsat,resp,&ns,sati,vi);    
+        nv_code=nv=rescode(i,obs,n,nx_code,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,nx,mask,clock_idx,azel,vsat,resp,&ns,sati,vi);    
 
         /* range rate residuals (m/s) */
         if (SPP_CD==spp_mode) {
             nv+=resdop_filter(rtk,obs,n,nx,rs,dts,nav,x,x+(nx-4),azel,vsat,v+nv,H+nv*nx,var+nv,SPP_CD,vi+nv);
         }
 
+#if 1
         /* outlier recject based on standard normal distribution */
-        /* if (i>=2&&nv>=nx) {
-            nv=outrej_spp(nv,nx,nx_code,thres,v,H,var,ssat,sati,vi,vsat,i,clock_idx);
-        } */
+        if (i>=2&&nv>=nx) {
+            nv=outrej_spp(nv,nv_code,nx,nx_code,thres,v,H,var,ssat,sati,vi,vsat,i,clock_idx);
+        }
+#endif
 
         /* dopple velocity constraint */
         if (dop_cons_flag&&i>2) {
-            nv+=dopvel_cons(rtk,nx,nx_code,x_pre,x,v+nv,H+nv*nx,var+nv,sol);
+            /* if the variance of the velocity estimate is too large, doppler constraints should not be used */
+            if ((Q[(nx-4)+(nx-4)*nx]+Q[(nx-3)+(nx-3)*nx]+Q[(nx-2)+(nx-2)*nx])/3.0>velvar_thres) {
+                dop_cons_flag=0;
+            }
+            if (dop_cons_flag) {
+                nv+=dopvel_cons(rtk,nx,nx_code,x_pre,x,v+nv,H+nv*nx,var+nv,sol);
+            }
         }
 
         /* determine the max obsat of all frequency */
@@ -1193,7 +1202,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             trace(7,"spp lsq error info=%d\n!",info); break;
         }
 
-        tracefilter(12,TRAE_R|TRAE_H|TRAE_v|TRAE_xpre,nx,nv,P,H,NULL,NULL,v,dx,NULL);
+        /* tracefilter(12,TRAE_R|TRAE_H|TRAE_v|TRAE_xpre,nx,nv,P,H,NULL,NULL,v,dx,NULL); */
 
         for (j=0;j<nx;j++) {
             x[j]+=dx[j];
@@ -1207,7 +1216,18 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             if (mask[3]) sol->dtr[3]=x[clock_idx[3]]/CLIGHT; /* BDS-GPS time offset (s) */
             if (mask[4]) sol->dtr[4]=x[clock_idx[4]]/CLIGHT; /* IRN-GPS time offset (s) */
             if (mask[5]) sol->dtr[5]=x[clock_idx[5]]/CLIGHT; /* QZS-GPS time offset (s) */
-            for (j=0;j<3;j++) sol->rr_old[j]=sol->rr[j];
+#if 0            
+            /* position consistency check between epochs */
+            if (dop_cons_flag&&norm(sol->rr+3,3)>0.0) {
+                for (j=0;j<3;j++) dpos[j]=x[j]-sol->rr[j];
+                /* if the position is too far away from the previous epoch, use the doppler velocity to correct the position */
+                if (norm(dpos,3)>120e3/3600.0) { /* dpos thres=120km/h */
+                    for (j=0;j<3;j++) ave_vel[j]=(sol->rr[j+3]+x[nx-4+j])/2.0;
+                    for (j=0;j<3;j++) x[j]=sol->rr[j]+ave_vel[j]*interval;
+                     trace(7,"spp position jump detected, doppler velocity is applied to correct the position!\n");
+                }
+            }
+#endif                
             for (j=0;j<3;j++) sol->rr[j]=x[j];
             if (GINS_OFF==opt->GI_mode) for (j=0;j<3;j++) sol->rr[j+3]=0.0;
             for (j=0;j<3;j++) sol->qr[j]=(float)Q[j+j*nx];

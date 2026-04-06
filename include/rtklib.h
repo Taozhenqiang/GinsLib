@@ -1987,7 +1987,7 @@ extern "C"
     EXPORT int matinv(double *A, int n);
     EXPORT int solve(const char *tr, const double *A, const double *Y, int n,
                      int m, double *X);
-    EXPORT int outrej_spp(int nv, int nx, int nx_code, double thres, double *v, double *H, double *var,
+    EXPORT int outrej_spp(int nv, int nv_code, int nx, int nx_code, double thres, double *v, double *H, double *var,
                       const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it, int *clock_idx);                 
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
     EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
