@@ -76,6 +76,7 @@ static char stat_[statopt];
 #define POSOPT  "0:llh,1:xyz,2:single,3:posfile,4:rinexhead,5:rtcm,6:raw"
 #define TIDEOPT "0:off,1:on,2:otl"
 #define PHWOPT  "0:off,1:on,2:precise"
+#define SPPOPT  "0:spp_ls_code,1:spp_ls_cd,2:spp_kf"
 
 EXPORT opt_t sysopts[]={
     {"pos1-GINS",       3,  (void *)&prcopt_.GI_mode,    GIOPT  },
@@ -83,7 +84,7 @@ EXPORT opt_t sysopts[]={
     {"pos1-week",       0,  (void *)&prcopt_.week,       ""     },
     {"pos1-mfspp",      3,  (void *)&prcopt_.mfspp,      SWTOPT },
     {"pos1-respp",      3,  (void *)&prcopt_.respp,      SWTOPT },
-    {"pos1-cdspp",      3,  (void *)&prcopt_.cdspp,      SWTOPT },
+    {"pos1-sppmode",    3,  (void *)&prcopt_.spp_mode,   SPPOPT },
     {"pos1-posmode",    3,  (void *)&prcopt_.mode,       MODOPT },
     {"pos1-frequency",  0,  (void *)&prcopt_.nf,         ""     },    
     {"pos1-ts",         2,  (void *)&time_[0],           ""     },

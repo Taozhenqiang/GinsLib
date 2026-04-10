@@ -2145,6 +2145,8 @@ extern int outsols(uint8_t *buff, sol_t *sol, const double *rb, const prcopt_t *
         }
         sprintf(s,"%4d%.16s%*.*f",week,sep,6+(timeu<=0?0:timeu+1),timeu,gpst);
     }
+    /* save current state */
+    matcpy(sol->rr_old,sol->rr,6,1);
     switch (opt->posf) {
         case SOLF_LLH:  p+=outpos (p,s,sol,opt,popt);   break;
         case SOLF_XYZ:  p+=outecef(p,s,sol,opt,popt);   break;

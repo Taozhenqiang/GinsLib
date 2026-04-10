@@ -239,7 +239,7 @@ const prcopt_t prcopt_default={
     0,
     0,
     0,
-    SOLTYPE_FORWARD,/* GNSS/INS mode, GNSS mode, mfspp flag, respp flag, cdspp flag, soltype */
+    SOLTYPE_FORWARD,/* GNSS/INS mode, GNSS mode, mfspp flag, respp flag, spp_mode, soltype */
     0,              /* reverse, analysis direction (0:forward,1:backward)*/
     2,              /*nf*/
     {{0,1,2,3,4,5,6},
@@ -2166,7 +2166,7 @@ static void lubksb(const double *A,int n,const int *indx,double *b) {
             ii=i;
         b[i]=s;
     }
-    for (i=n-1;i >=0;i--) {
+    for (i=n-1;i>=0;i--) {
         s=b[i];
         for (j=i+1;j<n;j++)
             s-=A[i+j*n]*b[j];
@@ -2194,6 +2194,14 @@ extern int matinv(double *A,int n) {
     }
     free(indx);
     free(B);
+    return 0;
+}
+/* inverse of diag matrix */
+extern int matinv_diag(double *A, int n) 
+{
+    int i;
+    for (i=0;i<n;i++) A[i+i*n]=1.0/A[i+i*n];
+
     return 0;
 }
 /* solve linear equation -----------------------------------------------------*/
@@ -2258,7 +2266,7 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
 {
     double *AP,*Ay,*AQ,*D,*vx,*xp_pre;
     double dv,alpha,k0=1.5,k1=2.5; /* factors for robust estimation */
-    int info,i,j,k,iter=(mode==Robust_OFF)?1:MAXITR_ROBUST;
+    int info,i,j,k,iter=(mode==Robust_OFF)?1:3;
 
     if (m<n) {
         trace(7,"spp lsq error! The number of observations is less than the number of parameters to be estimated.\n");
@@ -2278,7 +2286,7 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
         matcpy(D,P,m,m);            
 
         /* measurement noise covariance matirx D */
-        if ((info=matinv(D,m))) {
+        if ((info=matinv_diag(D,m))) {
             trace(7,"spp lsq error! measurement matrix rank deficiency.\n");
             break;
         }
@@ -2293,7 +2301,7 @@ extern int lsq_roubst(const double *A, const double *y, double *P, int n, int m,
 
             if (mode==Robust_RES&&i<iter-1) {
                 /* iteration termination judgment */
-                if (i>0&&iter_judge(x,xp_pre,n,ITR_TOL)) {
+                if (i>0&&iter_judge(x,xp_pre,n,ITR_TOL*1e3)) {
                     break; 
                 }   
                 

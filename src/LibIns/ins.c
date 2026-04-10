@@ -1017,7 +1017,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
     double install_angle[3]={0.0};
     int i,nx;
 
-    ins->nx=15;nx=ins->nx;
+    ins->nx=GINS_NX;nx=ins->nx;
     ins->F=zeros(nx,nx); ins->Phi=zeros(nx,nx);
     ins->G=zeros(nx,nx); ins->Q=zeros(nx,nx);
 
@@ -1038,7 +1038,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
     ins->zupt.window=popt->insample;
     ins->zupt.gthres=popt->zupt_gthres;
 
-    for (i=0;i<15;i++)
+    for (i=0;i<GINS_NX;i++)
     {
         ins->xa[i]=0.0;
         
@@ -1375,7 +1375,7 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
         }
         else {
             /* mode=(max_vnv>nx)?Robust_OFF:Robust_RES; */
-            nv=outrej_spp(nv,0,4,0,thres_ouj,v,H,var,NULL,NULL,NULL,vsat,0,NULL);
+            nv=outrej_spp(nv,NULL,4,0,thres_ouj,v,H,var,NULL,NULL,NULL,vsat,0,NULL);
 
             /* calculate the weight matrix */
             diag_Cov(nv,var,P,diag_wei);
@@ -1806,7 +1806,7 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
             Fg[0]=-1.0/ins->corr_time;Fg[4]=-1.0/ins->corr_time;Fg[8]=-1.0/ins->corr_time; 
         }
         
-        for (i=0;i<15;i++)
+        for (i=0;i<nx;i++)
         {
             if (i<3) {
                 k=i;
@@ -1892,7 +1892,7 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
             Fg[0]=-1.0/ins->corr_time;Fg[4]=-1.0/ins->corr_time;Fg[8]=-1.0/ins->corr_time; 
         }
         
-        for (i=0;i<15;i++)
+        for (i=0;i<nx;i++)
         {
             if (i<3) {
                 k=i;
