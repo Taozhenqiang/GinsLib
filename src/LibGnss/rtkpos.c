@@ -237,7 +237,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
 
     /* frequency dependent term - SF*/ 
     if (1==nf) {
-        p+=sprintf(p,"Dcb_L1(m),    "
+        p+=sprintf(p,"SNR_L1(dbHz),     "
+                    "Dcb_L1(m),    "
                     "SatPco_L1(m),   "
                     "SatPcv_L1(m),     "
                     "Ion_L1(m),     "
@@ -247,7 +248,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
     }   
     else if (2==nf) {
         /* frequency dependent term - DF*/    
-        p+=sprintf(p,"Dcb_L1(m),     Dcb_L2(m),    "
+        p+=sprintf(p,"SNR_L1(dbHz),    SNR_L2(dbHz),     "
+                    "Dcb_L1(m),     Dcb_L2(m),    "
                     "SatPco_L1(m),     SatPco_L2(m),   "
                     "SatPcv_L1(m),   SatPcv_L2(m),   "
                     "Ion_L1(m),     Ion_L2(m),      "
@@ -257,7 +259,8 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
     }
     else if (3==nf) {
         /* frequency dependent term - TF*/    
-        p+=sprintf(p,"Dcb_L1(m),      Dcb_L2(m),      Dcb_L3(m),    "
+        p+=sprintf(p,"SNR_L1(dbHz),    SNR_L2(dbHz),     SNR_L3(dbHz),     "
+                    "Dcb_L1(m),      Dcb_L2(m),      Dcb_L3(m),    "
                     "SatPco_L1(m),    SatPco_L2(m),   SatPco_L3(m),  "
                     "SatPcv_L1(m),   SatPcv_L2(m),   SatPcv_L3(m),    "
                     "Ion_L1(m),      Ion_L2(m),      Ion_L3(m),      "
@@ -663,7 +666,7 @@ static void outsolipos(rtk_t *rtk, const nav_t *nav)
     ssat_t *ssat,ssat0={0};
     int j,n,week,fr,est=opt->mode>=PMODE_DGPS,nfreq=est?opt->nf:1;
     double tow,ep[6];
-    char id[4],buff[2*MAXSOLMSG+1],*p=buff;
+    char id[4],buff[3*MAXSOLMSG+1],*p=buff; /* note max buff size may go out of bounds */
 
     if (!fp_ipos) return;
 
@@ -679,7 +682,8 @@ static void outsolipos(rtk_t *rtk, const nav_t *nav)
     for (int i=0;i<MAXSAT;i++) {
         ssat=rtk->ssat+i;
         if (PMODE_SINGLE==opt->mode) {
-            if (!ssat->vs)  continue;
+            if (!ssat->vs)  continue; /* vaild satellites */
+            /* if (!ssat->dts)  continue; */  /* all observation satellites */
         }
         else  {
             for (j=0;j<nfreq;j++) {
@@ -693,6 +697,11 @@ static void outsolipos(rtk_t *rtk, const nav_t *nav)
         p+=sprintf(p,"%s:%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,%15.4f,",
             id,ssat->rs[0],ssat->rs[1],ssat->rs[2],ssat->azel[0]*R2D,ssat->azel[1]*R2D,ssat->cdtr[0],ssat->cdtr[1],ssat->dts,ssat->dtrp,
             ssat->phw,ssat->sagnac,ssat->rel);
+        /* SNR */
+        for (j=0;j<opt->nf;j++) {
+            fr=sys2freid(ssat->sys,j,opt);
+            p+=sprintf(p,"%15.4f,",ssat->snr_rover[fr]*SNR_UNIT);
+        }
         /* DCB */    
         for (j=0;j<nfreq;j++) {
             fr=sys2freid(ssat->sys,j,opt);

@@ -767,13 +767,16 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
         }
         for (i=0;i<MAXSAT;i++) {
             satno2id(i+1,ssat[i].id);
-            sys=satsys(i+1,NULL); fr=sys2freid(sys,0,opt);
+            sys=satsys(i+1,NULL); 
             ssat[i].sys=sys;
             ssat[i].vs=0;  /* initialize spp valid satellite flag */
             ssat[i].range[0]=0.0;
             ssat[i].azel[0]=ssat[i].azel[1]=0.0;
-            ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
-            ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0;
+            for (j=0;j<nf;j++) {
+                fr=sys2freid(sys,j,opt);
+                ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
+                ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0;                
+            }
         }
         for (i=0;i<n;i++) {
             sys=satsys(obs[i].sat,NULL); 
