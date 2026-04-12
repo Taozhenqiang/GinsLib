@@ -9,13 +9,13 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
 {
     ins_t *ins=&rtk->ins;
     int i,nx;
-    double P[15];
+    double P[GINS_NX]={0.0};
 
     ins_init(ins,popt);
 
     if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         sol_t sol0={{0}};
-        nx=15; 
+        nx=GINS_NX; 
 
         rtk->lcgins.x=zeros(nx,1);
         rtk->lcgins.P=zeros(nx,nx);
@@ -36,7 +36,7 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4); */
     } 
     if (GINS_TC==popt->GI_mode) {
-        nx=15; 
+        nx=GINS_NX; 
         for (i=0;i<nx;i++)
         {
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];

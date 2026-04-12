@@ -101,7 +101,7 @@
 
 /* number and index of states */
 #define NF(opt)     ((opt)->ionoopt==IONOOPT_IFLC?1:(opt)->nf)
-#define NP(opt)     ((opt)->GI_mode==GINS_TC?15:((opt)->dynamics?9:3))
+#define NP(opt)     ((opt)->GI_mode==GINS_TC?GINS_NX:((opt)->dynamics?9:3))
 #define NC(opt)     (NSYS)
 #define NT(opt)     ((opt)->tropopt<TROPOPT_EST?0:((opt)->tropopt==TROPOPT_EST?1:3))
 #define NI(opt)     ((opt)->ionoopt==IONOOPT_EST?MAXSAT:0)
@@ -1628,12 +1628,12 @@ extern int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr)
         /* pseudorange outlier detection */
         if ((obs[i].P[fr2[0]]!=0.0&&fabs(obs[i].P[fr2[0]])<19e6)||(obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[1]])<19e6)) {
             satno2id(sat,id);
-            trace(7,"obsScan: abnormal pseudorange observations, less than 19000 km, sat=%s\n",id);
+            trace(6,"obsScan: abnormal pseudorange observations, less than 19000 km, sat=%s\n",id);
             continue;            
         }
         if (obs[i].P[fr2[0]]!=0.0&&obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])>=threshold) {
             satno2id(sat,id);
-            trace(7,"obsScan: dual-frequency pseudorange difference exceeded the limit, sat=%s\n",id);
+            trace(6,"obsScan: dual-frequency pseudorange difference exceeded the limit, sat=%s\n",id);
             continue;
         }
 

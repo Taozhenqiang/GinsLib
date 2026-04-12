@@ -130,7 +130,7 @@ def main():
             figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
-            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, False)
+            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, True)
             figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件

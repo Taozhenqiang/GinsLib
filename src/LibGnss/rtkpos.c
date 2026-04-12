@@ -77,12 +77,12 @@
 
 #define GAP_RESION  120      /* gap to reset ionosphere parameters (epochs) */
 
-#define TTOL_MOVEB  (1.0+2*DTTOL)
-                             /* time sync tolerance for moving-baseline (s) */
+#define TTOL_MOVEB  (1.0+2*DTTOL) /* time sync tolerance for moving-baseline (s) */
 
 /* number of parameters (pos,ionos,tropos,hw-bias,phase-bias,real,estimated) */
+#define NX_SPP      (4+5+4)       /* # of estimated parameters (ecef pos, GPS rec clk, ISBs(GLO/Gal/BDS/IRNSS/QZSS), ECEF vel, GPS clk drift) */
 #define NF(opt)     ((opt)->ionoopt==IONOOPT_IFLC?1:(opt)->nf)
-#define NP(opt)     ((opt)->GI_mode==GINS_TC?15:((opt)->dynamics==0?3:9))
+#define NP(opt)     ((opt)->GI_mode==GINS_TC?GINS_NX:((opt)->dynamics==0?3:9))
 #define NC(opt)     (((opt)->GI_mode==GINS_TC&&(opt)->mode==PMODE_SINGLE)?7:0) /* clock (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
 #define ND(opt)     (((opt)->mode!=PMODE_TC||(opt)->ionoopt==IONOOPT_IFLC)?0:2*NSYS*(opt)->nf)
 #define NI(opt)     ((opt)->ionoopt!=IONOOPT_EST?0:MAXSAT)
@@ -2563,7 +2563,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                     thres=residual_thres(rtk,Hi,P,rtk->nx,!post?MODE_PRIOR:MODE_POST);
                     thres+=Ri[nv]+Rj[nv]; /* thres_pre=R+H*P_pre*H' */
                     /* post-fit threshold adjustment */
-                    /* NOTE: Theoretical posterior checks are too strict and are not currently being used */  
+                    /* NOTE: theoretical posterior checks are too strict and are not currently being used */  
                     if (post) {
                         if(thres<=0.0||thres>(Ri[nv]+Rj[nv])) thres=Ri[nv]+Rj[nv]; 
                         thres_post=sqrt(thres);
@@ -3824,6 +3824,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
     rtk->ins=ins0;
     rtk->sol=sol0;
 
+    /* solution options type */
     if (sopt) {
         for (i=0;i<statopt;i++) {
             rtk->sol.stato[i]=sopt->stato[i];
@@ -3834,8 +3835,9 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
         rtk->rb[i]=0.0;  
         rtk->ru[i]=0.0;
     }
-    rtk->nx=popt->mode<=PMODE_FIXED?NX(popt):pppnx(popt);
-    rtk->na=popt->mode<=PMODE_FIXED?NR(popt):pppnx(popt);
+    rtk->nx=PMODE_LC_POS==popt->mode?GINS_NX:(popt->mode<=PMODE_FIXED?NX(popt):pppnx(popt));
+    rtk->na=PMODE_LC_POS==popt->mode?0:(popt->mode<=PMODE_FIXED?NR(popt):pppnx(popt));
+    if (rtk->nx<NX_SPP) rtk->nx=NX_SPP; /* spp based on kf (CV mode) */
     rtk->tt=0.0;
     rtk->interval=0.0;
     rtk->dopsgn=0.0;    
@@ -3868,6 +3870,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
     rtk->outage=0;
     rtk->gnss_aid_age=0;
 
+    /* initialize GINS parameters */
     if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
     {
         gins_init(rtk,popt);
@@ -4009,7 +4012,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
     }
 
     /* NOTE: suppress output of single solution 
-     if the SPP solution be output when the solution fails in DGPS/PPK/PPP mode. */
+     if the spp solution be output when the solution fails in DGPS/PPK/PPP mode. */
     if (!opt->outsingle) {
         rtk->sol.stat=SOLQ_NONE;
     }

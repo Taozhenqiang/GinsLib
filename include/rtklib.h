@@ -86,9 +86,11 @@ extern "C"
 #define SNR_UNIT 0.001 /* SNR unit (dBHz) */
 #define SNR_WINDOW 600 /* SNR window (epoch) */
 
-#define SPP_C  0  /* spp based on pseudorange*/
-#define SPP_D  1  /* velocity estimation based on Doppler */
-#define SPP_CD 2  /* spp based on pseudorange and Doppler */
+/* spp mode */
+#define SPP_LS_C  0  /* spp based on pseudorange */
+#define SPP_LS_CD 1  /* spp based on pseudorange and Doppler */
+#define SPP_KF    2  /* spp based on kalman filter */
+#define SPP_LS_D  4  /* velocity estimation based on Doppler */
 
 #define diag_var 0       /* option: covariance */
 #define diag_wei 1       /* option: weights */
@@ -103,6 +105,7 @@ extern "C"
 #define MODE_POST  1     /* option: posterior */
 
 /* GNSS/INS options ---------------*/
+#define GINS_NX     15            /* number of ins parameters */
 /* ins constants/macros */
 #define NINCIMU     100000        /* incremental number of imu data */
 #define NMAXPOS     10000         /* max number of pos data */
@@ -197,7 +200,7 @@ extern "C"
 /* end */
 
 /* GNSS option */
-#define MAXITR  20      /* max number of iteration for spp */
+#define MAXITR  20      /* max number of iteration for spp 10 */
 #define MAXSYS  6       /* max system */
 #define MAXFREQ 7       /* max NFREQ */
 #define THRES_MW_JUMP 10.0 /* threshold for mw jump detection */
@@ -1433,7 +1436,7 @@ extern "C"
         int mode;                /* GNSS positioning mode (PMODE_???) */
         int mfspp;               /* multi-frequency SPP enable flag (0:off,1:on) */
         int respp;               /* LS robust estimation enable flag (0:off,1:on) */
-        int cdspp;               /* spp based on pseudorange and Doppler (0:off,1:on) */
+        int spp_mode;            /* spp mode (0:spp_ls_code (only code),1:spp_ls_cd (code+dopple),2:spp_kf (code+dopple)) */
         int soltype;             /* solution type (0:forward,1:backward,2:combined) */
         int reverse;             /* analysis direction (0:forward,1:backward) */
         int nf;                  /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
@@ -1985,9 +1988,10 @@ extern "C"
     EXPORT void matmul(const char *tr,int r1,int c1,int c2,
                         const double *A,const double *B,double *C,double alpha, double beta);                                     
     EXPORT int matinv(double *A, int n);
+    EXPORT int matinv_diag(double *A, int n);
     EXPORT int solve(const char *tr, const double *A, const double *Y, int n,
                      int m, double *X);
-    EXPORT int outrej_spp(int nv, int nv_code, int nx, int nx_code, double thres, double *v, double *H, double *var,
+    EXPORT int outrej_spp(int nv, int *nv_code, int nx, int nx_code, double thres, double *v, double *H, double *var,
                       const ssat_t *ssat, const int *sati, const int *vi, int *vsat, int it, int *clock_idx);                 
     EXPORT int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
     EXPORT int lsq_roubst(const double *A, const double *y, double *P, int n, int m, double *x, double *Q, int mode); 
@@ -2503,7 +2507,6 @@ extern "C"
 
     /* standard positioning ------------------------------------------------------*/
     EXPORT int spp_sys(const prcopt_t *popt, int *clock_idx);
-    EXPORT int maxobsat(const int *vsat, int n, int nf);
     EXPORT int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
                       const prcopt_t *opt, sol_t *sol, double *azel, ssat_t *ssat);
     EXPORT int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
