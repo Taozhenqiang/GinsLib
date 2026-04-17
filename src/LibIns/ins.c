@@ -6,10 +6,18 @@
 
 static imu_t imus={0};          /* imu data */
 
+/* get pos obs for LC mode */
 extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
 {
-    posd_t *posd=&pos.data[ipos];
+    posd_t *posd=NULL;
     int i;
+
+    if (ipos<0||ipos>=pos.n) {
+        trace(7,"pos2sol: posfile reaches the end!\n");
+        return;
+    }
+
+    posd=&pos.data[ipos];
 
     sol->stat=SOLQ_FLOAT;
     sol->time=posd->time;
@@ -1117,7 +1125,10 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
 
     popt.GI_mode=GINS_OFF;  /* set to GINS_OFF mode */
     /* NOTE: initialize rtk_ instead of assigning rtk to rtk_ to avoid shallow copying of the structure */
-    if (SYNC_YES==rtk->upte) { rtkinit(&rtk_,&popt,NULL); init_flag=1; }
+    if (SYNC_YES==rtk->upte) { 
+        rtkinit(&rtk_,&popt,NULL); 
+        init_flag=1; 
+    }
 
     /* for GNSS/INS LC with pos file ,set alignment type to manual */
     if (PMODE_LC_POS==popt.mode) popt.alingetype=INSALI_MANUAL;
@@ -1144,8 +1155,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
     /* velocity vector-assisted alignment and INS re-initialization require GNSS/INS time synchronization */
     if (SYNC_YES==rtk->upte&&vel_flag) {
         /* velocity vector assisted yaw initialization based on tdcp */
-        if (!rtk->align&&INSALI_VELTOR==popt.alingetype)  
-        {
+        if (!rtk->align&&INSALI_VELTOR==popt.alingetype)  {
             /* initialize INS position using GNSS solution */
             if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
                 if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
@@ -1181,14 +1191,13 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
         }
 
         /* reinitialize INS in the event of a long-term GNSS outage */
-        if (rtk->align&&rtk->outage>MAX_OUTIME&&!outsim.valid_flag) 
-        {
+        if (rtk->align&&rtk->outage>MAX_OUTIME&&!outsim.valid_flag) {
             /* initialize INS position using GNSS solution */
             if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
                 if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
                 return rtk->align?1:0;
             }
-            /* if GNSS becomes available after a long interruption, set the GNSS interruption count to zero */
+            /* if GNSS becomes available after a long outage, reset the GNSS outage count */
             rtk->outage=0;
 
             /* reinitialize ins position and velocity, consider lever arm correction */
@@ -1236,7 +1245,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
 }
 
 /* TDCP-assisted motion alignment */
-extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
+extern int tdcp_vel(rtk_t *rtk, rtk_t *rtk_main, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt)
 {
     prcopt_t opt_=*opt;
     sol_t sol={0},sol_old={0};
@@ -1244,19 +1253,24 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
     double rr[3],rr_old[3],r,dr[3],dr_old[3],er=0.0,er_old=0.0,e[3],e_old[3],freq,thres_ouj=2.0,thres=3.0;
     double sgn=(SOLTYPE_BACKWARD==opt->reverse?-1.0:1.0);
     double *v,*H,*var,*P,dx[4]={0},Q[4*4];
+    int align=rtk_main->align;
     int sat[MAXSAT],ir_old[MAXSAT],ir[MAXSAT];
     int stat=0,stat_old=0,i,j,k,m,nf=rtk->opt.nf,sys,fr,nx=4,nv=0,vnv[MAXFREQ]={0},max_vnv=0,info,pos_flag=1,tdcp_flag=1,vel_flag=0,mode=Robust_RES;
     int vsat[MAXOBS]={0},vsat_old[MAXOBS]={0},svh[MAXOBS]={0},svh_old[MAXOBS]={0};
 
+    /* check if there are valid observations */
     if (!n||!n_old) return 0;
+
+    /* initialize rtk_tdcp parameters */
+    rtk->interval=rtk_main->interval; rtk->dopsgn=rtk_main->dopsgn;
 
     /* initialize rtk TDCP velocity */
     for (i=0;i<3;i++) rtk->sol.tdcp_vel[i]=0.0; 
 
     /* initializing memory */
-    rs=mat(n,6);    rs_old=mat(n_old,6);   dts=mat(n,2);   dts_old=mat(n_old,2);
-    vare=mat(n,1);  vare_old=mat(n_old,1); resp=mat(n,1);  resp_old=mat(n_old,1);
-    azel=zeros(n,2);azel_old=zeros(n_old,2);
+    rs=mat(n,6); rs_old=mat(n_old,6); dts=mat(n,2); dts_old=mat(n_old,2);
+    vare=mat(n,1); vare_old=mat(n_old,1); resp=mat(n,1); resp_old=mat(n_old,1);
+    azel=zeros(n,2); azel_old=zeros(n_old,2);
     v=mat(nf*n,1);  H=mat(nf*n,nx); var=mat(nf*n,1); P=zeros(nf*n,nf*n); 
 
     /* reset receiver velocity */
@@ -1264,9 +1278,9 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
 
     /* configured in spp mode */
     if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) {
-        opt_.GI_mode=GINS_OFF;     opt_.mode=PMODE_SINGLE;
-        opt_.sateph =EPHOPT_BRDC;
-        opt_.ionoopt=IONOOPT_BRDC; opt_.tropopt=TROPOPT_SAAS;
+        opt_.GI_mode=GINS_OFF; opt_.mode=PMODE_SINGLE; opt_.spp_mode=SPP_LS_C; /* TOdo */
+        opt_.sateph =EPHOPT_BRDC; opt_.ionoopt=IONOOPT_BRDC; opt_.tropopt=TROPOPT_SAAS;
+        rtk->opt=opt_;
     }
 
     /* satellite positons, velocities and clocks of current and previous epoch */
@@ -1283,8 +1297,8 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
     }
     else {
         /* receiver position in the previous epoch and the current epoch in spp mode */
+        rtk->sol.stat=stat;
         for (i=0;i<3;i++) {
-            rtk->sol.stat=stat;
             rr[i]=rtk->sol.rr[i]=sol.rr[i];
             rr_old[i]=sol_old.rr[i];
         }
@@ -1292,13 +1306,13 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
 
     /* if GNSS outage, tdcp fails */
     if (rtk->interval&&timediff(obs[0].time,obs_old[0].time)>rtk->interval) {
-        tdcp_flag=0; trace(7,"tdcp_vel: time difference between current and previous epoch is too large tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
+        tdcp_flag=0; trace(7,"tdcp_vel: time difference between current and previous epoch is too large, tt=%.2f\n",timediff(obs[0].time,obs_old[0].time));
     }
 
     /* epoch-to-epoch average velocity estimation based on tdcp */
     if (tdcp_flag) {
         /* check whether a cycle slip occurs in the current epoch observation */
-        init_ssatpar(rtk,NULL,n,RTK_slip,SOLQ_NONE);
+        init_ssatpar(rtk,NULL,n,ssat_slip,SOLQ_NONE);
 
         /* detect cycle slip by LLI/geometry-free/Melbourne-Wubbena linear combination */
         detslp_ll_ppp(rtk,obs,n);
@@ -1313,7 +1327,7 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
             else if (obs_old[i].sat>obs[j].sat) i--;
             else {
                 /* exclude satellites that are not involved in the solution or have unhealthy ephemeris */
-                if (satexclude(obs_old[i].sat,vare_old[i],svh_old[i],&opt_)||satexclude(obs[j].sat,vare[i],svh[j],&opt_)) continue;      
+                if (satexclude(obs_old[i].sat,vare_old[i],svh_old[i],&opt_)||satexclude(obs[j].sat,vare[j],svh[j],&opt_)) continue;      
                 /* exclude satellites with large residuals*/
                 if (!vsat_old[i]||!vsat[j]) continue;
                 /* exclude satellites that have cycle slips */
@@ -1365,10 +1379,7 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
         }         
 
         /* determine the maximum number of satellites available on a single frequency */
-        for (i=0;i<nf;i++) {
-            if (!i) max_vnv=vnv[i];
-            else if (vnv[i]>max_vnv) max_vnv=vnv[i];
-        }
+        max_vnv=maxobsat(vnv,nf);
 
         if (max_vnv<nx) {
             tdcp_flag=0;trace(7,"tdcp_vel: not enough valid satellites nv=%d\n",nv);
@@ -1410,21 +1421,22 @@ extern int tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_
     /* if tdcp fails, velocity estimation is performed using Doppler observations */
     if (stat&&!vel_flag&&rtk->dopsgn&&estvel(rtk,obs,n,rs,dts,nav,&opt_,&sol,azel,vsat)) {
         vel_flag=1;
-        /* update the receiver velocity with dopple */
-        matcpy(rtk->sol.rr+3,sol.rr+3,3,1);
+        matcpy(rtk->sol.rr+3,sol.rr+3,3,1); /* update the receiver velocity with dopple */
     }
 
     /* if tdcp and dopple fail, velocity estimation is performed using the spp position difference between epochs */
     if (pos_flag&&!vel_flag) {
         vel_flag=1;
-        /* update the receiver velocity with dpos */
-        for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*(rr[i]-rr_old[i])/rtk->interval;
+        for (i=0;i<3;i++) rtk->sol.rr[i+3]=sgn*(rr[i]-rr_old[i])/rtk->interval; /* update the receiver velocity with dpos */
     }
 
     /* only the vehicle velocity exceeds the threshold, the alignment is considered complete */
     if (!align&&vel_flag&&norm(rtk->sol.rr+3,3)<thres) {
         vel_flag=0;
     }
+
+    /* copy TDCP estimated velocity to rtk_main struct */
+    if (norm(rtk->sol.rr+3,3)>0.0) matcpy(rtk_main->sol.rr+3,rtk->sol.rr+3,3,1); 
 
     /* freeing up memory */
     free(rs);   free(rs_old);   free(dts);  free(dts_old);
@@ -1473,7 +1485,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt)
 {
     ins_t *ins=&rtk->ins;
     sol_t *sol=(GINS_TC==popt->GI_mode)?&rtk->sol:&rtk->lcgins.sol;
-    int i,j,nx=ins->nx,nv=0,info;
+    int i,j,nx=ins->nx,nv=4,info; /* max nv:ZUPT+ZIHR=4 */
     double zupt_time,vel,*xp,*Pp,*H,*v,*var,*R;
 
     /* detected vehicle stationary time (s) and GNSS velocity */
@@ -1544,9 +1556,11 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     Mat3mvskew(-1.0,ins->Cvb,ins->lever_nhc,lever_v);
 
     /* H of ZIHR */
-    Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; 
-    Ha_bg[1]=0.0; 
-    Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;
+    if (CONS_ZIHR==mode) {
+        Ha_bg[0]=-sin(ins->att[1])/cos(ins->att[0])*rtk->interval; 
+        Ha_bg[1]=0.0; 
+        Ha_bg[2]=cos(ins->att[1])/cos(ins->att[0])*rtk->interval;        
+    }
 
     /* converts the yaw from clockwise to counterclockwise */
     if (GINS_LC==rtk->opt.GI_mode) for (i=0;i<3;i++) att[i]=rtk->lcgins.sol.att[i];
@@ -1558,15 +1572,15 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     /* determine constraint model */
     if (CONS_NHC==mode) {
         inv=2;
-        trace(12,"nhc_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4);
+        trace(8,"nhc_constraints: v=\n");tracemat(8,ins->nhc_vel,3,1,9,4);
     }
     else if (CONS_ZUPT==mode) {
         inv=3;
-        trace(12,"zupt_constraints: v=\n");tracemat(12,ins->nhc_vel,3,1,9,4);
+        trace(8,"zupt_constraints: v=\n");tracemat(8,ins->nhc_vel,3,1,9,4);
     }
     else if (CONS_ZIHR==mode) {
         inv=1;
-        trace(12,"zihr_constraints: yaw=\n");tracemat(12,ins->att,3,1,9,4);
+        trace(8,"zihr_constraints: yaw=\n");tracemat(8,ins->att,3,1,9,4);
     }
 
     for (i=0;i<inv;i++) {
@@ -1783,6 +1797,7 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
         }
     }
 
+    /* update earth parameters */
     earth_update(popt,ins->pos,ins->vel,&ins->eth);
 
     /* NOTE: Phi angle error model */
@@ -1958,9 +1973,11 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
 
     /* discretization of the state transition matrix Phi */
     matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
-    /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16);
+#if 0
+    trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16);
     trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16);
-    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4); */ /*ok*/
+    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4); /*ok*/
+#endif
 
     free(Fg);free(I);free(I3);
 }

@@ -23,8 +23,6 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define SQR(x)      ((x)*(x))
-
 /* #define AS2R        (D2R/3600.0) */    /* arc sec to radian */
 #define GME         3.986004415E+14 /* earth gravitational constant */
 #define GMS         1.327124E+20    /* sun gravitational constant */

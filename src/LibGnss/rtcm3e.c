@@ -59,9 +59,7 @@
 #define P2_59       1.734723475976810E-18 /* 2^-59 */
 #define P2_66       1.355252715606880E-20 /* 2^-66 */
 
-#define ROUND(x)    ((int)floor((x)+0.5))
 #define ROUND_U(x)  ((uint32_t)floor((x)+0.5))
-#define MIN(x,y)    ((x)<(y)?(x):(y))
 
 /* MSM signal ID table -------------------------------------------------------*/
 extern const char *msm_sig_gps[32];

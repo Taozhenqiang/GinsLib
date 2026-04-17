@@ -11,34 +11,34 @@ from time_conversion import epoch2time, utc2gpst, time2gpst, GTimeT
 # 在这里修改配置参数
 
 # 输入文件路径
-INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/ref.xlsx"  
+INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/POS.tru"  
 
 # 要跳过的行数（通常是表头或注释行）
-SKIP_LINES = 1
+SKIP_LINES = 108
 
 # 时间系统配置
-TIME_SYSTEM = "UTC"  # 可选: "GPST" 或 "UTC"
-INPUT_TIME_FORMAT = "calendar"  # 可选: "week_tow" 或 "calendar"
+TIME_SYSTEM = "GPST"  # 可选: "GPST" 或 "UTC"
+INPUT_TIME_FORMAT = "week_tow"  # 可选: "week_tow" 或 "calendar"
 OUTPUT_TIME_FORMAT = "week_tow"  # 输出格式固定为周/周内秒
 
 # 单独输入各数据项的列索引（从0开始计数，如果某项不存在则设为-1）
 # 时间戳列索引（必须提供）
-TIME_COLS = [0, 1, 2, 3, 4, 5]  # [周, 秒] 或 [年, 月, 日, 时, 分, 秒] 根据INPUT_TIME_FORMAT确定
+TIME_COLS = [0, 1]  # [周, 秒] 或 [年, 月, 日, 时, 分, 秒] 根据INPUT_TIME_FORMAT确定
 
 # 位置相关列索引（如果存在）
-POSITION_COLS = [6, 7, 8]  # [x, y, z] 或 [lat, lon, height]
+POSITION_COLS = [2, 3, 4]  # [x, y, z] 或 [lat, lon, height]
 POSITION_FORMAT = "geodetic"  # 可选: "ecef" 或 "geodetic"
 
 # 速度相关列索引（如果存在）
-VELOCITY_COLS = [9, 10, 11]  # [vx, vy, vz] 或 [ve, vn, vu]
-VELOCITY_FORMAT = "ecef"  # 可选: "ecef" 或 "enu"
-VELOCITY_COEFFICIENTS = [1, 1, 1]  # 速度系数 [x系数, y系数, z系数]
+VELOCITY_COLS = [6, 5, 7]  # [vx, vy, vz] 或 [ve, vn, vu]
+VELOCITY_FORMAT = "enu"  # 可选: "ecef" 或 "enu"
+VELOCITY_COEFFICIENTS = [1, 1, -1]  # 速度系数 [x系数, y系数, z系数]
 
 # 姿态相关列索引（如果存在）
-ATTITUDE_COLS = [12, 13, 14]  # [pitch, roll, heading]
+ATTITUDE_COLS = [9, 8, 10]  # [pitch, roll, heading]
 
 # 输出文件路径（如果为None，则自动生成）
-OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/truth.truth"
+OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/truth_pva.truth"
 
 # 是否显示详细信息
 VERBOSE = True
@@ -101,7 +101,7 @@ def convert_enu_to_ecef(velocity_data, position_data, coefficients):
             vel_scaled = [vel[0] * coefficients[0], vel[1] * coefficients[1], vel[2] * coefficients[2]]
             
             # 计算变换矩阵（只需要纬度和经度）
-            E = xyz2enu(pos[:2])
+            E = xyz2enu(np.array(pos[:2])*np.pi/180.0)
             
             # ENU到ECEF的变换：v_ecef = E^T * v_enu
             v_ecef = np.dot(E.T, vel_scaled)
@@ -248,7 +248,7 @@ def read_excel_file(file_path, skip_lines=0, sheet_name=0):
 def read_text_file(file_path, skip_lines=0):
     """读取文本文件并返回所有数据"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f_in:
+        with open(file_path, 'r', encoding='gbk') as f_in:
             lines = f_in.readlines()
         
         if skip_lines >= len(lines):
@@ -350,11 +350,13 @@ def extract_and_convert_data(data_array, time_cols, time_format, time_system,
         
         # 坐标转换：大地坐标转ECEF
         if position_format.lower() == "geodetic":
-            position_data = convert_geodetic_to_ecef(position_data)
+            ecef_position = convert_geodetic_to_ecef(position_data)
+        else:
+            ecef_position = position_data
     else:
         # 如果没有位置数据，创建全零的位置数据
         for _ in range(len(data_array)):
-            position_data.append([0.0, 0.0, 0.0])
+            ecef_position.append([0.0, 0.0, 0.0])
     
     # 提取速度数据
     velocity_data = []
@@ -371,11 +373,13 @@ def extract_and_convert_data(data_array, time_cols, time_format, time_system,
         
         # 坐标转换：ENU转ECEF
         if velocity_format.lower() == "enu" and len(position_data) > 0:
-            velocity_data = convert_enu_to_ecef(velocity_data, position_data, velocity_coefficients)
+            ecef_velocity = convert_enu_to_ecef(velocity_data, position_data, velocity_coefficients)
+        else:
+            ecef_velocity = velocity_data
     else:
         # 如果没有速度数据，创建全零的速度数据
         for _ in range(len(data_array)):
-            velocity_data.append([0.0, 0.0, 0.0])
+            ecef_velocity.append([0.0, 0.0, 0.0])
     
     # 提取姿态数据
     attitude_data = []
@@ -407,13 +411,13 @@ def extract_and_convert_data(data_array, time_cols, time_format, time_system,
         
         # 添加位置数据
         if has_position_data:
-            row_data.extend(position_data[i])
+            row_data.extend(ecef_position[i])
         else:
             row_data.extend([0.0, 0.0, 0.0])
         
         # 添加速度数据
         if has_velocity_data:
-            row_data.extend(velocity_data[i])
+            row_data.extend(ecef_velocity[i])
         else:
             row_data.extend([0.0, 0.0, 0.0])
         

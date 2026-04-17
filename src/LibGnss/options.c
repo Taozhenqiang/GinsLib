@@ -77,6 +77,8 @@ static char stat_[statopt];
 #define TIDEOPT "0:off,1:on,2:otl"
 #define PHWOPT  "0:off,1:on,2:precise"
 #define SPPOPT  "0:spp_ls_code,1:spp_ls_cd,2:spp_kf"
+#define INITPOSTYPE "0:ecef,1:llh"
+#define INITVELTYPE "0:ecef,1:enu"
 
 EXPORT opt_t sysopts[]={
     {"pos1-GINS",       3,  (void *)&prcopt_.GI_mode,    GIOPT  },
@@ -167,6 +169,8 @@ EXPORT opt_t sysopts[]={
     {"ins-nhc_lever",   2,  (void *)&lever_nhc_,          ""    },
     {"ins-zupt_gthres", 1,  (void *)&prcopt_.zupt_gthres, ""    },
     {"ins-rotaion_angle",2, (void *)&rotation_angle_,     ""    },
+    {"ins-initptype",   3,  (void *)&prcopt_.initpos_type, INITPOSTYPE   },
+    {"ins-initvtype",   3,  (void *)&prcopt_.initvel_type, INITVELTYPE   },
     {"ins-initpos",     2,  (void *)&initpose_[0],       ""     },
     {"ins-initvel",     2,  (void *)&initpose_[1],       ""     },
     {"ins-initatt",     2,  (void *)&initpose_[2],       ""     },
@@ -480,7 +484,7 @@ extern int saveopts(const char *file, const char *mode, const char *comment,
 /* system options buffer to options ------------------------------------------*/
 static void buff2sysopts(void)
 {
-    double es[6],pos[3],*rr;
+    double es[6],pos[3],vel[3],*rr;
     char buff[1024],*p,*q,*id,*sep=NULL,sol_path[1024]={};
     int i,j,sat,ps;
 
@@ -587,21 +591,26 @@ static void buff2sysopts(void)
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         pos[j++]=atof(p);
     }
-    /* local frame [lat,lon,h] (deg,m) */
-    if (fabs(pos[0])<=90&&fabs(pos[1])<=180) {
-        for (j=0;j<2;j++) pos[j]*=D2R;
-        matcpy(prcopt_.initpos,pos,3,1);
+    if (prcopt_.initpos_type==0){ /* ecef frame[X,Y,Z] (m) */
+        ecef2pos(pos,prcopt_.initpos);  
     }
-    else { /* ecef frame[X,Y,Z] (m) */
-        ecef2pos(pos,prcopt_.initpos);        
+    else if (prcopt_.initpos_type==1) { /* local frame [lat,lon,h] (deg,m) */
+        for (j=0;j<2;j++) pos[j]*=D2R;
+        matcpy(prcopt_.initpos,pos,3,1);   
     }
 
     /* init ins velocity (n [E,N,U] (m/s) )*/
     for (j=0;j<3;j++) prcopt_.initvel[j]=0.0;
     strcpy(buff,initpose_[1]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
-        prcopt_.initvel[j++]=atof(p);
+        vel[j++]=atof(p);
     }  
+    if (prcopt_.initvel_type==0){ /* ecef frame[X,Y,Z] (m/s) */
+        enu2ecef(prcopt_.initpos,vel,prcopt_.initvel); 
+    }
+    else if (prcopt_.initvel_type==1) { /* local frame [E,N,U] (m/s) */
+        matcpy(prcopt_.initvel,vel,3,1);   
+    }
 
     /* init ins attitude ([pitch,roll,yaw] (deg) )*/
     for (j=0;j<3;j++) prcopt_.initatt[j]=0.0;

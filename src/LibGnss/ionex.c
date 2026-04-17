@@ -18,7 +18,6 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define SQR(x)      ((x)*(x))
 #define VAR_NOTEC   SQR(30.0)   /* variance of no tec */
 #define MIN_EL      0.0         /* min elevation angle (rad) */
 #define MIN_HGT     -1000.0     /* min user height (m) */

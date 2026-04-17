@@ -120,9 +120,6 @@
 #include "rtklib.h"
 
 /* constants/macros ----------------------------------------------------------*/
-
-#define SQR(x)      ((x)*(x))
-
 #define NAVEXP      "D"                 /* exponent letter in RINEX NAV */
 #define MAXRNXLEN   (16*MAXOBSTYPE+4)   /* max RINEX record length */
 #define MAXPOSHEAD  1024                /* max head line position */

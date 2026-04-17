@@ -67,8 +67,6 @@
 #define P2P15       32768.0               /* 2^15 */
 #define P2P16       65536.0               /* 2^16 */
 
-#define SQR(x)      ((x)*(x))
-
 /* get two component bits ----------------------------------------------------*/
 static uint32_t getbitu2(const uint8_t *buff, int p1, int l1, int p2, int l2)
 {

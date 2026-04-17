@@ -43,9 +43,6 @@
 #define BNXSYNC3R   0xD8    /* BINEX sync (little-endian,enhanced-crc,rev) */
 #define BNXSYNC4R   0xF8    /* BINEX sync (big-endian   ,enhanced-crc,rev) */
 
-#define MIN(x,y)    ((x)<(y)?(x):(y))
-#define SQR(x)      ((x)*(x))
-
 /* URA table (URA index -> URA value) ----------------------------------------*/
 static const double ura_eph[]={
     2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,

@@ -51,8 +51,6 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define SQR(x)      ((x)*(x))
-
 #define NMAX        10              /* order of polynomial interpolation */
 #define MAXDTE      900.0           /* max time difference to ephem time (s) */
 #define EXTERR_CLK  1E-3            /* extrapolation error for clock (m/s) */

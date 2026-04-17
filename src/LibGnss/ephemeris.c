@@ -75,8 +75,6 @@
 
 /* constants and macros ------------------------------------------------------*/
 
-#define SQR(x)   ((x)*(x))
-
 #define RE_GLO   6378136.0        /* radius of earth (m)            ref [2] */
 #define MU_GPS   3.9860050E14     /* gravitational constant         ref [1] */
 #define MU_GLO   3.9860044E14     /* gravitational constant         ref [2] */

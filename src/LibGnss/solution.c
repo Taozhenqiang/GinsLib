@@ -58,9 +58,8 @@
 #include "rtklib.h"
 
 /* constants and macros ------------------------------------------------------*/
+#define BSQR(x)     ((x)<0.0?-(x)*(x):(x)*(x))
 
-#define SQR(x)     ((x)<0.0?-(x)*(x):(x)*(x))
-#define SQRT(x)    ((x)<0.0||(x)!=(x)?0.0:sqrt(x))
 
 /* https://gpsd.gitlab.io/gpsd/NMEA.html#_talker_ids says ...
       GA    ~    Galileo Positioning System
@@ -500,13 +499,13 @@ static int decode_solxyz(char *buff, const solopt_t *opt, sol_t *sol)
     if (i<n) sol->stat=(uint8_t)val[i++];
     if (i<n) sol->ns  =(uint8_t)val[i++];
     if (i+3<=n) {
-        P[0]=SQR(val[i]); i++; /* sdx */
-        P[4]=SQR(val[i]); i++; /* sdy */
-        P[8]=SQR(val[i]); i++; /* sdz */
+        P[0]=BSQR(val[i]); i++; /* sdx */
+        P[4]=BSQR(val[i]); i++; /* sdy */
+        P[8]=BSQR(val[i]); i++; /* sdz */
         if (i+3<=n) {
-            P[1]=P[3]=SQR(val[i]); i++; /* sdxy */
-            P[5]=P[7]=SQR(val[i]); i++; /* sdyz */
-            P[2]=P[6]=SQR(val[i]); i++; /* sdzx */
+            P[1]=P[3]=BSQR(val[i]); i++; /* sdxy */
+            P[5]=P[7]=BSQR(val[i]); i++; /* sdyz */
+            P[2]=P[6]=BSQR(val[i]); i++; /* sdzx */
         }
         covtosol(P,sol);
     }
@@ -520,13 +519,13 @@ static int decode_solxyz(char *buff, const solopt_t *opt, sol_t *sol)
     }
     if (i+3<=n) {
         for (j=0;j<9;j++) P[j]=0.0;
-        P[0]=SQR(val[i]); i++; /* sdx */
-        P[4]=SQR(val[i]); i++; /* sdy */
-        P[8]=SQR(val[i]); i++; /* sdz */
+        P[0]=BSQR(val[i]); i++; /* sdx */
+        P[4]=BSQR(val[i]); i++; /* sdy */
+        P[8]=BSQR(val[i]); i++; /* sdz */
         if (i+3<n) {
-            P[1]=P[3]=SQR(val[i]); i++; /* sdxy */
-            P[5]=P[7]=SQR(val[i]); i++; /* sdyz */
-            P[2]=P[6]=SQR(val[i]); i++; /* sdzx */
+            P[1]=P[3]=BSQR(val[i]); i++; /* sdxy */
+            P[5]=P[7]=BSQR(val[i]); i++; /* sdyz */
+            P[2]=P[6]=BSQR(val[i]); i++; /* sdzx */
         }
         covtosol_vel(P,sol);
     }
@@ -538,13 +537,13 @@ static int decode_solxyz(char *buff, const solopt_t *opt, sol_t *sol)
     }
     if (i+3<n) {
         for (j=0;j<9;j++) P[j]=0.0;
-        P[0]=SQR(val[i]); i++; /* sdp */
-        P[4]=SQR(val[i]); i++; /* sdr */
-        P[8]=SQR(val[i]); i++; /* sdy */
+        P[0]=BSQR(val[i]); i++; /* sdp */
+        P[4]=BSQR(val[i]); i++; /* sdr */
+        P[8]=BSQR(val[i]); i++; /* sdy */
         if (i+3<n) {
-            P[1]=P[3]=SQR(val[i]); i++; /* sdxy */
-            P[5]=P[7]=SQR(val[i]); i++; /* sdyz */
-            P[2]=P[6]=SQR(val[i]); i++; /* sdzx */
+            P[1]=P[3]=BSQR(val[i]); i++; /* sdxy */
+            P[5]=P[7]=BSQR(val[i]); i++; /* sdyz */
+            P[2]=P[6]=BSQR(val[i]); i++; /* sdzx */
         }
         covtosol_att(P,sol);
     }
@@ -596,13 +595,13 @@ static int decode_solllh(char *buff, const solopt_t *opt, sol_t *sol)
     if (i<n) sol->stat=(uint8_t)val[i++];
     if (i<n) sol->ns  =(uint8_t)val[i++];
     if (i+3<=n) {
-        Q[4]=SQR(val[i]); i++; /* sdn */
-        Q[0]=SQR(val[i]); i++; /* sde */
-        Q[8]=SQR(val[i]); i++; /* sdu */
+        Q[4]=BSQR(val[i]); i++; /* sdn */
+        Q[0]=BSQR(val[i]); i++; /* sde */
+        Q[8]=BSQR(val[i]); i++; /* sdu */
         if (i+3<n) {
-            Q[1]=Q[3]=SQR(val[i]); i++; /* sdne */
-            Q[2]=Q[6]=SQR(val[i]); i++; /* sdeu */
-            Q[5]=Q[7]=SQR(val[i]); i++; /* sdun */
+            Q[1]=Q[3]=BSQR(val[i]); i++; /* sdne */
+            Q[2]=Q[6]=BSQR(val[i]); i++; /* sdeu */
+            Q[5]=Q[7]=BSQR(val[i]); i++; /* sdun */
         }
         covecef(pos,Q,P);
         covtosol(P,sol);
@@ -618,13 +617,13 @@ static int decode_solllh(char *buff, const solopt_t *opt, sol_t *sol)
     }
     if (i+3<=n) {
         for (j=0;j<9;j++) Q[j]=0.0;
-        Q[4]=SQR(val[i]); i++; /* sdn */
-        Q[0]=SQR(val[i]); i++; /* sde */
-        Q[8]=SQR(val[i]); i++; /* sdu */
+        Q[4]=BSQR(val[i]); i++; /* sdn */
+        Q[0]=BSQR(val[i]); i++; /* sde */
+        Q[8]=BSQR(val[i]); i++; /* sdu */
         if (i+3<=n) {
-            Q[1]=Q[3]=SQR(val[i]); i++; /* sdne */
-            Q[2]=Q[6]=SQR(val[i]); i++; /* sdeu */
-            Q[5]=Q[7]=SQR(val[i]); i++; /* sdun */
+            Q[1]=Q[3]=BSQR(val[i]); i++; /* sdne */
+            Q[2]=Q[6]=BSQR(val[i]); i++; /* sdeu */
+            Q[5]=Q[7]=BSQR(val[i]); i++; /* sdun */
         }
         covecef(pos,Q,P);
         covtosol_vel(P,sol);
@@ -637,13 +636,13 @@ static int decode_solllh(char *buff, const solopt_t *opt, sol_t *sol)
     }
     if (i+3<n) {
         for (j=0;j<9;j++) P[j]=0.0;
-        P[0]=SQR(val[i]); i++; /* sdp */
-        P[4]=SQR(val[i]); i++; /* sdr */
-        P[8]=SQR(val[i]); i++; /* sdy */
+        P[0]=BSQR(val[i]); i++; /* sdp */
+        P[4]=BSQR(val[i]); i++; /* sdr */
+        P[8]=BSQR(val[i]); i++; /* sdy */
         if (i+3<n) {
-            P[1]=P[3]=SQR(val[i]); i++; /* sdxy */
-            P[5]=P[7]=SQR(val[i]); i++; /* sdyz */
-            P[2]=P[6]=SQR(val[i]); i++; /* sdzx */
+            P[1]=P[3]=BSQR(val[i]); i++; /* sdxy */
+            P[5]=P[7]=BSQR(val[i]); i++; /* sdyz */
+            P[2]=P[6]=BSQR(val[i]); i++; /* sdzx */
         }
         covtosol_att(P,sol);
     }
@@ -684,13 +683,13 @@ static int decode_solenu(char *buff, const solopt_t *opt, sol_t *sol)
     if (i<n) sol->stat=(uint8_t)val[i++];
     if (i<n) sol->ns  =(uint8_t)val[i++];
     if (i+3<=n) {
-        Q[0]=SQR(val[i]); i++; /* sde */
-        Q[4]=SQR(val[i]); i++; /* sdn */
-        Q[8]=SQR(val[i]); i++; /* sdu */
+        Q[0]=BSQR(val[i]); i++; /* sde */
+        Q[4]=BSQR(val[i]); i++; /* sdn */
+        Q[8]=BSQR(val[i]); i++; /* sdu */
         if (i+3<=n) {
-            Q[1]=Q[3]=SQR(val[i]); i++; /* sden */
-            Q[5]=Q[7]=SQR(val[i]); i++; /* sdnu */
-            Q[2]=Q[6]=SQR(val[i]); i++; /* sdue */
+            Q[1]=Q[3]=BSQR(val[i]); i++; /* sden */
+            Q[5]=Q[7]=BSQR(val[i]); i++; /* sdnu */
+            Q[2]=Q[6]=BSQR(val[i]); i++; /* sdue */
         }
         covtosol(Q,sol);
     }
@@ -708,9 +707,9 @@ static int decode_solenu(char *buff, const solopt_t *opt, sol_t *sol)
         Q[4]=val[i]*val[i]; i++; /* sdn */
         Q[8]=val[i]*val[i]; i++; /* sdu */
         if (i+3<=n) {
-            Q[1]=Q[3]=SQR(val[i]); i++; /* sden */
-            Q[5]=Q[7]=SQR(val[i]); i++; /* sdnu */
-            Q[2]=Q[6]=SQR(val[i]); i++; /* sdue */
+            Q[1]=Q[3]=BSQR(val[i]); i++; /* sden */
+            Q[5]=Q[7]=BSQR(val[i]); i++; /* sdnu */
+            Q[2]=Q[6]=BSQR(val[i]); i++; /* sdue */
         }
         covtosol_vel(Q,sol);
     }
@@ -722,13 +721,13 @@ static int decode_solenu(char *buff, const solopt_t *opt, sol_t *sol)
     }
     if (i+3<n) {
         for (j=0;j<9;j++) P[j]=0.0;
-        P[0]=SQR(val[i]); i++; /* sdp */
-        P[4]=SQR(val[i]); i++; /* sdr */
-        P[8]=SQR(val[i]); i++; /* sdy */
+        P[0]=BSQR(val[i]); i++; /* sdp */
+        P[4]=BSQR(val[i]); i++; /* sdr */
+        P[8]=BSQR(val[i]); i++; /* sdy */
         if (i+3<n) {
-            P[1]=P[3]=SQR(val[i]); i++; /* sdxy */
-            P[5]=P[7]=SQR(val[i]); i++; /* sdyz */
-            P[2]=P[6]=SQR(val[i]); i++; /* sdzx */
+            P[1]=P[3]=BSQR(val[i]); i++; /* sdxy */
+            P[5]=P[7]=BSQR(val[i]); i++; /* sdyz */
+            P[2]=P[6]=BSQR(val[i]); i++; /* sdzx */
         }
         covtosol_att(P,sol);
     }
@@ -770,7 +769,7 @@ static int decode_solsss(char *buff, sol_t *sol)
     sol->time=gpst2time(week,tow);
     for (i=0;i<6;i++) {
         sol->rr[i]=i<3?pos[i]:0.0;
-        sol->qr[i]=i<3?(float)SQR(std[i]):0.0f;
+        sol->qr[i]=i<3?(float)BSQR(std[i]):0.0f;
         sol->dtr[i]=0.0;
     }
     sol->ns=0;
@@ -2126,6 +2125,7 @@ extern int outsols(uint8_t *buff, sol_t *sol, const double *rb, const prcopt_t *
         p+=sprintf(p,"\r\n");
         return (int)(p-buff);
     }
+    /* if GNSS is unavailable, set ns=ratio=0 */
     if (sol->stat>=SOLQ_INS) {
         sol->ns=0;
         sol->ratio=0.0;

@@ -62,12 +62,6 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define SQR(x)      ((x)*(x))
-#define SQRT(x)     ((x)<=0.0||(x)!=(x)?0.0:sqrt(x))
-#define MAX(x,y)    ((x)>(y)?(x):(y))
-#define MIN(x,y)    ((x)<(y)?(x):(y))
-#define ROUND(x)    (int)floor((x)+0.5)
-
 #define MAX_ITER    8               /* max number of iterations */
 #define MAX_STD_FIX 0.15            /* max std-dev (3d) to fix solution */
 #define MIN_NSAT_SOL 4              /* min satellite number for solution */
@@ -884,7 +878,7 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     }
 
     /* reset slip flag for all sats (PPP) */
-    init_ssatpar(rtk,NULL,0,RTK_slip,SOLQ_NONE);
+    init_ssatpar(rtk,NULL,0,ssat_slip,SOLQ_NONE);
 
     /* detect cycle slip by LLI */
     detslp_ll_ppp(rtk,obs,n);
@@ -1603,54 +1597,6 @@ static int test_hold_amb(rtk_t *rtk)
     }
     /* test # of continuous fixed */
     return ++rtk->nfix>=rtk->opt.minfix;
-}
-
-/* observation pre-check*/
-extern int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr)
-{
-	int i,ns,_ns,sat,sys,fr2[2],prn;
-    double threshold=100;
-    char id[4];
-
-	for (i=ns=0;i<nu&&i<MAXOBS;i++) {
-		sat=obs[i].sat;
-        sys=satsys(sat,&prn);
-        fr2[0]=sys2freid(sys,0,opt);
-        fr2[1]=sys2freid(sys,1,opt);
-
-        /* carrier integrity check for ppp */
-        if (opt->mode>=PMODE_PPP_KINEMA) {
-            if ((fabs(obs[i].L[fr2[0]])==0.0)&&(fabs(obs[i].L[fr2[1]])==0.0)) {
-                continue;
-            }
-        }
-
-        /* pseudorange outlier detection */
-        if ((obs[i].P[fr2[0]]!=0.0&&fabs(obs[i].P[fr2[0]])<19e6)||(obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[1]])<19e6)) {
-            satno2id(sat,id);
-            trace(6,"obsScan: abnormal pseudorange observations, less than 19000 km, sat=%s\n",id);
-            continue;            
-        }
-        if (obs[i].P[fr2[0]]!=0.0&&obs[i].P[fr2[1]]!=0.0&&fabs(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])>=threshold) {
-            satno2id(sat,id);
-            trace(6,"obsScan: dual-frequency pseudorange difference exceeded the limit, sat=%s\n",id);
-            continue;
-        }
-
-        obs[ns]=obs[i];
-        ns++;
-	}
-
-    if (!ns) return 0;
-    
-    /* overwrite the excluded satellites in the obs structure */
-    _ns=ns;
-    if (ns<nu) {
-        /* append base station data */
-        for (i=nu;i<nu+nr;i++) obs[_ns++]=obs[i];
-    }
-
-    return ns;
 }
 
 /* precise point positioning -------------------------------------------------*/

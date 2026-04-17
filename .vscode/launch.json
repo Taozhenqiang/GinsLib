@@ -47,19 +47,20 @@
                 // "ADIS16488_Vehicle_complex_20210728.conf",     
                 
                 // "LG69T_Vehicle_complex_20260211.conf",
-                // "LG69T_Vehicle_complex_20250414.conf",
+                "LG69T_Vehicle_complex_20250414.conf",
                 // "gnssloger_20260116.conf",
-                "gnssloger_20251010.conf",
+                // "gnssloger_20251010.conf",
                
 
-                "-p","0","-gins","0","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0", 
+                "-p","11","-gins","1","-sys","GECJ",
+                "-ion","1","-tro","1","-eph","0","-flt","1","-amb","0","-ambt","0","-solt","0", 
                 "-ref","./truth.truth",
                 // "-kml",
                 "-pcolor","2",
                 
-                "-x","4240",//trace level:12,7,4
+                "-x","4224",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}/data/GNSS/gnssloger_20251010",
+            "cwd": "${workspaceFolder}/data/GNSS/LG69T_Vehicle_complex_20250414",
             
         },  
         {
@@ -173,6 +174,22 @@
             // "cwd": "/home/tzq/open_code/GINS_data/IGM-A1_Vehicle_open_20211217-nsh" ,
 
             "console": "integratedTerminal",
+        },
+        {
+            "type":"debugpy",
+            "request": "launch",
+            "name": "covert_imu",
+
+            "program": "${workspaceFolder}/script/convert_imu.py",
+            "cwd": "${workspaceFolder}/data", //工作路径,
+        },
+        {
+            "type":"debugpy",
+            "request": "launch",
+            "name": "extract_commands",
+
+            "program": "${workspaceFolder}/script/extract_commands.py",
+            "cwd": "${workspaceFolder}/data", //工作路径,
         },
         {
             "type":"debugpy",

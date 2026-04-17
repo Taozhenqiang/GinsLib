@@ -86,6 +86,14 @@ extern "C"
 #define SNR_UNIT 0.001 /* SNR unit (dBHz) */
 #define SNR_WINDOW 600 /* SNR window (epoch) */
 
+/* math macros */
+#define SQR(x)      ((x)*(x))
+#define MAX(x,y)    ((x)>=(y)?(x):(y))
+#define MIN(x,y)    ((x)<=(y)?(x):(y))
+#define SGN(x)      ((x>0)?1:-1)
+#define SQRT(x)     ((x)<=0.0||(x)!=(x)?0.0:sqrt(x))
+#define ROUND(x)    (int)floor((x)+0.5)
+
 /* spp mode */
 #define SPP_LS_C  0  /* spp based on pseudorange */
 #define SPP_LS_CD 1  /* spp based on pseudorange and Doppler */
@@ -696,15 +704,14 @@ extern "C"
 
 /* init ssat struct for spp/ppp/rtk */
 #define SPP_ssat  0      /* init ssat struct for spp */
-#define SPP_range 1     /* store the distance from the satellite to the receiver at the current epoch */
-#define PPP_ssat 2      /* init ssat struct for ppp */
-#define PPP_vsat 3      /* reset vsat flag for spp */
-#define PPP_update 4    /* update ssat status for ppp */
-#define RTK_ssat 5      /* init ssat struct for rtk */
-#define RTK_resi 6      /* reset resc/resp for rtk */
-#define RTK_fix  7      /* init fix flag for rtk */
-#define RTK_slip 8      /* reset clip flag for rtk */
-#define RTK_update 9    /* update ssat status for rtk*/
+#define SPP_range 1      /* store the distance from the satellite to the receiver at the current epoch */
+#define PPP_ssat  2      /* init ssat struct for ppp */
+#define PPP_vsat  3      /* reset vsat flag for spp */
+#define PPP_update 4     /* update ssat status for ppp */
+#define RTK_ssat_vsat 5  /* init ssat struct for rtk */
+#define RTK_ssat_fix  6      /* init fix flag for rtk */
+#define ssat_slip 7          /* reset clip flag for rtk */
+#define RTK_ssat_update 8    /* update ssat status for rtk*/
 
 /* output file type */
 #define OUTFILE_STAT 1 /* output solution status file (.stat) */
@@ -1532,6 +1539,8 @@ extern "C"
         double lever_nhc[3];     /* lever frame from imu to nhc effective point in b frame (m) */
         double install_angle[3]; /* ins installation angle, [pitch,roll,yaw] (deg), from v frame to b frame */
         double zupt_gthres;      /* zero speed detection threshold of gyroscope (rad) */
+        int initpos_type;        /* the format for inputting the initial position is (0:ecef (m), 1:llh (deg,deg,m)) */
+        int initvel_type;        /* the format for inputting the initial velocity is (0:ecef (m/s), 1:enu (m/s)) */
         double initpos[3];       /* ins inital position [lat,lon,h] (rad,m) */
         double initvel[3];       /* ins inital velocity [E,N,U] (m/s)*/
         double initatt[3];       /* ins inital attitude [pitch,roll,heading] (rad) */
@@ -1737,6 +1746,7 @@ extern "C"
     
     typedef struct
     {                           /* RTK control/result type */
+        int nu,nr;              /* number of rover/base station observations */
         sol_t sol;              /* RTK solution */
         double rb[6];           /* base position/velocity (ecef) (m|m/s) */
         double ru[6];           /* user position/velocity predicted by ins (ecef) (m|m/s) */
@@ -2192,8 +2202,6 @@ extern "C"
 
 #endif /* TRACE */
 
-    /* mutipath model*/
-    EXPORT void BDmulCorr(rtk_t *rtk, obsd_t *obs, int n);
     /* platform dependent functions ----------------------------------------------*/
     EXPORT int execcmd(const char *cmd);
     EXPORT int expath(const char *path, char *paths[], int nmax);
@@ -2505,8 +2513,20 @@ extern "C"
     EXPORT int lambda_search(int n, int m, const double *a, const double *Q,
                              double *F, double *s);
 
+    /* observation preprocessing -------------------------------------------------*/
+    EXPORT int obsNum(const rtk_t *rtk, obsd_t *obs, int nobs);
+    EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss);
+    EXPORT int obsScan(const prcopt_t *opt, obsd_t *obs, const int n, int *nu_, int *nr_);
+    EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
+    EXPORT void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav);
+    /* mutipath model*/
+    EXPORT void BDmulCorr(rtk_t *rtk, obsd_t *obs, int n);
+    EXPORT int obsPreprocess(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, const nav_t *nav, const int n, const int n_old, int *nu_, int *nr_);
+
     /* standard positioning ------------------------------------------------------*/
     EXPORT int spp_sys(const prcopt_t *popt, int *clock_idx);
+    EXPORT int maxobsat(const int *ns, int nf);
+    EXPORT void save_old_obs(const obsd_t *obs, obsd_t *obs_old, const int ns, int *nu_old_);
     EXPORT int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
                       const prcopt_t *opt, sol_t *sol, double *azel, ssat_t *ssat);
     EXPORT int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
@@ -2519,14 +2539,12 @@ extern "C"
     EXPORT int valsol(sol_t *sol, const double *azel, const int *vsat, int n, const prcopt_t *opt, const double *v, double *P, int nv, int nx);                 
 
     /* precise positioning -------------------------------------------------------*/
-    EXPORT extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss);
     EXPORT void initx(rtk_t *rtk, double xi, double var, int i);
     EXPORT void init_crosscov(rtk_t *rtk, int ns, int n);
     EXPORT void covtodiag(double *P, int n);
     EXPORT void diag_Cov(int nv, const double *var, double *P, int opt);
     EXPORT void slid_windows(int N, double *data1, uint16_t *data2, int n);
     EXPORT int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat);
-    EXPORT int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old);
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt);
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);
@@ -2539,13 +2557,12 @@ extern "C"
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
     /* precise point positioning -------------------------------------------------*/
-    EXPORT int obsScan(prcopt_t *opt, obsd_t *obs, const int nu, const int nr);
-    EXPORT void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav);
-    EXPORT int pppnx(const prcopt_t *opt);
-    EXPORT int pppoutstat(rtk_t *rtk, char *buff);
     EXPORT void detslp_ll_ppp(rtk_t *rtk, const obsd_t *obs, int n);
     EXPORT void detslp_gf_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav);
-    EXPORT void detslp_mw_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav);    
+    EXPORT void detslp_mw_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav); 
+    EXPORT void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav);
+    EXPORT int pppnx(const prcopt_t *opt);
+    EXPORT int pppoutstat(rtk_t *rtk, char *buff);   
     EXPORT int ppp_ar(rtk_t *rtk, const obsd_t *obs, int n, int *exc,
                       const nav_t *nav, const double *azel, double *x, double *P);
 
@@ -2563,7 +2580,7 @@ extern "C"
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 
                         const char *infile, const char *outfile);
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag);
-    EXPORT int  tdcp_vel(rtk_t *rtk, int align, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
+    EXPORT int  tdcp_vel(rtk_t *rtk, rtk_t *rtk_main, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
     EXPORT int  motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);

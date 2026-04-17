@@ -20,8 +20,6 @@
 
 #define LOOPMAX     10000           /* maximum count of search loop */
 
-#define SGN(x)      ((x)<=0.0?-1.0:1.0)
-#define ROUND(x)    (floor((x)+0.5))
 #define SWAP(x,y)   do {double tmp_; tmp_=x; x=y; y=tmp_;} while (0)
 
 /* LD factorization (Q=L'*diag(D)*L) -----------------------------------------*/
@@ -483,39 +481,17 @@ extern int amb_BIE_qc(rtk_t *rtk, const double *Qab, const double *Qb, const dou
 extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,  const double *b, double *b_BIE) 
 {
     int i,j,vnum=num_candidate;
-    double sum_p=0.0,*db,weight,thres;
+    double sum_p=0.0,*db,weight;
     double lambda=2.0; /* for laplace distribution */
     double dof=2.0;    /* for student's t distribution */
 
     db=mat(nb,1);
-
-#if 0
-    /* quality control */
-    /* thres=chisqr[nb-1]; */ /* absolute threshold based on chi-square test */
-    for (j=0;j<nb;j++) db[j]=y[j]-b[j];
-    thres=3.0*quadratic(db,Qb,nb); /* relative threshold based on the first set of candidate solutions */
-    for (i=vnum-2,sum_p=0.0;i>=0;i--) {
-        for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
-        sum_p=quadratic(db,Qb,nb);
-        if (sum_p>thres) {
-            vnum--;
-            continue;
-        }
-        else break;
-    }
-
-    /* if no candidate solution is qualified, return 0 */
-    if (vnum==0) {
-        trace(12,"amb_BIE: no qualified candidate solution\n");
-        return 0;
-    }
-#endif 
        
     /* for (i=0;i<vnum;i++) {
         for (j=0;j<nb;j++) b_BIE[j]+=b[j+nb*i]*1.0/vnum;
     } */
 
-#if 1
+
     /* BIE soluiton */
     for (i=0,sum_p=0.0;i<vnum;i++) {
         for (j=0;j<nb;j++) db[j]=y[j]-b[j+nb*i];
@@ -536,7 +512,6 @@ extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,
         }
         return 1; */
         trace(12,"amb_BIE: sum_p=0.0\n");
-        trace(12,"weight of first candidate=float\n");
         return 0;
     }
     for (i=0;i<vnum;i++) {
@@ -555,7 +530,6 @@ extern int amb_BIE(int nb, int num_candidate, const double *y, const double *Qb,
             trace(12,"weight of first candidate=%.3f\n",weight);
         }
     }
-#endif
 
     free(db);
 

@@ -123,8 +123,6 @@
 #define FTP_CMD             "wget"      /* ftp/http command */
 #define FTP_TIMEOUT         30          /* ftp/http timeout (s) */
 
-#define MIN(x,y)            ((x)<(y)?(x):(y))
-
 /* macros --------------------------------------------------------------------*/
 
 #ifdef WIN32

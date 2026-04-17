@@ -46,9 +46,6 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define MIN(x,y)    ((x)<(y)?(x):(y))
-#define SQRT(x)     ((x)<=0.0||(x)!=(x)?0.0:sqrt(x))
-
 #define MAXPRCDAYS  100          /* max days of continuous processing */
 #define MAXINFILE   1000         /* max number of input files */
 #define MAXINVALIDTM 100         /* max number of invalid time marks */
@@ -286,7 +283,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
 
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
-    if ((0<=iobsu&&iobsu<obss.n)||PMODE_LC_POS==popt->mode) {
+    if ((0<=iobsu&&iobsu<obss.n)||(PMODE_LC_POS==popt->mode&&0<=ipos&&ipos<poss.n)) {
         time=(GINS_OFF==popt->GI_mode)?obss.data[iobsu].time:imus.data[iimu].time;
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
@@ -325,6 +322,8 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
         else {
             pos2sol(poss,&rtk->sol,ipos);
             gnss_time=rtk->sol.time;
+            /* check if the posfile reaches the end */
+            if (ipos>=poss.n) return -1;
         }
 
         /* NOTE: GNSS/INS time synchronization */
@@ -363,12 +362,12 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
                 iimu+=nn; iobsu+=nu; ipos+=npos;
             }
             else if (GI_dt<0){
-                if (NO==rtk->match) {iimu+=nn; return 0;}
+                if (NO==rtk->match) { iimu+=nn; return 0; }
                 else iimu+=nn;
             }
             else if (GI_dt>0){
-                if (NO==rtk->match) {iobsu+=nu; ipos+=npos; return 0;}   
-                else { iobsu+=nu; ipos+=npos;}    
+                if (NO==rtk->match) { iobsu+=nu; ipos+=npos; return 0; }   
+                else { iobsu+=nu; ipos+=npos; }    
             }            
         } 
         else {
@@ -541,23 +540,6 @@ static sol_t fillsoltm(const sol_t solold, const sol_t solnew, const gtime_t tm)
     return sol;
 }
 
-/* carrier-phase bias correction by ssr --------------------------------------*/
-static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
-{
-    double freq;
-    uint8_t code;
-    int i,j;
-
-    for (i=0;i<n;i++) for (j=0;j<NFREQ;j++) {
-        code=obs[i].code[j];
-
-        if ((freq=sat2freq(obs[i].sat,code,nav))==0.0) continue;
-
-        /* correct phase bias (cyc) */
-        obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]*freq/CLIGHT;
-    }
-}
-
 /* determine the position of the current reference station (vrs mode) */
 static int vrs_pos(prcopt_t *popt, const obsd_t *obs, vrs_t *vrs)
 {
@@ -566,7 +548,7 @@ static int vrs_pos(prcopt_t *popt, const obsd_t *obs, vrs_t *vrs)
 
     for (i=vrs->idx;i<vrs->nbase;i++) {
         if (timediff(vrs->time[i],obs_time)<=0&&timediff(vrs->time[i+1],obs_time)>0) break;
-        /*the observation times of the base station and the rover station are not yet aligned */
+        /* the observation times of the base station and the rover station are not yet aligned */
         else if (timediff(vrs->time[i],obs_time)>0) return 0; 
     }
     vrs->idx=i;
@@ -624,7 +606,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     imud_t *imu=(imud_t *)malloc(sizeof(imud_t)*MAXINS);
     double rb[3]={0};
     int i,nobs,num=0,align,vel_flag=0,stat;
-    int n=0,n_old=0,nr=0,nr_old=0;
+    int n,ns,nu,nr,n_old=0,nu_old=0;
 
     trace(3,"procpos : mode=%d\n",mode); /* 0=forward or backward, 1=forward and backward smoothing */
     
@@ -638,12 +620,14 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     if (!rtk->interval) gnss_intervel(rtk,&obss,&poss);
 
     /* epoch-by-epoch processing */
-    while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {    
+    while ((nobs=inputobs(rtk,obs,imu,stat,popt))>=0) {   
+        n=ns=nu=nr=0; /* reset number of observations */
+
         /* DebugGlo initialization */
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,114407,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,113867,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
         if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);
@@ -651,43 +635,31 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
 
-        if (PMODE_LC_POS==popt->mode) n=nobs;
-        else { /* exclude satellites */
-            for (i=n=0;i<nobs;i++) {
-                if ((satsys(obs[i].sat,NULL)&popt->navsys)&&popt->exsats[obs[i].sat-1]!=1) obs[n++]=obs[i];
-            }            
-        }
-       
-        /* if no satellites are available in GNSS mode or initial alignment fails in GNSS/INS mode, exit current epoch processing */
-        if (GINS_OFF==popt->GI_mode&&n<=0) continue;
-        else if (GINS_OFF!=popt->GI_mode&&n<=0&&!rtk->align) continue;
+        /* determine the number of observations after excluding satellites */
+        n=obsNum(rtk,obs,nobs);
+        /* observation preprocessing */
+        if (n>0) ns=obsPreprocess(rtk,obs,obs_old,&navs,n,nu_old,&nu,&nr);
 
-        /* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
-        if ((GINS_OFF==popt->GI_mode||SYNC_YES==rtk->upte)&&PMODE_LC_POS!=popt->mode&&!rtk->dopsgn) dopple_sgn(rtk,obs,obs_old,n,n_old);
+        /* if no satellites are available in GNSS mode or initial alignment is not OK for GNSS/INS mode, exit current epoch processing */
+        if (GINS_OFF==popt->GI_mode&&nu<=0) continue;
+        else if (GINS_OFF!=popt->GI_mode&&nu<=0&&!rtk->align) continue;
 
         /* ins initial alignment */
         if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
             if (NO==rtk->match) continue; 
             /* TDCP estimated velocity */
-            if (SYNC_YES==rtk->upte) {
+            if (SYNC_YES==rtk->upte&&PMODE_LC_POS!=popt->mode) {
                 vel_flag=0; /* reset vel flag */
-                /* determine the number of satellites of rover in the current epoch and the previous epoch */
-                for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
-                for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
-                /* initialize rtk_tdcp parameters */
-                rtk_tdcp->interval=rtk->interval; rtk_tdcp->dopsgn=rtk->dopsgn;
                 /* multi-strategy velocity estimation (TDCP/dopple/position difference) */
-                if (nr_old&&nr) vel_flag=tdcp_vel(rtk_tdcp,rtk->align,obs,obs_old,nr,nr_old,&navs,popt);
-                if (norm(rtk_tdcp->sol.rr+3,3)>0.0) matcpy(rtk->sol.rr+3,rtk_tdcp->sol.rr+3,3,1); /* copy TDCP estimated velocity to rtk struct */
+                if (nu_old&&nu) vel_flag=tdcp_vel(rtk_tdcp,rtk,obs,obs_old,nu,nu_old,&navs,popt);
                 /* GNSS-assisted detection INS status */  
-                gnss_aid_ins(rtk,rtk_tdcp->sol.stat,rtk_tdcp->sol.rr);     
-                /* save the GNSS observations of the previous epoch */              
-                n_old=n; 
-                for (i=0;i<n;i++) obs_old[i]=obs[i];                 
+                /* gnss_aid_ins(rtk,rtk_tdcp->sol.stat,rtk_tdcp->sol.rr); */ 
+                /* save old observation data */    
+                save_old_obs(obs,obs_old,nu,&nu_old);              
             }  
             /* velocity vector assisted alignment */  
             if (!rtk->align||rtk->outage>MAX_OUTIME) {
-                rtk->align=ins_align(rtk,obs,n,&navs,popt,vel_flag);
+                rtk->align=ins_align(rtk,obs,ns,&navs,popt,vel_flag);
             }    
             if (!rtk->align) continue;  
         }
@@ -700,20 +672,23 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         }
 
         /* for GNSS/INS integration navigation, when GNSS is not available, use motion constraints to assist */
-        if (n<=0&&GINS_OFF!=popt->GI_mode&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
+        if (nu<=0&&GINS_OFF!=popt->GI_mode&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
             motion_constraints(rtk,popt);
         }
 
         /* GNSS outage simulation */
-        if ((outsim.valid_flag=isoutage(rtk,Debug_Glo.tNow,outsim))||YES==rtk->nominal_upte||0==n) {
-            rtk->outage++;
+        if ((outsim.valid_flag=isoutage(rtk,Debug_Glo.tNow,outsim))||YES==rtk->nominal_upte||0==nu) {
+            /* TODO: if GNSS outage and motion constraints are applied, don't increment outage count */
+            if (SOLQ_CONS!=rtk->sol.stat) rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
-                rtk->lcgins.sol.stat=SOLQ_INS;
+                /* if GNSS outage and motion constraints are not applied, use INS solution */
+                if (SOLQ_CONS!=rtk->lcgins.sol.stat) rtk->lcgins.sol.stat=SOLQ_INS;
                 update_instat(&rtk->opt,&rtk->ins,rtk->lcgins.P,&rtk->lcgins.sol,rtk->ins.nx);
                 outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);                
             }
             else if (GINS_TC==popt->GI_mode){
-                rtk->sol.stat=SOLQ_INS;
+                /* if GNSS outage and motion constraints are not applied, use INS solution */
+                if (SOLQ_CONS!=rtk->sol.stat) rtk->sol.stat=SOLQ_INS;
                 update_instat(&rtk->opt,&rtk->ins,rtk->P,&rtk->sol,rtk->nx); 
                 outsol(fp,&rtk->sol,rtk->rb,popt,sopt);                 
             }
@@ -722,33 +697,22 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
 
         /* GNSS/INS tightly coupled integration */
         if (PMODE_LC_POS!=popt->mode) {
-            /* carrier-phase bias correction */
-            if (!strstr(popt->pppopt,"-ENA_FCB")) {
-                corr_phase_bias_ssr(obs,n,&navs);
-            }
-
-            /* multipath correction for BDS2 */
-            if (popt->navsys&SYS_CMP) {
-                BDmulCorr(rtk,obs,n); 
-            }
-
             /* navigation processing */
-            if (!rtkpos(rtk,obs,n,&navs)&&n>0) {
+            if (!rtkpos(rtk,obs,ns,&navs)&&nu>0) {
                 /* whether to output a blank line when GNSS is outage  */
                 /* if (GINS_OFF==popt->GI_mode) continue; */
             }            
         }
 
         /* GNSS/INS loosely coupled/semi-tight coupled integration */
-        if ((GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)&&n>0){
+        if ((GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)&&nu>0){
             lc_gins(rtk);            
         }
 
         /* forward or backward mode */
         if (mode==SOLMODE_SINGLE_DIR) {    
-            /* save the GNSS observations of the previous epoch */
-            n_old=n; 
-            for (i=0;i<n;i++) obs_old[i]=obs[i]; 
+            /* save old observation data for gnss dopple sgn judeg */
+            if (GINS_OFF==popt->GI_mode) save_old_obs(obs,obs_old,nu,&nu_old);
             /* output the GNSS/INS solution */
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);
             else outsol(fp,&rtk->sol,rtk->rb,popt,sopt);
@@ -1583,7 +1547,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     /* rover/reference fixed position */
-     if (popt->mode==PMODE_FIXED) {
+    if (popt->mode==PMODE_FIXED) {
         if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
             freeobsnav(&obss,&navs);
             free(rtk);

@@ -117,7 +117,6 @@
 #define MAXVAL          8388608.0
 #define OFF_FRQNO       -7      /* F/W ver.3.620 */
 
-#define SQR(x)          ((x)*(x))
 
 /* get fields (little-endian) ------------------------------------------------*/
 #define U1(p) (*((uint8_t *)(p)))

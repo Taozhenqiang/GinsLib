@@ -161,9 +161,6 @@
 #define POLYCRC32 0xEDB88320u /* CRC32 polynomial */
 #define POLYCRC24Q 0x1864CFBu /* CRC24Q polynomial */
 
-#define SQR(x)      ((x)*(x))
-#define MAX(x,y)    ((x)>=(y)?(x):(y))
-#define SGN(x)      ((x>0)?1:-1)
 #define MAX_VAR_EPH SQR(300.0) /* max variance eph to reject satellite (m^2) */
 
 static const double gpst0[]={1980,1,6,0,0,0};/* gps time reference */
@@ -620,116 +617,6 @@ extern void diag_Cov(int nv, const double *var, double *P, int opt)
     }
 }
 
-/* calculate GNSS sampling interval -------------------------------------------
-*args  :  rtk_t    *rtk   IO   rtk structure
-*         obs_t    *obss  I   observation data
-*         pos_t    *poss  I   position data (LC mode)
-*return:none
-*-----------------------------------------------------------------------------*/
-extern int gnss_intervel(rtk_t *rtk, const obs_t *obss, const pos_t *poss)
-{
-    int i,j,k;
-    double t0=0.0,t[2]={0.0},dttol=1e-3;
-
-    if ((!obss&&!poss)||!rtk) {
-        return 0;  /* invalid input */
-    }
-
-    /* calculate interval from observation file */
-    if (PMODE_LC_POS!=rtk->opt.mode) 
-    {
-        for (i=j=k=0;i<obss->n;i++) {
-            if (obss->data[i].rcv!=1) continue;  
-            
-            for (j=i+1;j<obss->n;j++) {
-                if (obss->data[j].rcv!= 1) continue;  /* skip no rover station data */
-                
-                t0=fabs(timediff(obss->data[i].time,obss->data[j].time));
-                
-                if (t0>dttol) {  
-                    t[k++]=t0;
-                    i=j;
-                    /* check if intervals are equal */
-                    if (k==2) {  
-                        if (fabs(t[0]-t[1])<dttol) {  
-                            rtk->interval=t[0];
-                            return 1;
-                        } else {
-                            k=0; break;
-                        }
-                    }
-                }
-            }
-        }        
-    }
-    else { /* calculate interval from pos file */
-        for (i=j=k=0;i<poss->n;i++) {  
-
-            for (j=i+1;j<poss->n;j++) {  
-
-                t0=fabs(timediff(poss->data[i].time,poss->data[j].time));  
-
-                if (t0>dttol) {  
-                    t[k++]=t0;
-                    i=j;
-                    /* check if intervals are equal */
-                    if (k==2) {  
-                        if (fabs(t[0]-t[1])<dttol) {  
-                            rtk->interval=t[0];
-                            return 1;
-                        } else {
-                            k=0; break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return 1;
-}
-
-/* the sign of doppler observations is determined based on pseudorange variation between adjacent epochs */
-extern int dopple_sgn(rtk_t *rtk, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old)
-{   
-    int i,j,fr,sys,nr,nr_old;
-    double dr;
-
-    /* determine the number of satellites of rover in the current epoch and the previous epoch */
-    for (i=nr=0;i<n;i++)         if (obs[i].rcv==1) nr++;
-    for (i=nr_old=0;i<n_old;i++) if (obs_old[i].rcv==1) nr_old++;
-
-    for (i=0;i<nr;i++) {
-        sys=satsys(obs[i].sat,NULL);
-        fr=sys2freid(sys,0,&rtk->opt);
-        for (j=0;j<nr_old;j++) {
-            if (obs[i].sat==obs_old[j].sat&&obs[i].P[fr]&&obs_old[j].P[fr]&&obs[i].D[fr]) break;
-        }
-        if (j>=nr_old) continue;
-        else break;
-    }
-
-    if (i>=nr) return 0;
-
-    /* pseudorange variation between adjacent epochs */
-    dr=obs[i].P[fr]-obs_old[j].P[fr];
-
-    /* when the satellite is close to the receiver, the doppler sign is positive; otherwise, it is negative */
-    if (SGN(dr)==-SGN(obs[i].D[fr])) {
-        rtk->dopsgn=-1.0;
-    }
-    else {
-        rtk->dopsgn=1.0;
-    }
-
-    /* in both forward and backward processing modes, the sign of doppler observations remains unchanged ? */
-    if (SOLTYPE_BACKWARD==rtk->opt.reverse) {
-        rtk->dopsgn=-rtk->dopsgn;
-    }
-
-    return 1;
-}
-
 /* sliding window average */
 extern void slid_windows(int N, double *data1, uint16_t *data2, int n)
 {
@@ -813,29 +700,19 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
             }
         }
     }
-    /* reset ambiguity fix flag and SNR (RTK) */
-    else if (RTK_ssat==mode) {
+    /* reset ambiguity fix flag and residual phase and code biases for all satellites (RTK) */
+    else if (RTK_ssat_vsat==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL); /* gnss system */
             for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 ssat[i].vsat[fr]=0;  /* valid satellite */
-                ssat[i].snr_rover[fr]=ssat[i].snr_base[fr]=0.0;
+                ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
             }
         }
     }
-    /* reset residual phase and code biases for all satellites (RTK) */
-    else if (RTK_resi==mode) {
-        for (i=0;i<MAXSAT;i++) {
-            sys=satsys(i+1,NULL);
-            for (j=0;j<nf;j++) {
-                fr=sys2freid(sys,j,opt);
-                ssat[i].resp[fr]=ssat[i].resc[fr]=0.0;
-            }  
-        }
-    }
     /* clear fix and par_ivsatflag for all sats (1=float, 2=fix) (RTK) */
-    else if (RTK_fix==mode) {
+    else if (RTK_ssat_fix==mode) {
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
             for (j=0;j<nf;j++) {
@@ -845,7 +722,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
         } 
     }   
     /* reset slip flag for all sats (RTK) */
-    else if (RTK_slip==mode) {     
+    else if (ssat_slip==mode) {     
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
             for (j=0;j<nf;j++) {
@@ -855,7 +732,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
         }
     }
     /* save satellite status auxiliary information */
-    else if (RTK_update==mode) {    
+    else if (RTK_ssat_update==mode) {    
         for (i=0;i<MAXSAT;i++) {
             sys=satsys(i+1,NULL);
             for (j=0;j<nf;j++) {
@@ -2720,7 +2597,6 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
 
         /* NOTE: robust filter based on innovation vector */
         if (Robust_INO==mode||Robust_Chi==mode) {
-            
             /* robust weight function */
             if ((info=robust_M_function(rtk,v,Q,NULL,R,R_,NULL,H,F,n,m,M_function))) {
                 info=-1;
@@ -2747,7 +2623,6 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
         
         /* NOTE: robust filter based on a posteriori residuals */
         if ((Robust_RES==mode||Robust_ST==mode||Robust_MST==mode)&&i<iter-1) {
-
             /* iteration termination judgment */
             if (i>0&&iter_judge(xp,xp_pre,nx,ITR_TOL)) {
                 break; 
@@ -5308,8 +5183,6 @@ extern double satazel(const double *pos,const double *e,double *azel) {
 *return:none
 *notes :dop[0]-[3] return 0 in case of dop computation error
  *-----------------------------------------------------------------------------*/
-#define SQRT(x) ((x)<0.0||(x) !=(x)?0.0:sqrt(x))
-
 extern void dops(int ns,const double *azel,double elmin,double *dop) {
     double H[4*MAXSAT],Q[16],cosel,sinel;
     int i,n;
@@ -5734,83 +5607,7 @@ extern void sunmoonpos(gtime_t tutc,const double *erpv,double *rsun,
     if (gmst)
         *gmst=gmst_;
 }
-/* mutipath correct-------------------------------------------------------------
-* BeiDou satellite-induced code pseudorange variations correct
-* args  :rtk_t *rtk       IO  rtk control/result struct
-           obsd_t *obs      IO  observation data
-           int    n         I   number of observation data
-           nav_t  *nav      I   navigation messages
-* note   :
-* -----------------------------------------------------------------------------*/
-extern void BDmulCorr(rtk_t *rtk, obsd_t *obs, int n) 
-{
-    int i,j,sat,prn,b,*f=(int *)&rtk->opt.fre[4],ix[3]={-1,-1,-1};
-    double dp[3],elev,a;
 
-    const static double IGSOCOEF[3][10]={
-        /* m */
-        {-0.55,-0.40,-0.34,-0.23,-0.15,-0.04,0.09,0.19,0.27,0.35},// B1
-        {-0.71,-0.36,-0.33,-0.19,-0.14,-0.03,0.08,0.17,0.24,0.33},// B2
-        {-0.27,-0.23,-0.21,-0.15,-0.11,-0.04,0.05,0.14,0.19,0.32},// B3
-    };
-    const static double MEOCOEF[3][10]={
-        /* m */
-        {-0.47,-0.38,-0.32,-0.23,-0.11,0.06,0.34,0.69,0.97,1.05},// B1
-        {-0.40,-0.31,-0.26,-0.18,-0.06,0.09,0.28,0.48,0.64,0.69},// B2
-        {-0.22,-0.15,-0.13,-0.10,-0.04,0.05,0.14,0.27,0.36,0.47},// B3
-    };
-
-    for (i=0;i<n&&i<MAXOBS;i++) {
-        sat=obs[i].sat;
-
-        if (satsys(sat,&prn)!=SYS_CMP) continue;
-        if (prn<=5) continue;
-
-        elev=rtk->ssat[sat-1].azel[1]*R2D;
-
-        if (elev<=0.0) continue;
-
-        for (j=0;j<3;j++) dp[j]=0.0;
-
-        a=elev*0.1;
-        b=(int) a;
-
-        if (prn>=6&&prn<11) { // IGSO(C06,C07,C08,C09,C10)
-            if (b<0) {
-                for (j=0;j<3;j++)
-                    dp[j]=IGSOCOEF[j][0];
-            } else if (b >=9) {
-                for (j=0;j<3;j++)
-                    dp[j]=IGSOCOEF[j][9];
-            } else {
-                for (j=0;j<3;j++)
-                    dp[j]=IGSOCOEF[j][b]*(1.0-a+b)+IGSOCOEF[j][b+1]*(a-b);
-            }
-        } else if (prn>=11&&prn<=14) { // MEO(C11,C12,C13,C14)
-            if (b<0) {
-                for (j=0;j<3;j++)
-                    dp[j]=MEOCOEF[j][0];
-            } else if (b >=9) {
-                for (j=0;j<3;j++)
-                    dp[j]=MEOCOEF[j][9];
-            } else {
-                for (j=0;j<3;j++)
-                    dp[j]=MEOCOEF[j][b]*(1.0-a+b)+MEOCOEF[j][b+1]*(a-b);
-            }
-        } else
-            continue;
-
-        /* find idx of B1I,B2I,B3I */
-        for (j=0;j<MAXFREQ;j++) {
-            if (0==f[j]) ix[0]=j; /* B1I */
-            if (1==f[j]) ix[1]=j; /* B2I */
-            if (2==f[j]) ix[2]=j; /* B3I */
-        }
-        for (j=0;j<3;j++) {
-            if (obs[i].P[ix[j]]>0.0&&ix[j]>0) obs[i].P[ix[j]]+=dp[j]; 
-        }
-    }
-}
 /* uncompress file -------------------------------------------------------------
 *uncompress (uncompress/unzip/uncompact hatanaka-compression/tar) file
 *args  :char   *file     I   input file

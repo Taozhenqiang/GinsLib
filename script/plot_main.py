@@ -18,7 +18,7 @@ def main():
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
-    ERROR_TYPE = 'p'
+    ERROR_TYPE = 'pva'
     
     # 文件路径配置（可选，如果使用默认路径则保持为空）
     SOLFILE_PATH = ''  # 自定义结果文件路径，留空使用默认路径
@@ -46,14 +46,14 @@ def main():
     if SOLFILE_PATH:
         solfile = SOLFILE_PATH
     else:
-        filename = './result/GNSS_Vehicle_complex_20250414_SPP_F.pos'
+        filename = './result/ASM330_Vehicle_complex_20250414_SPP_F_LC.pos'
         solfile = os.path.join(pathname, filename)
 
     # 提供文件路径和参考文件名
     if REFFILE_PATH:
         refile = REFFILE_PATH
     else:
-        filename = 'truth.truth'
+        filename = 'truth_pva.truth'
         refile = os.path.join(pathname, filename)
 
     # 结果文件读取配置
@@ -130,7 +130,7 @@ def main():
             figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
-            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, True)
+            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, False)
             figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件
@@ -160,7 +160,7 @@ def main():
                 filename = f"{data_name_without_ext}_pos.png"
             elif plot_type == 'vel_':
                 filename = f"{data_name_without_ext}_vel.png"
-            elif plot_type == 'att':
+            elif plot_type == 'att_':
                 filename = f"{data_name_without_ext}_att.png"
             elif plot_type == 'bg':
                 filename = f"{data_name_without_ext}_bg.png"

@@ -27,10 +27,13 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
+#if 1            
             else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
-            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2);            
-            /* else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc; */
+            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); 
+#else                       
+            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
+            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
+#endif
         }
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4); */
@@ -42,10 +45,13 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
+#if 1            
             else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
-            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2);
-            /* else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc; */
+            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); 
+#else                       
+            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
+            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
+#endif
         }
         for (i=0;i<nx;i++) rtk->P[i+i*rtk->nx]=P[i];
     }     
@@ -228,14 +234,14 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
     double *I3=eye(3),Cnb[9]={0.0};
     double qnn_[4],qn_b[4],phi_nn_[3];
 
-    /* convert dxyz to dblh */
+    /* convert denu to dblh */
     earth_update(popt,ins->pos,ins->vel,&ins->eth);
     Mat3mulv(1.0,ins->eth.Frp,dx+6,dr);
 
     /* NOTE: convert psi error state to phi error state */
     if (ERR_PSI==popt->err_model) psi2phi_corr(ins,dr,dx);
 
-    /* Quaternion-based attitude feedback correction, qnb=qnn_°qn_b */
+    /* quaternion-based attitude feedback correction, qnb=qnn_°qn_b */
     for (i=0;i<4;i++) qn_b[i]=ins->qnb[i];
     for (i=0;i<3;i++) phi_nn_[i]=dx[i];
     
@@ -261,8 +267,8 @@ extern void ins_fedback(rtk_t *rtk, double *dx)
         if (i>=12&&i<15)    ins->ba[i-12]+=dx[i];
     }        
 
+    /* update previous epoch pos/vel by kf updated state */
     for (i=0;i<3;i++){
-        /* update previous epoch pos/vel by kf updated state */
         ins->p1pos[i]=ins->pos[i];         
         ins->p1vel[i]=ins->vel[i];       
     }
@@ -280,7 +286,7 @@ extern void ins_fedback_fix(rtk_t *rtk, double *dx)
     double *I3=eye(3),Cnb[9],Cnb_[9];
     double qnn_[4],qn_b[4],qnb[4],phi_nn_[3];
 
-    /* convert dxyz to dblh */
+    /* convert denu to dblh */
     earth_update(popt,ins->pos,ins->vel,&ins->eth);
     Mat3mulv(1.0,ins->eth.Frp,dx+6,dr);
 
@@ -414,7 +420,7 @@ extern int lc_gins(rtk_t *rtk)
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
 
     /* check GNSS status and output INS navigation information if GNSS is unavailable */
-    if (SOLQ_NONE==rtk->sol.stat&&!popt->constraint[0]) {
+    if (SOLQ_NONE==rtk->sol.stat&&(!popt->constraint[0]&&!popt->constraint[1])) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(popt,ins,rtk->lcgins.P,sol,nx);
@@ -427,14 +433,14 @@ extern int lc_gins(rtk_t *rtk)
     /* detected vehicle stationary time span (s)*/
     zupt_time=ins->zupt.count*ins->interval*ins->nn;
 
-    /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints */
+    /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints (max num=ZUPT+ZIHR=4) */
     x=zeros(nx,1); P=zeros(nx,nx); xp=zeros(nx,1); Pp=zeros(nx,nx);
     v=zeros(nv+4,1); H=zeros(nv+4,nx); var=mat(nv+4,1); R=zeros(nv+4,nv+4);
 
     /* initialize states */
     matcpy(P,rtk->lcgins.P,nx,nx);
 
-    /* if GNSS is available, using GNSS/INS LC */
+    /* if GNSS is available, don't using GNSS/INS LC */
     if (SOLQ_NONE<rtk->sol.stat) {
         earth_update(popt,ins->pos,ins->vel,&ins->eth);
         matcpy(iFrp,ins->eth.Frp,3,3);
@@ -456,6 +462,7 @@ extern int lc_gins(rtk_t *rtk)
         covenu(ins->pos,Re,Rn); covtodiag(Rn,3);
         for (i=0;i<nv;i++) var[i]=Rn[i+i*nv];        
     }
+    else stat=SOLQ_CONS;
 
     /* motion constraints */
     /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
