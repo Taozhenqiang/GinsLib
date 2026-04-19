@@ -14,7 +14,7 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos_(位置), 'vel_'(速度), 'att_(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
@@ -25,7 +25,7 @@ def main():
     REFFILE_PATH = ''  # 自定义参考文件路径，留空使用默认路径
 
     # 图片保存配置
-    SAVE_IMAGES = True  # 设置为True保存图像，False不保存
+    SAVE_IMAGES = False  # 设置为True保存图像，False不保存
     # ================= 配置结束 =================
     
     # 检查配置是否有效
@@ -130,7 +130,7 @@ def main():
             figures.append(('ba', fig_ba))
         elif plot_type == 'err':
             print(f"绘制误差图 (类型: {ERROR_TYPE})...")
-            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, False)
+            fig, rms_stats , cep_stats= plot_err(data, ref_data, ERROR_TYPE, True)
             figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件

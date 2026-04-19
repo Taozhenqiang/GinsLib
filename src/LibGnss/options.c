@@ -45,6 +45,7 @@ static char constraint_[1024];
 static char rotation_angle_[1024];
 static char install_angle_[1024];
 static char initpose_[3][1024];
+static char initbias_[2][1024]; /* init gyro bias, accel bias */
 static char initunc_[3][1024];
 static char lever_[1024];
 static char lever_nhc_[1024];
@@ -180,7 +181,10 @@ EXPORT opt_t sysopts[]={
     {"ins-init_att_unc",2,  (void *)&initunc_[2],       ""      },
     {"ins-init_bg_unc", 1,  (void *)&prcopt_.init_bg_unc,""     },
     {"ins-init_ba_unc", 1,  (void *)&prcopt_.init_ba_unc,""     },
-    {"ins-corr_time",   1,  (void *)&prcopt_.corr_time,  ""     },     
+    {"ins-corr_time",   1,  (void *)&prcopt_.corr_time,  ""     }, 
+    {"ins-init_bias_type",   0,  (void *)&prcopt_.init_bias_type,""},
+    {"ins-init_gyro_bias",   2,  (void *)&initbias_[0],  ""     },
+    {"ins-init_acce_bias",   2,  (void *)&initbias_[1],  ""     },
     {"ins-psd_gyro",    1,  (void *)&prcopt_.psd_gyro,   ""     },
     {"ins-psd_acce",    1,  (void *)&prcopt_.psd_acce,   ""     }, 
     {"ins-psd_bg",      1,  (void *)&prcopt_.psd_bg,     ""     },
@@ -641,6 +645,22 @@ static void buff2sysopts(void)
     strcpy(buff,initunc_[2]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
         prcopt_.init_att_unc[j++]=atof(p)*D2R;
+    }
+
+    /* init gyro bias (rad/s) */
+    if (IMU_BIAS_MANUAL==prcopt_.init_bias_type) {
+        for (j=0;j<3;j++) prcopt_.init_gyro_bias[j]=0.0;
+        strcpy(buff,initbias_[0]);
+        for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+            prcopt_.init_gyro_bias[j++]=atof(p)*AS2R; /* convert from deg/h to rad/s */
+        }
+
+        /* init accel bias (mg) */
+        for (j=0;j<3;j++) prcopt_.init_acce_bias[j]=0.0;
+        strcpy(buff,initbias_[1]);
+        for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {
+            prcopt_.init_acce_bias[j++]=atof(p);
+        }        
     }
 
     /* lever */

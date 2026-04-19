@@ -633,7 +633,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
-        if (popt->constraint[1]||popt->constraint[2]) zerovel_detect(rtk,imu);
+        zerovel_detect(rtk,imu);
 
         /* determine the number of observations after excluding satellites */
         n=obsNum(rtk,obs,nobs);

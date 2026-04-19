@@ -75,6 +75,7 @@ extern "C"
 #define SC2RAD 3.1415926535898 /* semi-circle to radian (IS-GPS) */
 #define AU 149597870691.0      /* 1 AU (m) */
 #define AS2R (D2R / 3600.0)    /* arc sec to radian */
+#define G0 9.780327
 
 #define OMGE 7.2921151467E-5   /* earth angular velocity (IS-GPS) (rad/s) */
 
@@ -120,6 +121,11 @@ extern "C"
 #define NMAXREF     1000          /* max number of ref data */
 #define NMAXERR     1000          /* max number of err data */
 #define MAXINS      2             /* maximum number of samples */
+
+/* imu init bias process */
+#define IMU_BIAS_OFF 0           /* imu init bias process: off */
+#define IMU_BIAS_MANUAL  1       /* imu init bias process: manual */
+#define IMU_BIAS_AUTO  2        /* imu init bias process: auto (static average) */
 
 /* GNSS/INS mode */
 #define GINS_OFF 0      /* only GNSS */
@@ -849,6 +855,7 @@ extern "C"
         int nx;
         gtime_t time;                /* ins sampling time (GPST) */
         int nn;                      /* number of samples */
+        int bias_flag;               /* static bias initialization flag (0:off, 1:on) */
         double dttol;
         double interval;             /* ins sample interval */
         double n1dw[3];              /* gyroscope angle increment of the next epoch */
@@ -867,8 +874,8 @@ extern "C"
         double att[3];               /* ins attitude (pitch [-pi/2,pi/2],roll [-pi,pi],yaw [-pi,pi]) (rad) */
         double Cnb[9];               /* attitude matirx */
         double qnb[4];               /* attitude quaternion */
-        double bg[3];                /* gyroscope zero bias */
-        double ba[3];                /* accelerometer zero bias*/
+        double bg[3];                /* gyroscope zero bias (rad/s) */
+        double ba[3];                /* accelerometer zero bias (m/s^2) */
         double xa[15];               /* fixed solution */
         double wbib[3];              /* gyroscope angular velocity vector in b frame */
         double fb[3];                /* specific force vector in b frame */
@@ -882,6 +889,8 @@ extern "C"
         double lever[3];             /* lever frame form imu to gnss in b frame (m) */
         double corr_time;            /* correlation time of a first-order Markov process (s) */
         double discretime;           /* discretization time interval of time update (s) */
+        double init_gyro_bias[3];    /* initial gyro bias (rad/s) */
+        double init_acce_bias[3];    /* initial acce bias (mg) */
         double psd_gyro;             /* angle random walke psd of gyroscope (rad^2/s) */
         double psd_acce;             /* velocity random walke psd of accelerometer (m^2/s^3) */
         double psd_bg;               /* zero bias psd of gyroscope (rad^3/s^3) */
@@ -1551,6 +1560,9 @@ extern "C"
         double init_bg_unc;      /* initial bg std (rad/s) */
         double init_ba_unc;      /* initial ba std (m/s^2) */
         double corr_time;        /* correlation time of a first-order Markov process (s) */
+        int init_bias_type;      /* initial zero bias handling method (0:off, 1:manual, 2:auto (static average)) */
+        double init_gyro_bias[3];/* initial gyro bias (rad/s) */
+        double init_acce_bias[3];/* initial acce bias (mg) */
         double psd_gyro;         /* angle random walke psd of gyroscope (rad^2/s) */
         double psd_acce;         /* velocity random walke psd of accelerometer (m^2/s^3) */
         double psd_bg;           /* zero bias psd of gyroscope (rad^3/s^3) */

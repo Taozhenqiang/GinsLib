@@ -191,13 +191,25 @@ extern void conpad_fedback(ins_t *ins, double *dw, double *dv, double *da_con, d
 /* INS error feedback correction*/
 extern void imu_fedback(ins_t *ins, imud_t *imu)
 {
-    /* correct gyroscope and accelerometer zero bias */
-    vnadd(3,imu[0].dw,1.0,ins->bg,-ins->interval,ins->dw);
-    vnadd(3,imu[0].dv,1.0,ins->ba,-ins->interval,ins->dv);        
+    int i;
+
+    /* if init bias flag is false, then set it to zero */
+    if (!ins->bias_flag) {
+        for (i=0;i<3;i++) ins->init_gyro_bias[i]=0.0;
+        for (i=0;i<3;i++) ins->init_acce_bias[i]=0.0;
+    }
+
+    /* correct gyroscope and accelerometer zero bias (includes initial bias and estimated residual bias ) */
+    for (i=0;i<3;i++) {
+        ins->dw[i]=imu[0].dw[i]-(ins->init_gyro_bias[i]+ins->bg[i])*ins->interval;
+        ins->dv[i]=imu[0].dv[i]-(ins->init_acce_bias[i]+ins->ba[i])*ins->interval;
+    }
 
     if (2==ins->nn){
-        vnadd(3,imu[1].dw,1.0,ins->bg,-ins->interval,ins->n1dw);
-        vnadd(3,imu[1].dv,1.0,ins->ba,-ins->interval,ins->n1dv);        
+        for (i=0;i<3;i++) {
+            ins->n1dw[i]=imu[1].dw[i]-(ins->init_gyro_bias[i]+ins->bg[i])*ins->interval;
+            ins->n1dv[i]=imu[1].dv[i]-(ins->init_acce_bias[i]+ins->ba[i])*ins->interval;            
+        }    
     }
 }
 

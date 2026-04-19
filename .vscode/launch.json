@@ -52,8 +52,8 @@
                 // "gnssloger_20251010.conf",
                
 
-                "-p","11","-gins","1","-sys","GECJ",
-                "-ion","1","-tro","1","-eph","0","-flt","1","-amb","0","-ambt","0","-solt","0", 
+                "-p","0","-gins","1","-sys","GECJ",
+                "-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0", 
                 "-ref","./truth.truth",
                 // "-kml",
                 "-pcolor","2",
@@ -189,6 +189,22 @@
             "name": "extract_commands",
 
             "program": "${workspaceFolder}/script/extract_commands.py",
+            "cwd": "${workspaceFolder}/data", //工作路径,
+        },
+        {
+            "type":"debugpy",
+            "request": "launch",
+            "name": "plot_imu",
+
+            "program": "${workspaceFolder}/script/plot_imu.py",
+            "cwd": "${workspaceFolder}/data", //工作路径,
+        },
+        {
+            "type":"debugpy",
+            "request": "launch",
+            "name": "avar",
+
+            "program": "${workspaceFolder}/script/allan_variance.py",
             "cwd": "${workspaceFolder}/data", //工作路径,
         },
         {

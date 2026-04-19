@@ -639,58 +639,10 @@ def extract_imu_data():
         print(f"转换过程中发生错误: {e}")
         return False
 
-def parse_arguments():
-    """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='IMU数据提取工具')
-    parser.add_argument('-i', '--input', type=str, help='输入文件路径')
-    parser.add_argument('-o', '--output', type=str, help='输出文件路径')
-    parser.add_argument('-l', '--log', type=str, help='日志文件路径')
-    parser.add_argument('-s', '--skip', type=int, help='跳过的行数')
-    parser.add_argument('-si', '--sample-interval', type=float, help='IMU采样间隔(秒)')
-    parser.add_argument('-ts', '--time-system', choices=['GPST', 'UTC', 'UNIX'], help='时间系统')
-    parser.add_argument('-tf', '--time-format', choices=['calendar', 'week_tow', 'unix'], help='输入时间格式')
-    parser.add_argument('-tc', '--time-cols', type=str, help='时间列索引(逗号分隔，如:0,1,2,3,4,5)')
-    parser.add_argument('-ic', '--imu-cols', type=str, help='IMU列索引(逗号分隔，如:6,7,8,9,10,11)')
-    parser.add_argument('-d', '--delimiter', type=str, help='文件分隔符')
-    parser.add_argument('-tcmd', '--target-commands', type=str, help='目标指令(逗号分隔，如:$PQTMRAWIMU,$GPGGA)')
-    parser.add_argument('-v', '--verbose', action='store_true', help='显示详细信息')
-    
-    return parser.parse_args()
-
 def main():
     """
     主函数
     """
-    # 解析命令行参数
-    args = parse_arguments()
-    
-    # 更新配置参数
-    global INPUT_FILE, SKIP_LINES, TIME_SYSTEM, INPUT_TIME_FORMAT, TIME_COLS, IMU_COLS, OUTPUT_FILE, LOG_FILE, IMU_SAMPLE_INTERVAL, DELIMITER, TARGET_COMMANDS, VERBOSE
-    
-    if args.input:
-        INPUT_FILE = args.input
-    if args.output:
-        OUTPUT_FILE = args.output
-    if args.log:
-        LOG_FILE = args.log
-    if args.skip is not None:
-        SKIP_LINES = args.skip
-    if args.sample_interval is not None:
-        IMU_SAMPLE_INTERVAL = args.sample_interval
-    if args.time_system:
-        TIME_SYSTEM = args.time_system
-    if args.time_format:
-        INPUT_TIME_FORMAT = args.time_format
-    if args.time_cols:
-        TIME_COLS = [int(x) for x in args.time_cols.split(',')]
-    if args.imu_cols:
-        IMU_COLS = [int(x) for x in args.imu_cols.split(',')]
-    if args.delimiter:
-        DELIMITER = args.delimiter
-    if args.target_commands:
-        TARGET_COMMANDS = [cmd.strip() for cmd in args.target_commands.split(',')]
-    if args.verbose:
-        VERBOSE = args.verbose
     
     print("开始提取IMU数据...")
     print("=" * 50)

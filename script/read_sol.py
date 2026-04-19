@@ -50,7 +50,7 @@ def read_solution(navfile, skip_lines=28, row=10000, col=18, sample=5e-2):
                     data = np.resize(data, (row, col))  # 扩展数组
 
                 # 检查sline长度是否足够，避免IndexError, GNSS(24), GNSS/INS(39)
-                if len(sline) == 24:
+                if len(sline) > 5 and len(sline) < 45:
                     mode = 'GNSS'
                 elif len(sline) == 46 or len(sline) == 45:
                     mode = 'GNSS/INS'
@@ -58,13 +58,21 @@ def read_solution(navfile, skip_lines=28, row=10000, col=18, sample=5e-2):
                     continue  # 如果行数据不足，跳过该行
 
                 # 提取特定的数据列
-                # GNSS: gps week, sow, pos[x/y/z], ratio, vel[x/y/z]
                 if mode == 'GNSS':
-                    mline = [sline[0], sline[1], 
-                             sline[2], sline[3], sline[4], sline[14],
-                             sline[15], sline[16], sline[17], 
-                             0, 0, 0,
-                             0, 0, 0, 0, 0, 0]  
+                    # GNSS: gps week, sow, pos[x/y/z]
+                    if len(sline) < 18:
+                        mline = [sline[0], sline[1], 
+                                sline[2], sline[3], sline[4], 0,
+                                0, 0, 0, 
+                                0, 0, 0,
+                                0, 0, 0, 0, 0, 0] 
+                    else:
+                        # GNSS: gps week, sow, pos[x/y/z], ratio, vel[x/y/z]
+                        mline = [sline[0], sline[1], 
+                                sline[2], sline[3], sline[4], sline[14],
+                                sline[15], sline[16], sline[17], 
+                                0, 0, 0,
+                                0, 0, 0, 0, 0, 0]  
                 else:  # GNSS/INS: gps week, sow, pos[x/y/z], ratio, vel[x/y/z], att[pitch/roll/heading], bg[x/y/z], ba[x/y/z]
                     mline = [sline[0], sline[1], 
                              sline[2], sline[3], sline[4], sline[14],

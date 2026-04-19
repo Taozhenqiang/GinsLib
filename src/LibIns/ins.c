@@ -5,6 +5,8 @@
 #include "rtklib.h"
 
 static imu_t imus={0};          /* imu data */
+static double init_gyro_bias[3]; /* init gyro bias (rad/s) */
+static double init_acce_bias[3]; /* init acce bias (m/s^2) */
 
 /* get pos obs for LC mode */
 extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
@@ -912,7 +914,7 @@ extern void earth_init(const double *pos, const double *vel, eth_t *eth)
     sin2B2=sin(2.0*pos[0])*sin(2.0*pos[0]);
     secB=1.0/cos(pos[0]);
 
-    eth->g0=9.780327;
+    eth->g0=G0;
     eth->Rl=RE_WGS84;
     eth->alpha=FE_WGS84;
     eth->Rs=eth->Rl*(1.0-eth->alpha);
@@ -999,6 +1001,7 @@ extern void earth_update(const prcopt_t *popt, const double *pos, const double *
     eth->Frp[3]=secB/Rnh;               
     eth->Frp[8]=1.0;
 
+    /* refer psins */
     eth->g=eth->g0*(1+eth->beta[0]*sinB2-eth->beta[1]*sin2B2)-eth->beta[2]*pos[2];
     eth->gn[0]=0.0; eth->gn[1]=0.0; eth->gn[2]=-eth->g;
 
@@ -1037,15 +1040,25 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
     
     /* accelerometer and gyroscope velocity random walk and angle random walk and bias drive noise */
     ins->corr_time=popt->corr_time; 
+    if (IMU_BIAS_MANUAL==popt->init_bias_type) {
+        matcpy(ins->init_gyro_bias,popt->init_gyro_bias,3,1); /* rad/s */
+        matcpy(ins->init_acce_bias,popt->init_acce_bias,3,1); /* mg */
+
+        for (i=0;i<3;i++) ins->init_acce_bias[i]*=1e-3*G0; /* convert mg to m/s^2 */
+        ins->bias_flag=1;        
+    }
+
+
     ins->psd_gyro=popt->psd_gyro;
     ins->psd_acce=popt->psd_acce;
     ins->psd_bg=popt->psd_bg;
     ins->psd_ba=popt->psd_ba;
 
-    /* initialize zupt configuration options (sliding window length and detection threshold) */
+    /* init zupt configuration options (sliding window length and detection threshold) */
     ins->zupt.window=popt->insample;
     ins->zupt.gthres=popt->zupt_gthres;
 
+    /* init process noise covariance matrix */
     for (i=0;i<GINS_NX;i++)
     {
         ins->xa[i]=0.0;
@@ -1450,21 +1463,45 @@ extern int tdcp_vel(rtk_t *rtk, rtk_t *rtk_main, const obsd_t *obs, const obsd_t
 /* zero speed detection*/
 extern void zerovel_detect(rtk_t *rtk, imud_t *imu)
 {
-    zupt_t *zupt=&rtk->ins.zupt;
-    int i,j,nn=rtk->ins.nn;
+    ins_t *ins=&rtk->ins;
+    zupt_t *zupt=&ins->zupt;
+    int i,j,nn=ins->nn,window=(int)20/(ins->interval*nn); /* 20 s static imu data */
     double N=zupt->window,dw[3]={0.0},ndw;
 
     /* for multi-sample mode, the average value of the gyroscope is used */
     for (j=0;j<3;j++) for (i=0;i<nn;i++) dw[j]+=imu[i].dw[j];
     for (j=0;j<3;j++) dw[j]/=nn;
     ndw=norm(dw,3);
+
+    /* try IMU static bias saving only before INS alignment is complete */
+    if (!rtk->align) {
+        if (zupt->count&&IMU_BIAS_AUTO==rtk->opt.init_bias_type&&!ins->bias_flag) {
+            for (i=0;i<3;i++) for (j=0;j<nn;j++) {
+                init_gyro_bias[i]+=imu[j].dw[i];
+                init_acce_bias[i]+=imu[j].dv[i];
+            }
+            if (zupt->count>=window) {
+                for (i=0;i<3;i++) {
+                    ins->init_gyro_bias[i]=init_gyro_bias[i]/(window*nn)/ins->interval; /* rad/s */
+                    ins->init_acce_bias[i]=init_acce_bias[i]/(window*nn)/ins->interval; /* m/s^2*/
+                }
+                ins->init_acce_bias[2]-=G0; /* remove gravity from z-axis accelerometer bias */
+                /* NOTE: init bias of accelerometer not enabled */
+                for (i=0;i<3;i++) ins->init_acce_bias[i]=0.0;
+                ins->bias_flag=1;
+            }
+        }
+        else {
+            for (i=0;i<3;i++) init_gyro_bias[i]=init_acce_bias[i]=0.0;
+        }        
+    }
     
     /* initialization */
     if (!zupt->iimu) {
         zupt->Gm=ndw;
         zupt->Gd=0.0;
     }
-    if (zupt->iimu) {
+    else {
         zupt->Gm=(N-1.0)/N*zupt->old_Gm+1.0/N*ndw;
         if (!zupt->Gd) zupt->Gd=fabs(zupt->Gm-ndw);
         else zupt->Gd=(N-1.0)/N*zupt->old_Gd+1.0/N*fabs(zupt->Gm-ndw);
