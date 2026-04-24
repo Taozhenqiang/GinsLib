@@ -9,13 +9,13 @@ static double init_gyro_bias[3]; /* init gyro bias (rad/s) */
 static double init_acce_bias[3]; /* init acce bias (m/s^2) */
 
 /* get pos obs for LC mode */
-extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
+extern void getpos(pos_t pos, sol_t *sol, int ipos)
 {
     posd_t *posd=NULL;
     int i;
 
     if (ipos<0||ipos>=pos.n) {
-        trace(7,"pos2sol: posfile reaches the end!\n");
+        trace(7,"getpos: posfile reaches the end!\n");
         return;
     }
 
@@ -30,6 +30,32 @@ extern void pos2sol(pos_t pos, sol_t *sol, int ipos)
         sol->qv [i]=posd->qv[i];
     }
     for (i=3;i<6;i++) sol->qr[i]=posd->qr[i];
+}
+
+/* get odo vel based on gins time */
+extern int getodovel(odo_t odo, ins_t *ins, gtime_t gins_time, int iodo)
+{
+    odod_t *odod=NULL;
+    int i;
+
+    if (iodo<0||iodo>=odo.n) {
+        trace(7,"getodovel: odo file reaches the end!\n");
+        return odo.n;
+    }
+
+    for (i=iodo;i<odo.n;i++) {
+        if (fabs(timediff(gins_time,odo.data[i].time))<=ins->interval/2.0) {
+            ins->odo=&odo.data[i];
+            break;
+        }
+    }
+
+    if (i>=odo.n) {
+        ins->odo=NULL;
+        return iodo; 
+    }
+
+    return i;
 }
 
 /* copy imu data --------------------------------------------------------------
@@ -649,6 +675,24 @@ static int addposdata(pos_t *pos, const posd_t *data)
     return 1;
 }
 
+/* add odo data */
+static int addododata(odo_t *odo, const odod_t *data)
+{
+    odod_t *odo_data;
+
+    if (odo->nmax<=odo->n) {
+        if (odo->nmax<=0) odo->nmax=NMAXODO; else odo->nmax*=2;
+        if (!(odo_data=(odod_t *)realloc(odo->data,sizeof(odod_t)*odo->nmax))) {
+            trace(1,"addododata: malloc error n=%dx%d\n",sizeof(odod_t),odo->nmax);
+            free(odo->data); odo->data=NULL; odo->n=odo->nmax=0;
+            return -1;
+        }
+        odo->data=odo_data;
+    }
+    odo->data[odo->n++]=*data;
+    return 1;
+}
+
 /* add imu data ------------------------------------------------------*/
 static int addimudata(imu_t *imu, const imud_t *data)
 {
@@ -756,6 +800,47 @@ extern int readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_
         }
 
         stat=addposdata(poss,&posd);
+    }
+
+    fclose(fp);
+
+    return stat;
+}
+
+/* read odo data -----------------------------------------------*/
+extern int readodo(gtime_t ts, gtime_t te, const char *file, const prcopt_t *popt, odo_t *odo)
+{
+    FILE *fp;
+    odod_t odod;
+    gtime_t time;
+    char buff[256];
+    int stat=0;
+    double week,sec,data[3]={0.0},interval=1/popt->insample;
+
+    if (!(fp=fopen(file,"r"))) {
+        trace(7,"Error : odo file open failed %s",file);
+        showerr("Error : odo file open failed %s",file);
+        return 0;
+    }
+
+    while (fgets(buff,sizeof(buff),fp)) {
+
+        if (strchr(buff,'%')) continue;
+
+        repspace(buff); /* replace spaces with commas */
+        if (sscanf(buff,"%lf,%lf,%lf,%lf,%lf",&week,&sec,data,data+1,data+2)!=5) continue;
+
+        /* integer second filtering */
+        if (fmod(sec,1.0)>interval/2.0) continue;
+
+        time=gpst2time(week,sec);
+        /* screen data by time */
+        if ((ts.time!=0&&timediff(time,ts)<0.0)||(te.time!=0&&timediff(time,te)>interval/2.0)) continue;
+
+        odod.time=time;
+        matcpy(odod.odo_vel,data,3,1); /* odo velocity in m/s2 */
+
+        stat=addododata(odo,&odod);
     }
 
     fclose(fp);
@@ -895,6 +980,14 @@ extern void freepos(pos_t *pos)
     trace(3,"freepos:\n");
 
     free(pos->data); pos->data=NULL; pos->n =pos->nmax =0;
+}
+
+/* free odo data ----------------------------------------------------*/
+extern void freeodo(odo_t *odo)
+{
+    trace(3,"freeodo:\n");
+
+    free(odo->data); odo->data=NULL; odo->n=odo->nmax=0;
 }
 
 /* free imu data -----------------------------------------------------*/
@@ -1048,19 +1141,19 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
         ins->bias_flag=1;        
     }
 
-
     ins->psd_gyro=popt->psd_gyro;
     ins->psd_acce=popt->psd_acce;
     ins->psd_bg=popt->psd_bg;
     ins->psd_ba=popt->psd_ba;
+
+    ins->odo=NULL;
 
     /* init zupt configuration options (sliding window length and detection threshold) */
     ins->zupt.window=popt->insample;
     ins->zupt.gthres=popt->zupt_gthres;
 
     /* init process noise covariance matrix */
-    for (i=0;i<GINS_NX;i++)
-    {
+    for (i=0;i<GINS_NX;i++){
         ins->xa[i]=0.0;
         
         if (i<3)             ins->Q[i+i*nx]=ins->psd_gyro*ins->discretime;
@@ -1070,8 +1163,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
     }
     /* trace(12,"Q=\n"); tracemat(12,ins->Q,nx,nx,20,16); */ /*ok*/
 
-    for (i=0;i<3;i++)
-    {
+    for (i=0;i<3;i++){
         /* initialize the lever and motion constraint information */
         install_angle[i]=popt->install_angle[i];
         ins->lever_nhc[i]=popt->lever_nhc[i];
@@ -1126,6 +1218,15 @@ extern void init_inspva(ins_t *ins, const double *pos, const double *vel, const 
     earth_init(ins->pos,ins->vel,&ins->eth);  
 }
 
+static void save_tdcp_att(rtk_t *rtk, const double *att)
+{
+    rtk->sol.pitch=att[0]*R2D;
+    /* yaw (counterclockwise to clockwise, deg) */
+    rtk->sol.yaw=att[2]*R2D;
+    if (rtk->sol.yaw<0) rtk->sol.yaw*=-1;
+    else rtk->sol.yaw=360.0-rtk->sol.yaw;
+}
+
 /* ins initial alignment -------------------------------------------*/
 extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag)
 {
@@ -1147,8 +1248,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
     if (PMODE_LC_POS==popt.mode) popt.alingetype=INSALI_MANUAL;
 
     /* manual alignment */
-    if (!rtk->align&&INSALI_MANUAL==popt.alingetype&&popt.ts.time)
-    {   
+    if (!rtk->align&&INSALI_MANUAL==popt.alingetype&&popt.ts.time) {   
         if ((fabs(timediff(ins->time,popt.ts))-rtk->ins.dttol)<=rtk->ins.nn*rtk->ins.interval/2.0) {
             /* initialize ins position, velocity and attitude */
             init_inspva(ins,popt.initpos,popt.initvel,popt.initatt); 
@@ -1181,12 +1281,10 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
             /* initialize pitch and yaw using the velocity in the n frame */
             att[0]=atan2(vn[2],sqrt(vn[0]*vn[0]+vn[1]*vn[1])); /* pitch angle */
             att[2]=-atan2(vn[0],vn[1]);                        /* yaw angle */
-            /* yaw (counterclockwise to clockwise, deg) */
-            rtk->sol.yaw=att[2]*R2D;
-            if (rtk->sol.yaw<0) rtk->sol.yaw*=-1;
-            else rtk->sol.yaw=360.0-rtk->sol.yaw;
+
             /* output the initial alignment solution status */
-            /* outsolstat(rtk,nav); */
+            save_tdcp_att(rtk,att);
+            outsolstat(rtk,nav);
 
             /* initialize ins position, velocity and attitude ,consider lever arm correction */
             gnss2ins(rtk,pos,ins->pos,1);
@@ -1200,7 +1298,8 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
             trace(12,"INS initial alignment completed: %s!\n",Debug_Glo.chTime); 
             showerr("INS initial alignment completed: %s!",Debug_Glo.chTime); 
             if (init_flag) rtkfree(&rtk_); /* NOTE: free the rtk_ structure!!! */
-            return 1;            
+
+            return 1;           
         }
 
         /* reinitialize INS in the event of a long-term GNSS outage */
@@ -1460,7 +1559,7 @@ extern int tdcp_vel(rtk_t *rtk, rtk_t *rtk_main, const obsd_t *obs, const obsd_t
     return vel_flag;
 }
 
-/* zero speed detection*/
+/* zero speed detection */
 extern void zerovel_detect(rtk_t *rtk, imud_t *imu)
 {
     ins_t *ins=&rtk->ins;
@@ -1583,7 +1682,9 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 {
     ins_t *ins=&rtk->ins;
     int i,j,k,inv=0,k2[2]={0,2},k3[3]={0,1,2};
-    double Cbn[9]={0.0},Cvn[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},Ha_bg[3]={0.0},att[3]={0.0},yaw=0.0;
+    int odo_flag=0;
+    double Cbn[9]={0.0},Cvn[9]={0.0},Cne[9]={0.0},lever_v[9]={0.0},vel_v[9]={0.0},Ha_bg[3]={0.0},att[3]={0.0},yaw=0.0;
+    double ref_veln[3]={0.0},ref_velv[3]={0.0};
 
     DCMT(ins->Cnb,Cbn);
     Mat3mul2(1.0,ins->Cvb,Cbn,Cvn);
@@ -1591,6 +1692,19 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     Mat3mulv(1.0,Cvn,ins->vel,ins->nhc_vel);
     Mat3mvskew(-1.0,Cvn,ins->vel,vel_v);
     Mat3mvskew(-1.0,ins->Cvb,ins->lever_nhc,lever_v);
+
+    /* sim odo constraint */
+    if (ODO_SIM==rtk->opt.odopt&&ins->odo) {
+        xyz2enu(ins->pos,Cne);
+        Mat3mulv(1.0,Cne,ins->odo->odo_vel,ref_veln);
+        Mat3mulv(1.0,Cvn,ref_veln,ref_velv);
+
+        /* ins forward velocity - odo forward velocity */
+        ins->nhc_vel[1]-=ref_velv[1];
+        odo_flag=1;
+
+        trace(7,"motion_update: odo_flag=%d\n",odo_flag);
+    }
 
     /* H of ZIHR */
     if (CONS_ZIHR==mode) {
@@ -1608,7 +1722,9 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
 
     /* determine constraint model */
     if (CONS_NHC==mode) {
-        inv=2;
+        /* sim odo constraint */
+        if (odo_flag) inv=3;
+        else inv=2;
         trace(8,"nhc_constraints: v=\n");tracemat(8,ins->nhc_vel,3,1,9,4);
     }
     else if (CONS_ZUPT==mode) {
@@ -1621,7 +1737,7 @@ extern int motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, 
     }
 
     for (i=0;i<inv;i++) {
-        if (CONS_NHC==mode) k=k2[i];
+        if (CONS_NHC==mode) if (odo_flag) k=k3[i]; else k=k2[i];
         else if (CONS_ZUPT==mode) k=k3[i];
         else if (CONS_ZIHR==mode) k=0;
 
@@ -1711,7 +1827,6 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt)
 
     /* forward mechanization, sequentially performing velocity update, position update, and attitude update */
     if (MECH_FORWARD==popt->reverse) {
-
         /* [I-1/2*(zetax)*Cnb(k-1)] of velocity update */
         vnmul(3,ins->eth.wnin,interval,rv);
         vskew(1.0,rv,rs);  
@@ -1720,8 +1835,7 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt)
         Mat3mul2(1.0,Irs,Cnb,Ce);
 
         /* rotation and paddling error compensation items of velocity update */
-        for (i=0;i<3;i++)
-        {
+        for (i=0;i<3;i++){
             delta_vb[i]=dv[i]+dv_rot[i]+dv_pad[i];
         }
         Mat3mulv(1.0,Ce,delta_vb,delta_vn);
@@ -1758,7 +1872,6 @@ extern void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *popt)
     }
     /* backward mechanization, sequentially performing attitude update, velocity update, and position update */
     else if (MECH_BACKWARD==popt->reverse) {
-
         /* NOTE: attitude update */
         if (ATT_DCM==popt->att_type) {
             rv2DCM(interval,ins->eth.wnin,Cnnk);

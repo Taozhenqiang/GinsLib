@@ -142,8 +142,13 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-kml"))            pos2kml=1;
         else if (!strcmp(argv[i],"-pcolor")&&i+1<argc) pcolor=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-ref")&&i+1<argc)  refile=argv[++i];
-        else if (!strcmp(argv[i],"-sys")&&i+1<argc) 
-        {
+        else if (!strcmp(argv[i],"-imu")&&i+4<argc) {
+            prcopt.psd_gyro=atof(argv[++i]);
+            prcopt.psd_acce=atof(argv[++i]);
+            prcopt.psd_bg=atof(argv[++i]);
+            prcopt.psd_ba=atof(argv[++i]);
+        }
+        else if (!strcmp(argv[i],"-sys")&&i+1<argc) {
             prcopt.navsys=SYS_NONE;
             for (p=argv[++i];*p;p++) {
                 switch (*p) {

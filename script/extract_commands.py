@@ -10,14 +10,14 @@ from collections import Counter
 INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LG69TAP01-TEMP0711-1HZ_INS.dat"
 
 # 输出文件路径
-OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/1.txt"  # None表示自动生成
+OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/imu.txt"  # None表示自动生成
 
 # 目标指令列表（支持多个指令）
-TARGET_COMMANDS = ["$PQTMINSPVA"]  # 示例：提取$PQTMDRPVA指令
+TARGET_COMMANDS = ["$PQTMRAWIMU"]  # 示例：提取$PQTMDRPVA指令
 # TARGET_COMMANDS = ["$PQTMDRPVA", "$PQTMINSPVA", "$PQTMODOMSG"]  # 提取多个指令
 
 # 文件编码（如果遇到编码错误可以修改）
-FILE_ENCODING = "gbk"  # 可选: "gbk", "gb2312", "utf-8"
+FILE_ENCODING = "utf-8"  # 可选: "gbk", "gb2312", "utf-8"
 
 # 是否显示详细信息
 VERBOSE = True
@@ -77,24 +77,23 @@ def extract_commands_from_file():
         # 读取文件
         extracted_data = {}
         total_lines = 0
-        
-        if verbose:
-            print(f"读取文件: {input_file}")
-            print(f"目标指令: {target_commands}")
-            print(f"输出文件: {output_file}")
-        
-        with open(input_file, 'r', encoding=encoding, errors='ignore') as f:
+
+        # 读取文件内容，使用replace编码防止丢行
+        with open(input_file, 'r', encoding=encoding, errors='replace') as f:
             for line_num, line in enumerate(f, 1):
                 total_lines += 1
                 line = line.strip()
                 
+                line = re.sub(r'^[^$]*', '', line)  # 删掉开头所有非 $ 字符
+
                 # 跳过空行
                 if not line:
                     continue
                 
                 # 检查是否包含目标指令
                 for command in target_commands:
-                    if line.startswith(command):
+                    # 注意：这里使用包含关系检查，而不是以指令开头检查
+                    if command in line:
                         # 解析指令行
                         elements = parse_command_line(line, command)
                         
@@ -112,9 +111,6 @@ def extract_commands_from_file():
         if verbose:
             print(f"\n处理完成!")
             print(f"总行数: {total_lines}")
-            print(f"提取结果:")
-            for command, data in extracted_data.items():
-                print(f"  {command}: {len(data)} 行")
         
         # 保存提取结果
         with open(output_file, 'w', encoding='utf-8') as f_out:
@@ -129,10 +125,6 @@ def extract_commands_from_file():
                         line_content = ",".join(data)
                     
                     f_out.write(line_content + "\n")
-        
-        print(f"\n提取完成!")
-        print(f"输入文件: {input_file}")
-        print(f"输出文件: {output_file}")
         
         # 显示提取统计
         for command, data in extracted_data.items():
@@ -198,7 +190,7 @@ def main():
     success = extract_commands_from_file()
     
     if success:
-        print("\n指令提取成功完成!")
+        print("\n指令提取成功!")
     else:
         print("\n指令提取失败!")
 

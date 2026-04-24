@@ -80,6 +80,7 @@ static char stat_[statopt];
 #define SPPOPT  "0:spp_ls_code,1:spp_ls_cd,2:spp_kf"
 #define INITPOSTYPE "0:ecef,1:llh"
 #define INITVELTYPE "0:ecef,1:enu"
+#define PAROPT  "0:off,1:manual,2:auto"
 
 EXPORT opt_t sysopts[]={
     {"pos1-GINS",       3,  (void *)&prcopt_.GI_mode,    GIOPT  },
@@ -122,6 +123,7 @@ EXPORT opt_t sysopts[]={
     {"pos1-bds3",       3,  (void *)&prcopt_.bdsflag[1], SWTOPT },
     {"pos1-navsys",     0,  (void *)&prcopt_.navsys,     NAVOPT },
     {"pos1-filter",     3,  (void *)&prcopt_.filter,     FILOPT },
+    {"pos1-lcfilter",   3,  (void *)&prcopt_.lcfilter,   FILOPT },
     {"pos1-M_robust",   3,  (void *)&prcopt_.M_robust,   MESOPT },
 
     {"pos2-artype",     0,  (void *)&prcopt_.artype,     ""     },    
@@ -164,7 +166,8 @@ EXPORT opt_t sysopts[]={
     {"ins-insample",    0,  (void *)&prcopt_.insample,   ""     },
     {"ins-aligntype",   0,  (void *)&prcopt_.alingetype,  ""    },
     {"ins-attupdtype",  0,  (void *)&prcopt_.att_type,    ""    },  
-    {"ins-errmodel",    0,  (void *)&prcopt_.err_model,   ""    },  
+    {"ins-errmodel",    0,  (void *)&prcopt_.err_model,   ""    },
+    {"ins-odo",         0,  (void *)&prcopt_.odopt,      ""    },  
     {"ins-constraints", 2,  (void *)&constraint_,        ""     },
     {"ins-install_angle",2, (void *)&install_angle_,      ""    },
     {"ins-nhc_lever",   2,  (void *)&lever_nhc_,          ""    },
@@ -179,10 +182,11 @@ EXPORT opt_t sysopts[]={
     {"ins-init_pos_unc",2,  (void *)&initunc_[0],       ""      },
     {"ins-init_vel_unc",2,  (void *)&initunc_[1],       ""      },
     {"ins-init_att_unc",2,  (void *)&initunc_[2],       ""      },
+    {"ins-init_biasunc_type", 3,  (void *)&prcopt_.init_biasunc_type, PAROPT},
     {"ins-init_bg_unc", 1,  (void *)&prcopt_.init_bg_unc,""     },
     {"ins-init_ba_unc", 1,  (void *)&prcopt_.init_ba_unc,""     },
     {"ins-corr_time",   1,  (void *)&prcopt_.corr_time,  ""     }, 
-    {"ins-init_bias_type",   0,  (void *)&prcopt_.init_bias_type,""},
+    {"ins-init_bias_type",   3,  (void *)&prcopt_.init_bias_type, PAROPT},
     {"ins-init_gyro_bias",   2,  (void *)&initbias_[0],  ""     },
     {"ins-init_acce_bias",   2,  (void *)&initbias_[1],  ""     },
     {"ins-psd_gyro",    1,  (void *)&prcopt_.psd_gyro,   ""     },
@@ -269,6 +273,7 @@ EXPORT opt_t sysopts[]={
     {"file-sp3file",    2,  (void *)&filopt_.sp3,        ""     },
     {"file-clkfile",    2,  (void *)&filopt_.clk,        ""     },
     {"file-imufile",    2,  (void *)&filopt_.imu,        ""     }, 
+    {"file-odofile",    2,  (void *)&filopt_.odo,        ""     },
     {"file-posfile",    2,  (void *)&filopt_.pos,        ""     },    
     {"file-antfile",    2,  (void *)&filopt_.antp,       ""     },
     {"file-mgexdcbfile",2,  (void *)&filopt_.mgex_dcb,   ""     },
@@ -626,7 +631,7 @@ static void buff2sysopts(void)
     /* counterclockwise is positive */
     prcopt_.initatt[2]=-prcopt_.initatt[2];
 
-    /* init ins position std */
+    /* init ins position std (m) */
     for (j=0;j<3;j++) prcopt_.init_pos_unc[j]=0.0;
     strcpy(buff,initunc_[0]);
     for (p=strtok_r(buff,",",&q),j=0;p&&j<3;p=strtok_r(NULL,",",&q)) {

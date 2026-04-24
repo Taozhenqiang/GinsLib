@@ -118,6 +118,7 @@ extern "C"
 /* ins constants/macros */
 #define NINCIMU     100000        /* incremental number of imu data */
 #define NMAXPOS     10000         /* max number of pos data */
+#define NMAXODO     1000          /* max number of odo data */
 #define NMAXREF     1000          /* max number of ref data */
 #define NMAXERR     1000          /* max number of err data */
 #define MAXINS      2             /* maximum number of samples */
@@ -125,7 +126,7 @@ extern "C"
 /* imu init bias process */
 #define IMU_BIAS_OFF 0           /* imu init bias process: off */
 #define IMU_BIAS_MANUAL  1       /* imu init bias process: manual */
-#define IMU_BIAS_AUTO  2        /* imu init bias process: auto (static average) */
+#define IMU_BIAS_AUTO  2        /* imu init bias process: auto  */
 
 /* GNSS/INS mode */
 #define GINS_OFF 0      /* only GNSS */
@@ -171,7 +172,7 @@ extern "C"
 #define MECH_FORWARD  0   /* forward ins mechanization */
 #define MECH_BACKWARD 1   /* backward ins mechanization */
 
-#define MAX_OUTIME  60       /* INS maximum independent working time 60 */
+#define MAX_OUTIME       60  /* INS maximum independent working time 60 */
 #define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length 20 */
 
 /* position file format (for LC) */
@@ -536,6 +537,9 @@ extern "C"
 #define PMODE_LC_POS  11     /* GNSS/INS LC position based on .pos file */
 #define PMODE_INSPURE 12     /* positioning mode: pure ins */  
 
+#define ODO_NONE 0   /* odo velocity option: no odo velocity */
+#define ODO_SIM  1   /* odo velocity option: simulate odo velocity */
+
 #define SOLF_LLH 0  /* solution format: lat/lon/height */
 #define SOLF_XYZ 1  /* solution format: x/y/z-ecef */
 #define SOLF_ENU 2  /* solution format: e/n/u-baseline */
@@ -808,6 +812,18 @@ extern "C"
         int n,nmax;                   /* number of pos result/allocated */       
         posd_t *data;                 /* pos result record */
     } pos_t;
+
+    typedef struct
+    {                                 /* odo velocity data record */
+        gtime_t time;                 /* odo velocity time (GPST) */
+        double odo_vel[3];            /* odo forward velocity or ECEF ref velocity (m/s) */
+    }odod_t;
+
+    typedef struct
+    {
+        int n,nmax;                   /* odo velocity data*/
+        odod_t *data;                 /* odo velocity data record */
+    }odo_t;
     
 
     typedef struct 
@@ -857,7 +873,7 @@ extern "C"
         int nn;                      /* number of samples */
         int bias_flag;               /* static bias initialization flag (0:off, 1:on) */
         double dttol;
-        double interval;             /* ins sample interval */
+        double interval;             /* ins sample interval (s) */
         double n1dw[3];              /* gyroscope angle increment of the next epoch */
         double n1dv[3];              /* accelerometer speed increment of the next epoch */
         double dw[3];                /* gyroscope angle increment  */
@@ -897,6 +913,7 @@ extern "C"
         double psd_ba;               /* zero bias psd of accelerometer (m^2/s^5) */        
         eth_t eth;                   /* earth related record  */
         zupt_t zupt;                 /* zero speed detection structure */
+        odod_t *odo;                 /* odo data  */
 
     } ins_t;
 
@@ -1293,6 +1310,7 @@ extern "C"
         double qb[12];     /* bg/ba variance/covariance (deg^2/h^2,ug^2)*/
                            /* {bgx,bgy,bgz,bax,bay,baz,bgxy,bgyz,bgxz,baxy,bayz,baxz} */
         double tdcp_vel[3];/* tdcp velocity in e frame (m/s) */
+        double pitch;      /* pitch based TDCP velocity (deg) */
         double yaw;        /* yaw based TDCP velocity (deg) */
         double dtr[7];     /* receiver clock bias to time systems (s) */ /* clock for GPS and isb for others (0-5,GPS,GLONASS,Galileo,BDS,IRNSS,QZSS); clock drift (6:GPS)*/
         uint8_t type;      /* type (0:xyz-ecef,1:enu-baseline) */
@@ -1465,7 +1483,8 @@ extern "C"
                                  QZSS: 0-L1;1-L2;2-L5;3-LEX; */ 
         int bdsflag[2];          /* exclude flag of BSD2 and BDS3 [0] BDS2 flag,[1] BSD3 flag */      
         int navsys;              /* navigation system */       
-        int filter;              /* filter method (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST) */
+        int filter;              /* GNSS or TC filter method (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST) */
+        int lcfilter;            /* LC filter method (0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST) */
         int M_robust;            /* M-estimation robust weight function (0:IGG3,1:Huber,2:MCKF) */
         double elmin;            /* elevation mask angle (rad) */
         snrmask_t snrmask;       /* SNR mask */
@@ -1534,6 +1553,7 @@ extern "C"
 
         int week;                /* GPS week for GNSS/INS LC with pos file */
         int postype;             /* pos file type (POSF_???) */
+        int odopt;              /* odo velocity option (ODO_???) */
         int imudatype;           /* imu data type (IMUT_???) */
         char imu_order[10];      /* imu data order (AgGd, AgGr, GdAg, GrAg) */
         int bodyframe;           /* body frame direction(0:RFU,1:FRD) */
@@ -1557,6 +1577,7 @@ extern "C"
         double init_pos_unc[3];  /* initial position std (rad,rad,m) */
         double init_vel_unc[3];  /* initial velocity std (m/s) */
         double init_att_unc[3];  /* initial attitude std (rad) */
+        int init_biasunc_type;   /* initial std of imu bias  (0:manual, 1:auto) */
         double init_bg_unc;      /* initial bg std (rad/s) */
         double init_ba_unc;      /* initial ba std (m/s^2) */
         double corr_time;        /* correlation time of a first-order Markov process (s) */
@@ -1618,6 +1639,7 @@ extern "C"
         char clk[MAXSTRPATH];     /* precise clock file */
         char imu[MAXSTRPATH];     /* imu data file */
         char pos[MAXSTRPATH];     /* position file for GNSS/INS LC */
+        char odo[MAXSTRPATH];     /* odo velocity file for GNSS/INS LC */
         char mgex_dcb[MAXSTRPATH];/* mgex DCB/OSB files */
         char antp[MAXSTRPATH];    /* receiver and satellite antenna parameters file */
         char stapos[MAXSTRPATH];  /* station positions file */
@@ -1782,8 +1804,8 @@ extern "C"
         int match;              /* GNSS/INS observation matching (for initialization only) */
         int upte;               /* GNSS/INS time synchronization */
         gtime_t upte_time;      /* time of last GNSS/INS measureemnt update */
-        int nominal_upte;     /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
-        int align;
+        int nominal_upte;       /* nominal GNSS/INS time synchronization (used to maintain result output when GNSS is unavailable) */
+        int align;              /* GINS align flag */
         int outage;             /* GNSS outage count, if GNSS is available, outage is reset to 0 */
         int gnss_aid_age;       /* GNSS-assisted detection INS status count, used for INS reinitialization */
         ins_t ins;
@@ -2109,6 +2131,7 @@ extern "C"
     EXPORT void freeant(spcvs_t *pcvss, rpcvs_t *pcvsr);
     EXPORT void freepos(pos_t *pos);    
     EXPORT void freeimu(imu_t *imu);
+    EXPORT void freeodo(odo_t *odo);
     EXPORT int readblq(const char *file, const char *sta, double *odisp);
     EXPORT int readerp(const char *file, erp_t *erp);
     EXPORT int geterp(const erp_t *erp, gtime_t time, double *val);
@@ -2583,10 +2606,12 @@ extern "C"
           
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
-    EXPORT void pos2sol(pos_t pos, sol_t *sol, int ipos);
+    EXPORT void getpos(pos_t pos, sol_t *sol, int ipos);
+    EXPORT int getodovel(odo_t odo, ins_t *ins, gtime_t gins_time, int iodo);
     EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
     EXPORT int  ins_init(ins_t *ins, const prcopt_t *prcopt);
     EXPORT void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att);
+    EXPORT int  readodo(gtime_t ts, gtime_t te, const char *file, const prcopt_t *popt, odo_t *odo);
     EXPORT int  readimu(gtime_t ts, gtime_t te, const char *file, const prcopt_t *prcopt, imu_t *imu, int gps_week);
     EXPORT int  readpos(const char *file, const prcopt_t *popt, pos_t *poss, int gps_week);
     EXPORT int  inspure(gtime_t ts, gtime_t te, const prcopt_t *popt, const solopt_t *sopt, 

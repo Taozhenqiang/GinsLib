@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import logging
-from read_sol import read_solution
-from read_ref import read_ref
+from read_file import read_pos
+from read_file import read_ref
 from plot_solution import plot_trajectory
 from plot_solution import plot_position
 from plot_solution import plot_velocity
@@ -80,14 +80,14 @@ def batch_plot_analysis(sol_file_path, ref_file_path, process_mode):
         logging.info("GNSS模式，仅绘制位置误差")
     
     # 结果文件读取配置
-    skip_lines = 14
+    skip_lines = 0
     row = 10000
     # GINLIB: gps week, sow, pos[x/y/z], ratio, vel[x/y/z], att[pitch/roll/heading], bg[x/y/z], ba[x/y/z]
     col = 18
     sample = 1/100
 
     # 读取结果文件
-    data = read_solution(sol_file_path, skip_lines, row, col, sample)
+    data = read_pos(sol_file_path, skip_lines, row, col, sample)
 
     # 检查是否成功读取
     if data is not None:
@@ -181,7 +181,11 @@ def batch_plot_analysis(sol_file_path, ref_file_path, process_mode):
             elif plot_type == 'ba':
                 filename = f"{data_name_without_ext}_ba.png"
             elif plot_type == 'pos':
-                filename = f"{data_name_without_ext}_pos.png"
+                filename = f"{data_name_without_ext}_pos_err.png"
+            elif plot_type == '3Dpos':
+                filename = f"{data_name_without_ext}_3Dpos_err.png"
+            elif plot_type == 'pos_cdf':
+                filename = f"{data_name_without_ext}_pos_cdf.png"
             elif plot_type == 'vel':
                 filename = f"{data_name_without_ext}_vel.png"
             elif plot_type == 'att':

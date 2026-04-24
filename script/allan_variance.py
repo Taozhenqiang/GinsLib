@@ -5,12 +5,13 @@ import os
 import sys
 from pathlib import Path
 
-def read_imu_data(file_path, time_col, gyro_cols, accel_cols, skip_rows=0, end_row=0):
+def read_imu_data(file_path, time_col, gyro_cols, accel_cols, time_format, skip_rows=0, end_row=0):
     """
     读取IMU数据文件
     args:
         file_path: 输入文件路径
         time_col: 时间列索引
+        time_format: 时间格式：'s'(秒) 或 'ms'(毫秒)
         gyro_cols: 陀螺仪数据列索引列表 [x, y, z]
         accel_cols: 加速度计数据列索引列表 [x, y, z]
         skip_rows: 跳过的行数
@@ -20,6 +21,13 @@ def read_imu_data(file_path, time_col, gyro_cols, accel_cols, skip_rows=0, end_r
     try:
         # 根据文件扩展名选择读取方法
         file_ext = Path(file_path).suffix.lower()
+
+        if time_format.lower() == 'ms':
+            sample_interval = 0.001
+        elif time_format.lower() == 's':
+            sample_interval = 1.0
+        else:
+            raise ValueError("时间格式必须为's'或'ms'")
         
         if file_ext in ['.csv']:
             df = pd.read_csv(file_path, skiprows=skip_rows, nrows=end_row-skip_rows+1, header=None, index=None)
@@ -58,7 +66,7 @@ def read_imu_data(file_path, time_col, gyro_cols, accel_cols, skip_rows=0, end_r
             df = pd.DataFrame(data)
         
         # 提取时间数据
-        time_data = df.iloc[:, time_col].values - df.iloc[0, time_col]  # 以第一个时间戳为起点，转换为相对时间
+        time_data = (df.iloc[:, time_col].values - df.iloc[0, time_col]) * sample_interval  # 以第一个时间戳为起点，转换为相对时间，并将时间尺度转换为秒
         
         # 提取陀螺仪数据
         gyro_data = df.iloc[:, gyro_cols].values
@@ -223,7 +231,7 @@ def avarimu(imu, sample_interval=0.01):
         sigma.append(sig_k.flatten())
         tau.append(tau_k.flatten())
     
-    # 转置为列向量格式（对齐MATLAB输出）
+    # 转置为列向量格式
     sigma = np.array(sigma).T
     tau = np.array(tau).T
 
@@ -232,14 +240,14 @@ def avarimu(imu, sample_interval=0.01):
     
     # 子图1：陀螺原始数据 (左上)
     plt.subplot(2, 2, 1)
-    plt.plot(imu[:, -1] * ts, imu[:, 0:3])
+    plt.plot(imu[:, -1], imu[:, 0:3])
     plt.grid(True)
     plt.xlabel(r'$t$ / s')
     plt.ylabel(r'$\omega$ / (°)/h')
 
     # 子图2：加速度计原始数据 (右上)
     plt.subplot(2, 2, 2)
-    plt.plot(imu[:, -1] * ts, imu[:, 3:6])
+    plt.plot(imu[:, -1], imu[:, 3:6])
     plt.grid(True)
     plt.xlabel(r'$t$ / s')
     plt.ylabel(r'$f^b$ / mg')
@@ -276,6 +284,7 @@ def main():
     ACCEL_COLS = [5, 6, 7]              # 加速度计数据列索引 [x, y, z]
     
     # 数据格式和单位配置
+    TIME_FORMAT = 'ms'                  # 时间格式：'s'(秒) 或 'ms'(毫秒)
     SAMPLE_INTERVAL = 0.01              # IMU采样间隔（秒）
     DATA_FORMAT = 'rate'                # 数据格式：'rate'(速率)或'increment'(增量)
     GYRO_UNIT = 'deg/s'                 # 陀螺仪输入单位：'deg', 'rad', 'deg/s', 'rad/s'
@@ -331,7 +340,8 @@ def main():
     print("正在读取IMU数据...")
     time_data, gyro_data, accel_data = read_imu_data(
         INPUT_FILE, TIME_COL, GYRO_COLS, 
-        ACCEL_COLS, SKIP_ROWS, END_ROWS-1
+        ACCEL_COLS, TIME_FORMAT, 
+        SKIP_ROWS, END_ROWS-1
     )
     
     if time_data is None:
@@ -339,7 +349,7 @@ def main():
         return 1
     
     print(f"数据读取成功: {len(time_data)} 个数据点")
-    print(f"时间数据范围: {time_data.min():.3f} - {time_data.max():.3f}*{SAMPLE_INTERVAL} 秒")
+    print(f"时间数据范围: {time_data.min():.3f} - {time_data.max():.3f} 秒")
     
     # 转换陀螺仪数据
     gyro_converted = convert_gyro_units2rad(

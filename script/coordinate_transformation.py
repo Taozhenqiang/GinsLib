@@ -2,9 +2,9 @@ import numpy as np
 
 def ecef2pos(r):
     """
-    Convert ECEF (Earth-Centered Earth-Fixed) coordinates to geographic coordinates (latitude, longitude, height).
-    :param r: A numpy array or list with the ECEF coordinates [x, y, z].
-    :return: pos: A numpy array containing [latitude, longitude, height].
+    将ECEF坐标转换为大地坐标
+    :param r: ECEF坐标数组 [x, y, z] (米)
+    :return: 大地坐标数组 [纬度, 经度, 高度] (弧度, 米)
     """
     FE_WGS84 = 1.0 / 298.257223563  # Flattening factor of WGS84
     RE_WGS84 = 6378137  # Earth's radius in meters (WGS84)
@@ -70,10 +70,10 @@ def xyz2enu(pos):
 
 def xyz2blh(xyz):
     """
-    Convert cartesian coordinates (XYZ) to geodetic coordinates (latitude, longitude, height).
-    :param xyz: A numpy array or list with the ECEF coordinates [x, y, z].
-    :return: A tuple (blh, Cne) where blh is a numpy array containing [latitude, longitude, height]
-             and Cne is the transformation matrix (if requested).
+    转换ECEF坐标为大地坐标
+    :param xyz: ECEF坐标数组 [x, y, z] (米)
+    :return: blh: 大地坐标数组 [纬度, 经度, 高度] (弧度, 米)
+    :        Cne: ECEF到局部坐标变换矩阵 (3x3 numpy数组)
     """
     # Convert ECEF (XYZ) to BLH using ecef2pos
     pos = ecef2pos(xyz)  # Assuming ecef2pos is defined elsewhere
@@ -107,10 +107,10 @@ def pos2ecef(pos):
     FE_WGS84 = 1.0 / 298.257223563  # WGS84扁率因子
     RE_WGS84 = 6378137.0  # WGS84地球半径 (米)
     
-    sinp = np.sin(pos[0]*np.pi/180.0)  # 纬度正弦
-    cosp = np.cos(pos[0]*np.pi/180.0)  # 纬度余弦
-    sinl = np.sin(pos[1]*np.pi/180.0)  # 经度正弦
-    cosl = np.cos(pos[1]*np.pi/180.0)  # 经度余弦
+    sinp = np.sin(pos[0])  # 纬度正弦
+    cosp = np.cos(pos[0])  # 纬度余弦
+    sinl = np.sin(pos[1])  # 经度正弦
+    cosl = np.cos(pos[1])  # 经度余弦
     
     e2 = FE_WGS84 * (2.0 - FE_WGS84)  # 偏心率平方
     v = RE_WGS84 / np.sqrt(1.0 - e2 * sinp * sinp)  # 地球半径

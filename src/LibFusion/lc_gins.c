@@ -11,8 +11,10 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
     int i,nx;
     double P[GINS_NX]={0.0};
 
+    /* init INS struct */
     ins_init(ins,popt);
 
+    /* loose coupled and semi-tight coupled mode */
     if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
         sol_t sol0={{0}};
         nx=GINS_NX; 
@@ -22,36 +24,37 @@ extern void gins_init(rtk_t *rtk, const prcopt_t *popt)
         rtk->lcgins.nx=nx;
         rtk->lcgins.sol=sol0;
 
-        for (i=0;i<nx;i++)
-        {
+        for (i=0;i<nx;i++){
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
-#if 1            
-            else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
-            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); 
-#else                       
-            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
-#endif
+            else if (i>=9&&i<12) {
+                if (IMU_BIAS_MANUAL==popt->init_biasunc_type) P[i]=popt->init_bg_unc*popt->init_bg_unc;
+                else  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2); /* auto */
+            } 
+            else if (i>=12&&i<=15) {
+                if (IMU_BIAS_MANUAL==popt->init_biasunc_type) P[i]=popt->init_ba_unc*popt->init_ba_unc;    
+                else  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); /* auto */
+            }            
         }
         for (i=0;i<nx;i++) rtk->lcgins.P[i+i*nx]=P[i];
         /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,nx,nx,9,4); */
     } 
+    /* tight coupled mode */
     if (GINS_TC==popt->GI_mode) {
         nx=GINS_NX; 
-        for (i=0;i<nx;i++)
-        {
+        for (i=0;i<nx;i++){
             if (i<3)              P[i]=popt->init_att_unc[i]*popt->init_att_unc[i];
             else if (i>=3&&i<6)   P[i]=popt->init_vel_unc[i-3]*popt->init_vel_unc[i-3];
             else if (i>=6&&i<9)   P[i]=popt->init_pos_unc[i-6]*popt->init_pos_unc[i-6];
-#if 1            
-            else if (i>=9&&i<12)  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2);
-            else                  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); 
-#else                       
-            else if (i>=9&&i<12)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
-            else                  P[i]=popt->init_ba_unc*popt->init_ba_unc;
-#endif
+            else if (i>=9&&i<12) {
+                if (IMU_BIAS_MANUAL==popt->init_biasunc_type)  P[i]=popt->init_bg_unc*popt->init_bg_unc;
+                else  P[i]=(sqrt(ins->psd_bg)*1E2)*(sqrt(ins->psd_bg)*1E2); /* auto */
+            }
+            else if (i>=12&&i<=15) {
+                if (IMU_BIAS_MANUAL==popt->init_biasunc_type) P[i]=popt->init_ba_unc*popt->init_ba_unc;
+                else  P[i]=(sqrt(ins->psd_ba)*1E2)*(sqrt(ins->psd_ba)*1E2); /* auto */
+            }       
         }
         for (i=0;i<nx;i++) rtk->P[i+i*rtk->nx]=P[i];
     }     
@@ -417,7 +420,6 @@ extern void update_lcstat(rtk_t *rtk, int stat){
         sol->time=rtk->sol.time;
         sol->ns=rtk->sol.ns;      
     }
-
 }
 
 /* GNSS/INS loosely coupled integration */
@@ -426,7 +428,7 @@ extern int lc_gins(rtk_t *rtk)
     ins_t *ins=&rtk->ins;
     sol_t *sol=&rtk->lcgins.sol;
     prcopt_t *popt=&rtk->opt;
-    int i,j,nx=rtk->lcgins.nx,nv,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.filter;
+    int i,j,nx=rtk->lcgins.nx,nv,nv_cons=0,info,stat=rtk->sol.stat,mode=rtk->opt.lcfilter;
     double p_ins[3],p_gnss[3],iFrp[9],dp[3],zupt_time;
     double Re[9],Rn[9];
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;

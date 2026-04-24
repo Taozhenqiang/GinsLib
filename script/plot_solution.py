@@ -146,7 +146,7 @@ def plot_velocity(solution):
 
     for i in range(nsol):
         time[n] = solution[i, 1] #GPS time
-        vel[n, :] = solution[i, 6:9]  # Assuming solution[i] has [time, x, y, z]
+        vel[n, :] = solution[i, 5:8]  # Assuming solution[i] has [time, x, y, z]
         n += 1
 
     # Convert from ECEF to ENU frame (Cne is the transformation matrix)
@@ -213,7 +213,7 @@ def plot_attitude(solution):
 
     for i in range(nsol):
         time[n] = solution[i, 1] #GPS time
-        att[n, :] = solution[i, 9:12]  # Assuming solution[i] has [time, x, y, z]
+        att[n, :] = solution[i, 8:11]  # Assuming solution[i] has [time, x, y, z]
         n += 1
 
     # Set up the figure window
@@ -263,8 +263,12 @@ def plot_imubias(solution):
 
     for n in range(nsol):
         time[n] = solution[n, 1]  # GPS time
-        bg[n, :] = solution[n, 12:15]  # Gyroscope biases (deg/h)
-        ba[n, :] = solution[n, 15:18]  # Accelerometer biases (ug) 
+        if len(solution[n]) >= 18:
+            bg[n, :] = solution[n, 12:15]  # Gyroscope biases (deg/h)
+            ba[n, :] = solution[n, 15:18]  # Accelerometer biases (ug) 
+        else:
+            bg[n, :] = np.zeros(3)
+            ba[n, :] = np.zeros(3)
 
     # Plot gyroscope biases
     Fcolor = ["#ffcc66", "#14a959", "#ff6666"]

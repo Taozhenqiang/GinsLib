@@ -1915,6 +1915,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         }
         if (GINS_OFF!=opt->GI_mode&&opt->constraint[i]) p+=sprintf(p," %s",s13[i]);
     }
+    if (GINS_OFF!=opt->GI_mode&&ODO_SIM==opt->odopt) p+=sprintf(p," ODO");
     if (motion_flag) p+=sprintf(p,"\r\n");
     
     if (PMODE_LC_POS!=opt->mode) {
@@ -1958,12 +1959,21 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         p+=sprintf(p,"%s ephemeris : %s\r\n",COMMENTH,s6[opt->sateph]);        
     }
 
-    if (opt->mode>PMODE_SINGLE||opt->GI_mode>GINS_OFF) {
-        p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
+    if (PMODE_LC_POS==opt->mode) {
+        p+=sprintf(p,"%s lcfilter  : %s\r\n",COMMENTH,s8[opt->lcfilter]);
     }
-    if (Robust_INO==opt->filter||Robust_RES==opt->filter) {
-        p+=sprintf(p,"%s M_robust  : %s\r\n",COMMENTH,s9[opt->M_robust]);
+    else {
+        if (GINS_LC==opt->GI_mode) {
+            p+=sprintf(p,"%s lcfilter  : %s\r\n",COMMENTH,s8[opt->lcfilter]);
+        }
+        if (opt->mode>PMODE_SINGLE||opt->GI_mode>GINS_OFF) {
+            p+=sprintf(p,"%s filter    : %s\r\n",COMMENTH,s8[opt->filter]);
+        }
+        if (Robust_INO==opt->filter||Robust_RES==opt->filter) {
+            p+=sprintf(p,"%s M_robust  : %s\r\n",COMMENTH,s9[opt->M_robust]);
+        }        
     }
+
     if (PMODE_KINEMA<=opt->mode&&opt->mode<=PMODE_PPP_FIXED) {
         p+=sprintf(p,"%s amb opt   : %s\r\n",COMMENTH,s12[opt->artype]);
         p+=sprintf(p,"%s amb res   : %s\r\n",COMMENTH,s10[opt->modear]);

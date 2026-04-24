@@ -251,7 +251,8 @@ const prcopt_t prcopt_default={
                        QZSS: 0-L1;1-L2;2-L5;3-LEX;*/
     {1,0},
     SYS_GPS|SYS_GLO|SYS_GAL,/* navsys */
-    Robust_OFF,  /* filter */
+    Robust_OFF,  /* GNSS or TC filter */
+    Robust_OFF,  /* LC filter */
     IGG3,   /* M-estimation robust weight function */
     15.0*D2R,
     {{0,0}},/* elmin,snrmask */
@@ -2409,7 +2410,7 @@ extern int robust_M_function(rtk_t *rtk, const double *v, double *Pv, const doub
         else {
             ak=dv/chisqr[m-1]; /* robust weight */
 
-            trace(12,"Chi_KF: dv=%7.2f thres=%.2f alpha=%.2f\n",dv,chisqr[m-1],ak);
+            trace(12,"Chi_KF: dv=%7.2f, thres=%.2f, alpha=%.2f\n",dv,chisqr[m-1],ak);
         }
 
         /* Pv=ak*Pv */
@@ -2583,9 +2584,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
     matmul("NT",n,n,m,P,H,F,1.0,0.0); /* F=PH' */
     matmul("NN",m,n,m,H,F,Q,1.0,1.0); /* Q=H*F+R */
 
-
     for (i=0;i<iter;i++) {
-
         /* save the previous state vector for iteration termination judgment */
         if (i>0) matcpy(xp_pre,xp,n,1); 
 
@@ -2656,6 +2655,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
                 if ((i==j)&&Pp[i+j*n]<0.0) {
                     info=-1;
                     trace(7,"The error covariance matrix is not positive definite!\n");
+                    trace(7,"Pp=\n"); tracemat(7,Pp,n,n,15,9);
                     showerr("%s: The error covariance matrix is not positive definite!",Debug_Glo.chTime);
                 }
             }
@@ -2666,6 +2666,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
     free(IP); free(KR);
     free(vk); free(Hk); free(R_); free(D); free(Pv);
     free(xp_pre);
+
     return info;
 }
 extern int filter(double *x,double *P,const double *H,const double *v,
@@ -3490,7 +3491,7 @@ extern void pos2ecef2(const double *pos,double *r,double *T) {
 *return:none
 *notes :matrix stored by column-major order (fortran convention)
  *-----------------------------------------------------------------------------*/
-extern void xyz2enu(const double *pos,double *E) {
+extern void xyz2enu(const double *pos, double *E) {
     double sinp=sin(pos[0]),cosp=cos(pos[0]),sinl=sin(pos[1]),cosl=cos(pos[1]);
 
     E[0]=-sinl;      E[1]=cosl;         E[2]=0.0;

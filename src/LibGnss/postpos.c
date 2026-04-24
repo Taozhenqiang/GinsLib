@@ -55,6 +55,7 @@ static spcvs_t pcvss={0};        /* satellite antenna parameters */
 static rpcvs_t pcvsr={0};        /* receiver antenna parameters */
 static imu_t imus={0};          /* imu data */
 static pos_t poss={0};          /* pos data */
+static odo_t odos={0};          /* oddo velocity data */
 static obs_t obss={0};          /* observation data */
 static nav_t navs={0};          /* navigation data */
 static sbs_t sbss={0};          /* sbas messages */
@@ -66,6 +67,7 @@ static int iobsu =0;            /* current rover observation data index */
 static int iobsr =0;            /* current reference observation data index */
 static int iimu  =0;            /* current imu data index */
 static int ipos  =0;            /* current pos data index */
+static int iodo  =0;            /* current odo data index */
 static int isbs  =0;            /* current sbas message index */
 static int aborts=0;            /* abort status */
 static sol_t *solf;             /* forward solutions */
@@ -290,10 +292,8 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
         }            
     }
     /* input forward data */
-    if (SOLTYPE_FORWARD==popt->reverse) 
-    { 
-        if (PMODE_LC_POS!=popt->mode) 
-        {
+    if (SOLTYPE_FORWARD==popt->reverse) { 
+        if (PMODE_LC_POS!=popt->mode) {
             if ((nu=nextobsf(&obss,&iobsu,1))<=0) return -1;
             if (popt->intpref) {
                 /* for interpolation, find first base timestamp after rover timestamp */
@@ -320,15 +320,14 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             gnss_time=obss.data[iobsu].time;
         }
         else {
-            pos2sol(poss,&rtk->sol,ipos);
+            getpos(poss,&rtk->sol,ipos);
             gnss_time=rtk->sol.time;
             /* check if the posfile reaches the end */
             if (ipos>=poss.n) return -1;
         }
 
         /* NOTE: GNSS/INS time synchronization */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
-        {
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
             if (iimu>=imus.n) return -1;
 
             /* calculate the difference between the current time and the nominal measurement update time */
@@ -368,7 +367,12 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             else if (GI_dt>0){
                 if (NO==rtk->match) { iobsu+=nu; ipos+=npos; return 0; }   
                 else { iobsu+=nu; ipos+=npos; }    
-            }            
+            }   
+            
+            /* get odo vel based on gins time */
+            if (rtk->align&&(rtk->nominal_upte==YES||rtk->upte==SYNC_YES)) {
+                iodo=getodovel(odos,ins,rtk->upte_time,iodo);
+            } 
         } 
         else {
             iobsu+=nu; ipos+=npos;
@@ -390,10 +394,8 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
         }
     }
     /* input backward data */
-    else if (SOLTYPE_BACKWARD==popt->reverse) 
-    { 
-        if (PMODE_LC_POS!=popt->mode) 
-        {
+    else if (SOLTYPE_BACKWARD==popt->reverse) { 
+        if (PMODE_LC_POS!=popt->mode) {
             if ((nu=nextobsb(&obss,&iobsu,1))<=0) return -1;
             if (popt->intpref) {
                 /* for interpolation, find first base timestamp before rover timestamp */
@@ -418,13 +420,12 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             gnss_time=obss.data[iobsu].time;
         }
         else {
-            pos2sol(poss,&rtk->sol,ipos);
+            getpos(poss,&rtk->sol,ipos);
             gnss_time=rtk->sol.time;            
         }
 
         /* NOTE: GNSS/INS time synchronization */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
-        {
+        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
             if (iimu<0) return -1;
 
             /* calculate the difference between the current time and the nominal measurement update time */
@@ -627,7 +628,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,113867,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,109268,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
         if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);
@@ -678,8 +679,8 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
 
         /* GNSS outage simulation */
         if ((outsim.valid_flag=isoutage(rtk,Debug_Glo.tNow,outsim))||YES==rtk->nominal_upte||0==nu) {
-            /* TODO: if GNSS outage and motion constraints are applied, don't increment outage count */
-            if (SOLQ_CONS!=rtk->sol.stat) rtk->outage++;
+            /* TODO: if GNSS outage, increment outage count */
+            rtk->outage++;
             if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) {
                 /* if GNSS outage and motion constraints are not applied, use INS solution */
                 if (SOLQ_CONS!=rtk->lcgins.sol.stat) rtk->lcgins.sol.stat=SOLQ_INS;
@@ -740,9 +741,9 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     }
 
     /* obs and obs_old point to the same memory and only need to free once */
-    rtkfree(rtk_tdcp);
-    free(obs); free(imu); 
-    obs=obs_old=NULL; /* free obs_old to avoid memory leak */
+    if (GINS_OFF!=popt->GI_mode) rtkfree(rtk_tdcp);
+    free(rtk_tdcp); rtk_tdcp=NULL; /* free rtk_tdcp to avoid memory leak */
+    free(obs); free(imu); obs=obs_old=NULL; /* free obs_old to avoid memory leak */
 }
 /* validation of combined solutions ------------------------------------------*/
 static int valcomb(const sol_t *solf, const sol_t *solb, double *rbf, double *rbb, const prcopt_t *popt)
@@ -1519,25 +1520,31 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         tgdarrge(popt,&navs);
     }
 
+    /* read pos data for LC */
     if (PMODE_LC_POS==popt->mode) {
         week=popt->week;
-        /* read pos data */
         if (*fopt->pos&&!(readpos(fopt->pos,popt,&poss,week))){
             /* free pos parameters */
             freepos(&poss);
         }
         if (!(*fopt->pos)) showerr("Error : pos file open failed %s",fopt->pos);
     }
- 
+    
+    /* read imu/odo data */
     if (GINS_OFF!=popt->GI_mode) {
         if (PMODE_LC_POS==popt->mode) week=popt->week;
         else time2gpst(obss.data[0].time,&week);
-        /* read imu data */
         if (*fopt->imu&&!(readimu(ts,te,fopt->imu,popt,&imus,week))) {
             /* free imu parameters */
             freeimu(&imus);
         }    
-        if (!(*fopt->imu)) showerr("Error : imu file open failed %s",fopt->imu);    
+        if (!(*fopt->imu)) showerr("Error : imu file open failed %s",fopt->imu);  
+
+        /* ODO is enabled only when NHC is enabled */
+        if (*fopt->odo&&popt->odopt&&popt->constraint[0]&&!(readodo(ts,te,fopt->odo,popt,&odos))) {
+            /* free odo parameters */
+            freeodo(&odos);
+        }
     }
 
     /* set antenna parameters */
@@ -1664,7 +1671,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     /* free rtk, obs/nav , ant and imu data */
-    free(rtk);          
+    free(rtk); rtk=NULL; /* free rtk to avoid memory leak */      
     if (obss.n)            freeobsnav(&obss,&navs);
     if (imus.n)            freeimu(&imus);
     if (poss.n)            freepos(&poss);

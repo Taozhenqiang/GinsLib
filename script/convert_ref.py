@@ -85,8 +85,12 @@ def convert_geodetic_to_ecef(position_data):
     ecef_positions = []
     for pos in position_data:
         if len(pos) == 3:
-            # 假设输入是[纬度, 经度, 高度]（弧度）
-            ecef = pos2ecef(pos)
+            # 假设输入是[纬度, 经度, 高度]（度）
+            lat_rad = np.deg2rad(pos[0])
+            lon_rad = np.deg2rad(pos[1])
+            height = pos[2]
+            llh_pos = [lat_rad, lon_rad, height]
+            ecef = pos2ecef(llh_pos)
             ecef_positions.append(ecef)
         else:
             ecef_positions.append([0.0, 0.0, 0.0])  # 无效数据

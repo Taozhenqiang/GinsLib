@@ -552,12 +552,12 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }        
 
         /* tdcp velocity */
-        if (rtk->sol.stato[7]&&GINS_OFF!=rtk->opt.GI_mode) {
+        if (rtk->sol.stato[7]) {
             p+=sprintf(p,"$TDCP,%d,%d",week,itow);
             for (i=0;i<3;i++) {
-                p+=sprintf(p,",%12.6f",rtk->sol.tdcp_vel[i]);
+                p+=sprintf(p,",%12.6f",rtk->sol.rr[i+3]);
             }       
-            p+=sprintf(p,",%12.6f",rtk->sol.yaw);
+            p+=sprintf(p,",%12.6f,%12.6f",rtk->sol.pitch,rtk->sol.yaw);
             p+=sprintf(p,"\n");
         }  
         
@@ -977,7 +977,7 @@ static double residual_thres(rtk_t *rtk, const double *H, const double *P, int n
 
     /* create list of non-zero states */
     ix=imat(n,1);
-    if (GINS_OFF==rtk->opt.GI_mode) idx=0;
+    if (GINS_TC!=rtk->opt.GI_mode) idx=0;
     else idx=rtk->ins.nx;
     for (i=0;i<idx;i++) ix[k++]=i;
 
@@ -1051,7 +1051,6 @@ static void Jacobi_avp(rtk_t *rtk, int i, int j, double *Hi, const double *e, co
     int k;
 
     if (GINS_TC==opt->GI_mode) {
-
         xyz2enu(ins->pos,Cne); DCMT(Cne,Cen);
         Mat3mulv(1.0,ins->Cnb,ins->lever,lever_n);
 
@@ -2452,8 +2451,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
     /* init vsat vlag and phase and code residual for all satellites */
     init_ssatpar(rtk,NULL,0,RTK_ssat_vsat,SOLQ_NONE);
 
-    /* compute factors of ionospheric and tropospheric delay
-           - only used if kalman filter contains states for ION and TROP delays
+    /* compute factors of ionospheric and tropospheric delay- only used if kalman filter contains states for ION and TROP delays
            usually insignificant for short baselines (<10km)*/
     for (i=0;i<ns;i++) {
         if (opt->ionoopt==IONOOPT_EST) {
@@ -2598,8 +2596,8 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                 Rj[nv]=varerr(rtk,sat[j],sysj,azel[1+iu[j]*2],SNR_UNIT*rtk->ssat[sat[j]-1].snr_rover[fr],
                               SNR_UNIT*rtk->ssat[sat[j]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[j]]);
 
-#if 1                 
-                /* calculate pre-fit and post-fit threshold */          
+#if 0                 
+                /* TODO: calculate pre-fit and post-fit threshold */          
                 if (H) {
                     if (post) Hi=H+nv*rtk->nx;
                     thres=residual_thres(rtk,Hi,P,rtk->nx,!post?MODE_PRIOR:MODE_POST);
@@ -2719,7 +2717,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
         }        
     }       
 
-    if (H) {trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4);}
+    if (H) { trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4); }
 
     /* double-differenced measurement error covariance */
     ddcov(nb,b,Ri,Rj,nv,R);
@@ -3618,7 +3616,7 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
            nu       I       # of user observations (rover)
            nr       I       # of ref observations  (base)
            nav      I       satellite navigation data
- */
+ ------------------------------------------------------------------------------------*/
 static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *nav)
 {
     prcopt_t *opt=&rtk->opt;
@@ -3628,14 +3626,14 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     int info,vflg[MAXOBS*NFREQ*2+1],svh[MAXOBS*2];
     int stat=rtk->opt.mode<=PMODE_DGPS?SOLQ_DGPS:SOLQ_FLOAT;
     int nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf,sys,fr,mode=rtk->opt.filter;
-    int factor=(GINS_OFF==opt->GI_mode)?2:1,maxiter=MAX_ITER*factor;
+    int factor=(GINS_TC==opt->GI_mode)?1:2,maxiter=MAX_ITER*factor;
 
     trace(3,"relpos  : nu=%d nr=%d\n",nu,nr);
 
     rtk->epoch++;
     /* define local matrices, n=total observations, base + rover */
-    rs=mat(6,n);   dts=mat(2,n);  var=mat(1,n);
-    y=mat(nf*2,n); e=mat(3,n);    azel=zeros(2,n);   freq=zeros(nf,n);
+    rs=mat(6,n); dts=mat(2,n); var=mat(1,n);
+    y=mat(nf*2,n); e=mat(3,n); azel=zeros(2,n); freq=zeros(nf,n);
 
     /* compute satellite positions, velocities and clocks for base and rover */
     satposs(time,obs,n,nav,opt->sateph,rs,dts,var,svh);
@@ -3644,7 +3642,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     if (!zdres(0,rtk,1,obs+nu,nr,rs+nu*6,dts+nu*2,var+nu,svh+nu,nav,rtk->rb,opt,
                y+nu*nf*2,e+nu*3,azel+nu*2,freq+nu*nf)) {
         trace(7,"initial base station position error\n");
-
         free(rs); free(dts); free(var); free(y); free(e); free(azel); free(freq);
         return 0;
     }
@@ -3737,14 +3734,14 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
         update_valid_sats(rtk,sat,ns);
 
         /* too few valid phases */
-        if (GINS_TC==opt->GI_mode&&rtk->sol.ns<4&&nv<=4) {
+        if (GINS_TC==opt->GI_mode&&(rtk->sol.ns<4||nv<4)) {
             /* if the number of available observation is less than 4, use the pure inertial navigation solution. */
             /* NOTE: rtk->sol.ns may larger than nv, because nv is the number of satellite pairs, and ns is the total number of available satellites, for example, nv=4 might have ns=8. */
             trace(7,"ppk: not enough valid phases, ns(L1)=%d, nv=%d\n", rtk->sol.ns, nv);
             stat=SOLQ_NONE;
         } 
         /* L1 valid satellites num and total valid phases num */
-        else if (rtk->sol.ns<4&&nv<4) { 
+        else if (rtk->sol.ns<4||nv<4) { 
             trace(7,"ppk: not enough valid phases, ns(L1)=%d, nv=%d\n", rtk->sol.ns, nv);
             stat=SOLQ_NONE;
         }
@@ -3793,17 +3790,18 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
  
     /* if GNSS is not available, use pure inertial navigation solution and increment the outage count */
-    if (GINS_TC==opt->GI_mode&&SOLQ_NONE==stat) {
-        if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
-            motion_constraints(rtk,opt);
+    if (SOLQ_NONE==stat) {
+        if (GINS_TC==opt->GI_mode) {
+            if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
+                motion_constraints(rtk,opt);
 
-            free(rs); free(dts); free(var); free(y); free(e); free(azel); free(freq);
-            free(xp); free(Pp);  free(xa);  free(v); free(H); free(R); free(bias);
-            return SOLQ_CONS;
-        }
-        else {
-            rtk->outage++; stat=SOLQ_INS;                  
-        }          
+                free(rs); free(dts); free(var); free(y); free(e); free(azel); free(freq);
+                free(xp); free(Pp);  free(xa);  free(v); free(H); free(R); free(bias);
+                return SOLQ_CONS;                
+            }
+            else stat=SOLQ_INS;                  
+        }                
+        rtk->outage++;          
     }
 
     /* update solution status */
@@ -3839,13 +3837,12 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
     rtk->sol=sol0;
 
     for (i=0;i<6;i++) {
-        rtk->rb[i]=0.0;  
-        rtk->ru[i]=0.0;
+        rtk->rb[i]=rtk->ru[i]=0.0;
     }
     rtk->nu=rtk->nr=0;
     rtk->nx=PMODE_LC_POS==popt->mode?GINS_NX:(popt->mode<=PMODE_FIXED?NX(popt):pppnx(popt));
     rtk->na=PMODE_LC_POS==popt->mode?0:(popt->mode<=PMODE_FIXED?NR(popt):pppnx(popt));
-    if (rtk->nx<NX_SPP) rtk->nx=NX_SPP; /* spp based on kf (CV mode) */
+    if ((GINS_OFF==popt->GI_mode||GINS_LC==popt->GI_mode)&&PMODE_SINGLE==popt->mode) rtk->nx=NX_SPP; /* spp based on kf (CV mode) */
     rtk->tt=0.0;
     rtk->interval=0.0;
     rtk->dopsgn=0.0;    
@@ -3870,11 +3867,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
     rtk->robust_info=robust_info0;
 
     /* solution options type */
-    if (sopt) {
-        for (i=0;i<statopt;i++) {
-            rtk->sol.stato[i]=sopt->stato[i];
-        }        
-    }
+    if (sopt) for (i=0;i<statopt;i++) { rtk->sol.stato[i]=sopt->stato[i]; }        
     
     /* GNSS/INS time synchronization and alignment */
     rtk->match=NO;
@@ -3901,8 +3894,8 @@ extern void rtkfree(rtk_t *rtk)
     trace(3,"rtkfree :\n");
 
     rtk->nx=rtk->na=0;
-    free(rtk->x ); rtk->x =NULL;
-    free(rtk->P ); rtk->P =NULL;
+    free(rtk->x);  rtk->x =NULL;
+    free(rtk->P);  rtk->P =NULL;
     free(rtk->xa); rtk->xa=NULL;
     free(rtk->Pa); rtk->Pa=NULL;
 

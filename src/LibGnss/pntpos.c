@@ -1935,8 +1935,8 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     
     if (n<=0) {
         rtk->outage++;
-        /* NOTE: reset spp position if gnss outage */
-        for (i=0;i<6;i++) rtk->x[i]=0.0;
+        /* NOTE: reset spp position if gnss outage in spp_kf mode */
+        if (SPP_KF==opt_.spp_mode) for (i=0;i<6;i++) rtk->x[i]=0.0;
         /* if the number of available satellites is 0, output INS solution */
         if (GINS_TC==opt_.GI_mode) update_instat(&rtk->opt,&rtk->ins,rtk->P,sol,rtk->nx);                  
         trace(7,"no observation data");
@@ -1950,7 +1950,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     /* init ssat struct */
     if (rtk&&ssat) init_ssatpar(rtk,obs,n,SPP_ssat,SOLQ_NONE);
     
-    if (opt_.mode!=PMODE_SINGLE) { /* for precise positioning */
+    if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) { /* for precise positioning */
         opt_.spp_mode=SPP_LS_C; /* TOdo */
         opt_.sateph=EPHOPT_BRDC;
         opt_.ionoopt=IONOOPT_BRDC;
@@ -1965,8 +1965,8 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     /* spp/ins tc mode and GNSS unavailable, output INS solution */
     if (!stat&&rtk) {
         rtk->outage++;
-        /* NOTE: reset spp position if gnss outage */
-        for (i=0;i<6;i++) rtk->x[i]=0.0;
+        /* NOTE: reset spp position if gnss outage in spp_kf mode */
+        if (SPP_KF==opt_.spp_mode) for (i=0;i<6;i++) rtk->x[i]=0.0;
         /* in the GNSS framework, only TC is processed; LC/STC is processed in lc_gins */
         if (GINS_TC==opt->GI_mode) {
             if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {

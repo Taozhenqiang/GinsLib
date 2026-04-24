@@ -22,6 +22,13 @@ elseif(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_compile_options(-O0) 		#不进行优化
     add_compile_options(-g) 		#生成调试信息
     add_compile_options(-Wno-unused-variable) #忽略未使用变量警告
+elseif(CMAKE_BUILD_TYPE MATCHES "Asan")
+    # ASAN模式：地址消毒器检测内存错误
+    add_compile_options(-O0) 		#不进行优化
+    # add_compile_options(-g) 		#生成调试信息
+    add_compile_options(-fsanitize=address) 	#启用地址消毒器
+    add_compile_options(-fno-omit-frame-pointer) #保留帧指针
+    add_link_options(-fsanitize=address) 	#链接时也启用ASAN
 else()
     # 默认模式：中等优化
     add_compile_options(-O2) 		#中等优化级别
@@ -38,6 +45,13 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_compile_options(-pthread)
     add_compile_options(-Wall) 		#启用所有警告信息
+elseif(CMAKE_BUILD_TYPE MATCHES "Asan") # 设置ASAN环境变量
+    # 设置ASAN选项
+    set(ENV{ASAN_OPTIONS} "detect_leaks=1:symbolize=1:abort_on_error=1:check_initialization_order=1:strict_init_order=1")
+    # 在Windows上可能需要额外的设置
+    if(WIN32)
+        set(ENV{ASAN_OPTIONS} "$ENV{ASAN_OPTIONS}:windows_hook_rtl_allocators=1")
+    endif()
 endif()
 
 if(WIN32)

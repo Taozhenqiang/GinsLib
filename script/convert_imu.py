@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import argparse
 import sys
+from collections import Counter
 from time_conversion import epoch2time, utc2gpst, time2gpst, GTimeT
 from common import cal_gravity
 
@@ -11,10 +12,10 @@ from common import cal_gravity
 # 在这里修改配置参数（如果使用命令行参数，这些配置将被覆盖）
 
 # 输入文件路径
-INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LG69TAP01-TEMP0711-1HZ_INS.dat"  
+INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/imu.txt"  
 
 # 要跳过的行数（通常是表头或注释行）
-SKIP_LINES = 1 # 5000
+SKIP_LINES = 2940 # 5000
 
 # 时间系统配置
 TIME_SYSTEM = "UNIX"  # 可选: "GPST", "UTC", "UNIX"
@@ -36,7 +37,7 @@ TIME_COLS = [1]  # 默认: 年月日时分秒格式 # [0, 1, 2, 3, 4, 5]
 IMU_SAMPLE_INTERVAL = 0.01  # 默认10ms采样间隔
 
 # 输出文件路径（如果为None，则自动生成）
-OUTPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/asm330lhh.txt'
+OUTPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/asm330lhh1.txt'
 
 # 日志文件路径
 LOG_FILE = './GNSS/LG69T_Vehicle_complex_20250414/asm330lhh.log'  # None表示自动生成
@@ -57,7 +58,6 @@ FIELD_WIDTH = 15  # 每个字段的宽度（字符数）
 DECIMAL_PLACES = 6  # 小数位数
 
 # ========================= 函数定义 =========================
-
 def detect_delimiter(line):
     """
     检测行中的分隔符
@@ -230,9 +230,9 @@ def convert_time_format(time_data, input_format, time_system):
     
     if VERBOSE:
         if invalid_count > 0:
-            print(f"时间格式转换完成: 有效{valid_count}行, 无效{invalid_count}行")
+            print(f"时间格式转换完成: 有效 {valid_count} 行, 无效 {invalid_count} 行")
         else:
-            print(f"时间格式转换完成: 全部{valid_count}行有效")
+            print(f"时间格式转换完成: 全部 {valid_count} 行有效")
     
     return np.array(converted_time)
 
@@ -346,21 +346,13 @@ def read_text_file(file_path, skip_lines=0, target_commands=None):
     try:
         # 逐行读取，跳过编码错误的行
         lines = []
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f_in:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f_in:
             for line_num, line in enumerate(f_in, 1):
                 lines.append(line)
         
         if VERBOSE:
             print(f"成功读取 {len(lines)} 行数据")
-        
-        # 过滤目标指令行
-        if target_commands:
-            original_count = len(lines)
-            lines = filter_target_lines(lines, target_commands)
-            filtered_count = len(lines)
-            if VERBOSE:
-                print(f"指令过滤: 原始{original_count}行 -> 保留{filtered_count}行")
-        
+
         # 跳过指定行数
         if skip_lines >= len(lines):
             if VERBOSE:
@@ -368,8 +360,15 @@ def read_text_file(file_path, skip_lines=0, target_commands=None):
             skip_lines = 0
         
         data_lines = lines[skip_lines:]
-        
-        
+
+        # 过滤目标指令行
+        if target_commands:
+            original_count = len(data_lines)
+            data_lines = filter_target_lines(data_lines, target_commands)
+            filtered_count = len(data_lines)
+            if VERBOSE:
+                print(f"指令过滤: 原始 {original_count} 行 -> 保留 {filtered_count} 行")
+          
         # 处理数据
         processed_data = []
         
@@ -408,12 +407,11 @@ def read_text_file(file_path, skip_lines=0, target_commands=None):
         row_lengths = [len(row) for row in processed_data]
         
         # 找到最常见的行长度（众数）
-        from collections import Counter
         length_counter = Counter(row_lengths)
         most_common_length, most_common_count = length_counter.most_common(1)[0]
         
         if VERBOSE:
-            print(f"数据行长度统计: {dict(length_counter)}")
+            print(f"数据行宽度统计: {dict(length_counter)}")
         
         # 剔除长度异常的行
         valid_data = []
@@ -480,7 +478,7 @@ def check_imu_data_quality(time_data, imu_data, sample_interval, log_file=None):
             
             for idx in abnormal_indices:
                 time_diff = time_intervals[idx-1]
-                f.write(f"第{idx+1}行: 时间间隔={time_diff:.6f}秒 (期望={sample_interval}秒)\n")
+                f.write(f"第{idx+1}行: 时间戳={time_data[idx-1][1]:.5f} 时间间隔={time_diff:.6f}秒 (期望={sample_interval}秒)\n")
             
             f.write("\n时间间隔统计:\n")
             if time_intervals:
@@ -562,12 +560,13 @@ def extract_imu_data():
         
         # 提取IMU数据
         imu_data = []
+        if acc_unit == 'g':
+            g = cal_gravity(np.deg2rad(LAT_HEIGHT[0]), LAT_HEIGHT[1])
         for row in data_array:
             if len(row) > max(imu_cols):
                 imu_row = [row[col] for col in imu_cols if col < len(row)]
                 # 转换加速度计单位为 m/s^2
                 if acc_unit == 'g':
-                    g = cal_gravity(np.deg2rad(LAT_HEIGHT[0]), LAT_HEIGHT[1])
                     imu_row[3] = imu_row[3] * g
                     imu_row[4] = imu_row[4] * g
                     imu_row[5] = imu_row[5] * g
@@ -594,8 +593,7 @@ def extract_imu_data():
         valid_imu_data = [imu_array[i] for i in valid_indices]
         
         # 检查IMU数据质量
-        abnormal_indices, missing_count, time_intervals = check_imu_data_quality(
-            valid_time_data, valid_imu_data, sample_interval, log_file)
+        abnormal_indices, missing_count, time_intervals = check_imu_data_quality(valid_time_data, valid_imu_data, sample_interval, log_file)
         
         if verbose:
             print(f"IMU数据质量检查完成:")
@@ -651,13 +649,11 @@ def main():
     print(f"输入文件: {INPUT_FILE}")
     print(f"输出文件: {OUTPUT_FILE}")
     print(f"日志文件: {LOG_FILE}")
-    print(f"跳过行数: {SKIP_LINES}")
-    print(f"采样间隔: {IMU_SAMPLE_INTERVAL}秒")
+    print(f"采样间隔: {IMU_SAMPLE_INTERVAL} s")
     print(f"时间系统: {TIME_SYSTEM}")
     print(f"输入时间格式: {INPUT_TIME_FORMAT}")
     print(f"时间列索引: {TIME_COLS}")
     print(f"IMU列索引: {IMU_COLS}")
-    print(f"采样间隔: {IMU_SAMPLE_INTERVAL}秒")
     print(f"目标指令: {TARGET_COMMANDS}")
     print("=" * 50)
     
