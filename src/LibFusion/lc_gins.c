@@ -230,7 +230,7 @@ extern void  psi2phi_corr(ins_t *ins, const double *dr, double *dx)
     /* equivalent rotation vector phi_nc */
     d_ceta[0]=-dr[0]; d_ceta[1]=dr[1]*cos(ins->pos[0]); d_ceta[2]=dr[1]*sin(ins->pos[0]);
 
-    /* convert Psi attitude misalignment angle (psi_cn') to Phi attitude misalignment angle (phi_nn') , phi_nn'=phi_nc+psi_cn' */     
+    /* NOTE: convert Psi attitude misalignment angle (psi_cn') to Phi attitude misalignment angle (phi_nn') , phi_nn'=phi_nc+psi_cn' */     
     for (i=0;i<3;i++) dx[i]=dx[i]+d_ceta[i];
 
     /* convert Psi velocity error state to Phi velocity error state */

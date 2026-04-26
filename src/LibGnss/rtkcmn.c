@@ -299,6 +299,7 @@ const prcopt_t prcopt_default={
     0.01,
     30.0,       /* varholdamb,gainholdamb,maxtdif */
     {5.0,30.0},/* maxinno {phase,code} */
+    0,        /* postcheck flag (0:off,1:on) */
     {0},
     {0},
     {0},     /* baseline,ru,rb */

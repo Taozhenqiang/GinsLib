@@ -1952,7 +1952,6 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
 
     /* NOTE: Phi angle error model */
     if (ERR_PHI==popt->err_model) {
-
         vskew(-1.0,ins->eth.wnin,Faa);
         Mat3add2(ins->eth.F1,1.0,ins->eth.F2,1.0,Fap);
         Mat3mul2(1.0,Fap,ins->eth.Frp,Far);
@@ -2044,7 +2043,6 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
     }
     /* NOTE: Psi angle error model */
     else if (ERR_PSI==popt->err_model) {
-
         vskew(-1.0,ins->eth.wnin,Faa); /* att */
 
         vskew(1.0,ins->fn,Fva);
@@ -2123,11 +2121,10 @@ extern void phi_update(ins_t *ins, const prcopt_t *popt)
 
     /* discretization of the state transition matrix Phi */
     matmul("NN",nx,nx,nx,ins->F,I,ins->Phi,ins->discretime,1.0);
-#if 0
-    trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16);
+
+    /* trace(12,"F=\n"); tracemat(12,ins->F,nx,nx,20,16);
     trace(12,"Phi=\n"); tracemat(12,ins->Phi,nx,nx,20,16);
-    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4); /*ok*/
-#endif
+    trace(12,"G=\n"); tracemat(12,ins->G,nx,nx,9,4); */ /*ok*/
 
     free(Fg);free(I);free(I3);
 }

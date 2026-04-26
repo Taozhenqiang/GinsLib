@@ -154,6 +154,7 @@ EXPORT opt_t sysopts[]={
     {"pos2-dopthres",   1,  (void *)&prcopt_.thresdop,   "m"    },
     {"pos2-rejphase",   1,  (void *)&prcopt_.maxinno[0], "m"    },
     {"pos2-rejcode",    1,  (void *)&prcopt_.maxinno[1], "m"    },
+    {"pos2-postcheck",  3,  (void *)&prcopt_.postcheck,  SWTOPT },
     {"pos2-niter",      0,  (void *)&prcopt_.niter,      ""     },
     {"pos2-baselen",    1,  (void *)&prcopt_.baseline[0],"m"    },
     {"pos2-basesig",    1,  (void *)&prcopt_.baseline[1],"m"    },

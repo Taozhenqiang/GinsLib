@@ -347,7 +347,7 @@ def batch_process_gins(exe_path_input, err_analysis=False):
     all_error_stats = []
 
     # for folder_name in sub_folders:  
-    for folder_name in sub_folders[1:2]:  # 处理单个子文件夹用于测试
+    for folder_name in sub_folders[4:5]:  # 处理单个子文件夹用于测试
         # 进入子文件夹路径
         current_work_dir = os.path.join(data_root_path, folder_name)
         
@@ -375,7 +375,7 @@ def batch_process_gins(exe_path_input, err_analysis=False):
             
             # 4. 定义处理模式 (保持原有逻辑)
             # mode = ["SPP","SPP LC","SPP TC","PPP","PPP LC","PPP TC","PPD","PPD LC","PPD TC","PPK","PPK LC","PPK TC"]
-            mode = ["PPK LC"]
+            mode = ["PPK TC"]
 
             # IMU噪声调优脚本
             imu_noise = [3.731563392387180e-09, 3.600000000000000e-07, 2.115398748518809e-10, 2.500000000000001e-07]
@@ -407,7 +407,7 @@ def batch_process_gins(exe_path_input, err_analysis=False):
                     # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
                     # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","2","-amb","2","-ambt","4","-solt","0"], #ppk
                     # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","2","-amb","0","-ambt","4","-solt","0","-imu",f"{psd_gyro}",f"{psd_acc}",f"{psd_bg}",f"{psd_ba}"], #ppk/ins LC
-                    [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","2","-amb","0","-ambt","4","-solt","0"], #ppk/ins LC
+                    [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","0","-solt","0"], #ppk/ins LC
                     # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
                 ]
 

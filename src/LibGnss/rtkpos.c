@@ -417,22 +417,22 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
     ins_t *ins=&rtk->ins;
     ssat_t *ssat;
     double Cbn[9],pos[3],vel[3],acc[3],vela[3]={0},acca[3]={0},xa[3],cdisb=0.0,pdisb=0.0;
-    int week,nf=NF(&rtk->opt),fr,i,j;
+    int week,nf=NF(opt),fr,i,j;
     char id[8],*p=buff;
 
     double tow=time2gpst(Debug_Glo.tNow,&week);
-    int est=rtk->opt.mode>=PMODE_DGPS;
+    int est=opt->mode>=PMODE_DGPS;
     int nfreq=est?nf:1,itow=(int) floor(tow+0.5);
     
 
-    if (rtk->opt.mode>=PMODE_PPP_KINEMA) {
+    if (opt->mode>=PMODE_PPP_KINEMA) {
         /* write ppp solution status to buffer */
         p+=pppoutstat(rtk,buff);
     } 
     else {
         /* receiver position */
         if (rtk->sol.stato[0]) {
-            if (est) {
+            if (est&&GINS_OFF==opt->GI_mode) {
                 for (int i=0;i<3;i++) xa[i]=i<rtk->na?rtk->xa[i]:0.0;
                 p+=sprintf(p,"$POS,%d,%.3f,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",week,tow,
                         rtk->sol.stat,rtk->x[0],rtk->x[1],rtk->x[2],xa[0],xa[1],
@@ -448,13 +448,13 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         /* receiver velocity and acceleration */
         if (rtk->sol.stato[1]) {
             /* velocity in b frame */
-            if (GINS_LC==rtk->opt.GI_mode||GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode) {
+            if (GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode) {
                 DCMT(ins->Cnb,Cbn);
                 Mat3mulv(1.0,Cbn,ins->vel,vel);
                 p+=sprintf(p,"$VELACC,%d,%.3f,%d,%.4f,%.4f,%.4f\n",
                         week,itow,rtk->sol.stat,vel[0],vel[1],vel[2]);                   
             }
-            else if (est&&rtk->opt.dynamics) {
+            else if (est&&opt->dynamics) {
                 ecef2pos(rtk->sol.rr,pos);
                 ecef2enu(pos,rtk->x+3,vel);
                 ecef2enu(pos,rtk->x+6,acc);
@@ -482,12 +482,12 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }
 
         /* ionospheric parameters */
-        if (est&&rtk->opt.ionoopt==IONOOPT_EST&&rtk->sol.stato[3]) {
+        if (est&&opt->ionoopt==IONOOPT_EST&&rtk->sol.stato[3]) {
             for (i=0;i<MAXSAT;i++) {
                 ssat=rtk->ssat+i;
                 if (!ssat->vs) continue;
                 satno2id(i+1,id);
-                j=II(i+1,&rtk->opt);
+                j=II(i+1,opt);
                 xa[0]=j<rtk->na?rtk->xa[j]:0.0;
                 p+=sprintf(p,"$ION,%d,%.3f,%d,%s,%.1f,%.1f,%.4f,%.4f\n",week,tow,
                            rtk->sol.stat,id,ssat->azel[0]*R2D,ssat->azel[1]*R2D,
@@ -496,9 +496,9 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }
 
         /* tropospheric parameters */
-        if (est&&(rtk->opt.tropopt>=TROPOPT_EST&&rtk->sol.stato[4])) {
+        if (est&&(opt->tropopt>=TROPOPT_EST&&rtk->sol.stato[4])) {
             for (i=0;i<2;i++) {
-                j=IT(i,&rtk->opt);
+                j=IT(i,opt);
                 xa[0]=j<rtk->na?rtk->xa[j]:0.0;
                 p+=sprintf(p,"$TROP,%d,%.3f,%d,%d,%.4f,%.4f\n",week,tow,
                            rtk->sol.stat,i+1,rtk->x[j],xa[0]);
@@ -506,9 +506,9 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }
 
         /* receiver h/w bias */
-        if (est&&rtk->opt.glomodear==GLO_ARMODE_AUTOCAL) {
+        if (est&&opt->glomodear==GLO_ARMODE_AUTOCAL) {
             for (i=0;i<nfreq;i++) {
-                j=IL(i,&rtk->opt);
+                j=IL(i,opt);
                 xa[0]=j<rtk->na?rtk->xa[j]:0.0;
                 p+=sprintf(p,"$HWBIAS,%d,%.3f,%d,%d,%.4f,%.4f\n",week,tow,
                            rtk->sol.stat,i+1,rtk->x[j],xa[0]);
@@ -516,25 +516,25 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         }
 
         /* code and phase disb */
-        if (est&&PMODE_TC==rtk->opt.mode&&rtk->sol.stato[5]) {
+        if (est&&PMODE_TC==opt->mode&&rtk->sol.stato[5]) {
             /* float solution*/
             if (2==rtk->sol.stat) {
-                for (i=0;i<rtk->opt.nf;i++) {
+                for (i=0;i<opt->nf;i++) {
                     cdisb=0.0;pdisb=0.0;
                     for (j=0;j<NSYS;j++) {
-                        cdisb+=rtk->x[ID(0,j,i,&rtk->opt)];
-                        pdisb+=rtk->x[ID(1,j,i,&rtk->opt)];
+                        cdisb+=rtk->x[ID(0,j,i,opt)];
+                        pdisb+=rtk->x[ID(1,j,i,opt)];
                     }
                     p+=sprintf(p,"$DISB,%d,%.3f,%d,%.3f,%.3f\n",week,tow,i+1,cdisb,pdisb);
                 }
             }
             /* fixed solution*/
             else {
-                for (i=0;i<rtk->opt.nf;i++) {
+                for (i=0;i<opt->nf;i++) {
                     cdisb=0.0;pdisb=0.0;
                     for (j=0;j<NSYS;j++) {
-                        cdisb+=rtk->xa[ID(0,j,i,&rtk->opt)];
-                        pdisb+=rtk->xa[ID(1,j,i,&rtk->opt)];
+                        cdisb+=rtk->xa[ID(0,j,i,opt)];
+                        pdisb+=rtk->xa[ID(1,j,i,opt)];
                     }
                     p+=sprintf(p,"$DISB,%d,%.3f,%d,%.3f,%.3f\n",week,tow,i+1,cdisb,pdisb);
                 }                
@@ -637,18 +637,18 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
         for (j=0;j<nfreq;j++) {
             fr=sys2freid(ssat->sys,j,opt);
             if (PMODE_DGPS<=opt->mode&&!ssat->vsat[fr]) continue;
-            int k=IB(i+1,j,&rtk->opt);
-            p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u\n",
+            int k=IB(i+1,j,opt);
+            /* p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u\n",
                        week,tow,id,fr+1,ssat->azel[0]*R2D,ssat->azel[1]*R2D,
                        ssat->resp[fr],ssat->resc[fr],ssat->vsat[fr],ssat->snr_rover[fr]*SNR_UNIT,
                        ssat->fix[fr],ssat->slip[fr]&3,ssat->lock[fr],ssat->outc[fr],
-                       ssat->slipc[fr],ssat->rejc[fr]);
-            /* p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u,%8.2f,%8.2f,%.3f\n",
+                       ssat->slipc[fr],ssat->rejc[fr]); */
+            p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u,%8.2f,%8.2f,%.3f\n",
                        week,tow,id,fr+1,ssat->azel[0]*R2D,ssat->azel[1]*R2D,
                        ssat->resp[fr],ssat->resc[fr],ssat->vsat[fr],ssat->snr_rover[fr]*SNR_UNIT,
                        ssat->fix[fr],ssat->slip[fr]&3,ssat->lock[fr],ssat->outc[fr],
                        ssat->slipc[fr],ssat->rejc[fr],k<rtk->nx?rtk->x[k]:0,
-                       k<rtk->nx?rtk->P[k+k*rtk->nx]:0,ssat->icbias[fr]); */
+                       k<rtk->nx?rtk->P[k+k*rtk->nx]:0,ssat->icbias[fr]);
         }
     }
 
@@ -1540,8 +1540,8 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
 {
     prcopt_t *opt=&rtk->opt;
     double cp,pr,cp1,cp2,pr1,pr2,*bias,offset,freqi,freq1,freq2,C1,C2,alpha=1.0;
-    int i,j,k,slip,reset,nf=NF(&rtk->opt),f2,sys,fr,fr2[2];
-    char fc[4],fc2[4];
+    int i,j,k,slip,reset,nf=NF(opt),f2,sys,fr,fr2[2];
+    char fc[4],fc2[4],id[4];
 
     trace(3,"udbias  : tt=%.3f ns=%d\n",tt,ns);
 
@@ -1574,52 +1574,51 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
         for (i=1;i<=MAXSAT;i++) {
             sys=satsys(i,NULL); fr=sys2freid(sys,k,opt);
 
-            reset=++rtk->ssat[i-1].outc[fr]>(uint32_t)rtk->opt.maxout;
+            reset=++rtk->ssat[i-1].outc[fr]>(uint32_t)opt->maxout;
 
             /* NOTE: only for instantaneous mode, the ambiguity parameters are reinitialized every epoch */
-            if (rtk->opt.modear==ARMODE_INST&&rtk->x[IB(i,k,&rtk->opt)]!=0.0) {
-                initx(rtk,0.0,0.0,IB(i,k,&rtk->opt));
+            if (opt->modear==ARMODE_INST&&rtk->x[IB(i,k,opt)]!=0.0) {
+                initx(rtk,0.0,0.0,IB(i,k,opt));
             }
             /* only for satellites with obs outage */
-            else if (reset&&rtk->x[IB(i,k,&rtk->opt)]!=0.0) {
-                initx(rtk,0.0,0.0,IB(i,k,&rtk->opt));
+            else if (reset&&rtk->x[IB(i,k,opt)]!=0.0) {
+                initx(rtk,0.0,0.0,IB(i,k,opt));
                 sys2frech(sys,fr,fc);
-                trace(7,"udbias(ppk): sat outage counter overflow (sat=%3s %3s counter=%d)\n",
-                      rtk->ssat[i-1].id,fc,rtk->ssat[i-1].outc[fr]);
+                trace(7,"udbias(ppk): sat=%3s (%3s) outage counter overflow, reset phase bias\n",rtk->ssat[i-1].id,fc);
                 rtk->ssat[i-1].outc[fr]=0;
             }
             /* if the satellite outage time exceeds the threshold (not for instantaneous mode), reset its ambiguity lock count */
-            if (rtk->opt.modear!=ARMODE_INST&&reset) {
-                rtk->ssat[i-1].lock[fr]=-rtk->opt.minlock;
+            if (opt->modear!=ARMODE_INST&&reset) {
+                rtk->ssat[i-1].lock[fr]=-opt->minlock;
             }
         }
         /* update phase bias noise and check for cycle slips */
         for (i=0;i<ns;i++) {
             fr=sys2freid(rtk->ssat[sat[i]-1].sys,k,opt);
 
-            j=IB(sat[i],k,&rtk->opt);     
-           
-            /* NOTE: stepwise relaxation of the random walk process */
-#if 1            
+            j=IB(sat[i],k,opt);     
+
+#if 1 
+            /* NOTE: stepwise relaxation of the random walk process */           
             if (rtk->ssat[sat[i]-1].lock[fr]<=0) alpha=20;
             else if (abs(rtk->ssat[sat[i]-1].lock[fr])<120) alpha=20-abs(rtk->ssat[sat[i]-1].lock[fr])/120.0*20.0;
             else alpha=1; 
 #endif
             /* NOTE: Integer ambiguity parameters are modeled as the random walk process */
-            rtk->P[j+j*rtk->nx]+=alpha*alpha*rtk->opt.prn[0]*rtk->opt.prn[0]*fabs(tt);
+            rtk->P[j+j*rtk->nx]+=alpha*alpha*opt->prn[0]*opt->prn[0]*fabs(tt);
            
             slip=rtk->ssat[sat[i]-1].slip[fr];
-
-            if (rtk->opt.ionoopt==IONOOPT_IFLC) {
+            
+            if (opt->ionoopt==IONOOPT_IFLC) {
                 f2=sys2freid(rtk->ssat[sat[i]-1].sys,1,opt);
                 slip|=rtk->ssat[sat[i]-1].slip[f2];
             }
 
             /* for continuous and fix and hold modes, reset ambiguity state if detecting cycle slip */            
-            if (rtk->opt.modear==ARMODE_INST||!(slip&1)) continue;
+            if (opt->modear==ARMODE_INST||!(slip&1)) continue;
             rtk->x[j]=0.0;
             /* rtk->ssat[sat[i]-1].rejc[fr]=0; */
-            rtk->ssat[sat[i]-1].lock[fr]=-rtk->opt.minlock;
+            rtk->ssat[sat[i]-1].lock[fr]=-opt->minlock;
             /* retain icbiases for GLONASS sats */
             if (rtk->ssat[sat[i]-1].sys!=SYS_GLO) rtk->ssat[sat[i]-1].icbias[fr]=0;
         }
@@ -1629,7 +1628,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
         for (i=j=0,offset=0.0;i<ns;i++) {
             fr=sys2freid(rtk->ssat[sat[i]-1].sys,k,opt);
 
-            if (rtk->opt.ionoopt!=IONOOPT_IFLC) {
+            if (opt->ionoopt!=IONOOPT_IFLC) {
                 /* phase diff between rover and base in cycles */
                 cp=sdobs(obs,iu[i],ir[i],fr); /* cycle */
                 /* pseudorange diff between rover and base in meters */
@@ -1666,25 +1665,26 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
                 /* estimate bias in meters */
                 bias[i]=(C1*cp1*CLIGHT/freq1+C2*cp2*CLIGHT/freq2)-(C1*pr1+C2*pr2);
             }
-            if (rtk->x[IB(sat[i],k,&rtk->opt)]!=0.0) {
-                offset+=bias[i]-rtk->x[IB(sat[i],k,&rtk->opt)];
+            if (rtk->x[IB(sat[i],k,opt)]!=0.0) {
+                offset+=bias[i]-rtk->x[IB(sat[i],k,opt)];
                 j++;
             }
         }
         /* correct phase-bias offset to ensure phase-code coherency */
         if (j>0) {
             for (i=1;i<=MAXSAT;i++) {
-                if (rtk->x[IB(i,k,&rtk->opt)]!=0.0) rtk->x[IB(i,k,&rtk->opt)]+=offset/j;
+                if (rtk->x[IB(i,k,opt)]!=0.0) rtk->x[IB(i,k,opt)]+=offset/j;
             }
         }
         /* set initial states of phase-bias */
         for (i=0;i<ns;i++) {
             fr=sys2freid(rtk->ssat[sat[i]-1].sys,k,opt);
             /* if the ambiguity is reset and the bias is not zero, initialize the ambiguity */
-            if (bias[i]==0.0||rtk->x[IB(sat[i],k,&rtk->opt)]!=0.0) continue;
+            if (bias[i]==0.0||rtk->x[IB(sat[i],k,opt)]!=0.0) continue;
+            initx(rtk,bias[i],SQR(opt->std[0]),IB(sat[i],k,opt));
 
-            initx(rtk,bias[i],SQR(rtk->opt.std[0]),IB(sat[i],k,&rtk->opt));
-            trace(8,"     sat=%3d, fidx=%d: init phase=%.3f\n",sat[i],fr,bias[i]);
+            sys2frech(rtk->ssat[sat[i]-1].sys,fr,fc); satno2id(sat[i],id);
+            trace(8," sat=%3s (%3s), init amb=%10.3f\n",id,fc,bias[i]);
         }
         free(bias);
     }
@@ -2633,16 +2633,17 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                 if (!code&&(obs[iu[i]].LLI[fr]&LLI_HALFC)) Ri[nv]+=0.01;
                 if (!code&&(obs[iu[j]].LLI[fr]&LLI_HALFC)) Rj[nv]+=0.01;
  
-#if 1                
-                /* record large post-fit residuals */                 
-                thres_post=sqrt(Ri[nv]+Rj[nv]);             
-                if (post>0&&fabs(v[nv])>thres_post*THRES_REJECT) {
-                    obsi[ne]=j; frqi[ne]=fr; ve[ne]=v[nv]; vari[ne]=(Ri[nv]+Rj[nv]); codei[ne]=code; sysix[ne]=sysi; ne++;
-                    sys2frech(sysj,fr,fc);
-                    trace(8,"(post) outlier record(ppk) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
-                        fr+1,fc,v[nv],sqrt((Ri[nv]+Rj[nv]))*THRES_REJECT,azel[1+iu[j]*2]*R2D);
+                if (opt->postcheck) {
+                    /* record large post-fit residuals */                 
+                    thres_post=sqrt(Ri[nv]+Rj[nv]);             
+                    if (post>0&&fabs(v[nv])>thres_post*THRES_REJECT) {
+                        obsi[ne]=j; frqi[ne]=fr; ve[ne]=v[nv]; vari[ne]=(Ri[nv]+Rj[nv]); codei[ne]=code; sysix[ne]=sysi; ne++;
+                        sys2frech(sysj,fr,fc);
+                        trace(8,"(post) outlier record(ppk) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
+                            fr+1,fc,v[nv],sqrt((Ri[nv]+Rj[nv]))*THRES_REJECT,azel[1+iu[j]*2]*R2D);
+                    }                    
                 }
-#endif
+
                 /* NOTE: set valid data flags, for PPK mode, if only pseudorange observations are available, the valid flag is set to 0 */
                 if (opt->mode>PMODE_DGPS) {
                     if (!code) rtk->ssat[sat[i]-1].vsat[fr]=rtk->ssat[sat[j]-1].vsat[fr]=1;
@@ -3468,14 +3469,12 @@ static int update_stat(rtk_t *rtk, const obsd_t *obs, int n, int ns, int *sat, i
         sol->ns=0; return 0; 
     }
 
-    if (GINS_TC==popt->GI_mode) 
-    {
+    if (GINS_TC==popt->GI_mode) {
         /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
         if (stat!=SOLQ_INS&&rtk->outage<=MAX_OUTIME) rtk->outage=0;
 
         /* update solution status */
-        if (SOLQ_FIX==stat) 
-        {
+        if (SOLQ_FIX==stat) {
             /* convert INS solution to GNSS center */
             if (OUTPOS_GNSS==popt->outpos) {
                 insfix2gnss(ins,p_gnss,6);
@@ -3717,7 +3716,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
             else break; /* exit the loop */
         }
     }
-
     /* trace(7,"R=\n"); tracemat(7,R,nv,nv,8,6); */
 
     /* if the number of iterations exceeds the limit, the solution fails */
@@ -3733,7 +3731,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
         /* update valid satellite status for ambiguity resolution */
         update_valid_sats(rtk,sat,ns);
 
-        /* too few valid phases */
+        /* NOTE: too few valid phases (sol->ns represents the number of effective phase observations at L1 frequency) */
         if (GINS_TC==opt->GI_mode&&(rtk->sol.ns<4||nv<4)) {
             /* if the number of available observation is less than 4, use the pure inertial navigation solution. */
             /* NOTE: rtk->sol.ns may larger than nv, because nv is the number of satellite pairs, and ns is the total number of available satellites, for example, nv=4 might have ns=8. */

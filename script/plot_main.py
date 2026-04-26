@@ -27,7 +27,7 @@ def main():
     MULTI_FILE_ANALYSIS = False  # True: 多文件对比分析, False: 单文件分析
     
     # 单文件分析配置
-    SOLFILE_PATH = './result/LG69T_Vehicle_complex_20250414_PPK_F_LC.pos'  # pos文件路径
+    SOLFILE_PATH = './result/LG69T_Vehicle_complex_20250414_PPK_F_TC.pos'  # pos文件路径
     
     # 多文件分析配置（当MULTI_FILE_ANALYSIS为True时使用）
     SOLFILE_PATHS = [
@@ -51,7 +51,7 @@ def main():
     # 图片保存配置
     SAVE_IMAGES = False  # 设置为True保存图像，False不保存
     DEFINE_PATH = True
-    SAVE_PATH =  './figure/PPK_INS_LC/LC-Chi+GECJ+IGG3+CONT_FLOAT'
+    SAVE_PATH =  './figure/PPK_INS_TC/GECJ+IGG3+ODO+INST_PAR-BIE'
     # ================= 配置结束 =================
     
     # 检查配置是否有效

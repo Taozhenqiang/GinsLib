@@ -1535,6 +1535,7 @@ extern "C"
         double gainholdamb;      /* gain used for GLO and SBAS sats to adjust ambiguity */
         double maxtdiff;         /* max difference of time (sec) */
         double maxinno[2];       /* reject threshold of innovation for phase and code (m) */
+        int postcheck;           /* flag of post-fit residual check (0:off,1:on) */
         double baseline[2];      /* baseline length constraint {const,sigma} (m) */
         double ru[3];            /* rover position for fixed mode {x,y,z} (ecef) (m) */
         double rb[3];            /* base position for relative mode {x,y,z} (ecef) (m) */
