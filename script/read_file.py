@@ -7,7 +7,7 @@ def read_pos(navfile, skip_lines=28, row=10000, col=18, sample=5e-2, sol_type='G
     
     Parameters:
     - navfile: 输入文件路径和文件名
-    - skip_lines: 跳过文件开头的行数（默认为28行）
+    - skip_lines: 跳过文件开头的行数
     - row: 预设数组大小（默认为10000行）
     - col: 文件的列数（默认为18列）
     
@@ -53,9 +53,9 @@ def read_pos(navfile, skip_lines=28, row=10000, col=18, sample=5e-2, sol_type='G
 
                 # 检查sline长度是否足够，避免IndexError, GNSS(24), GNSS/INS(39)
                 if sol_type == 'GINSLIB':
-                    if len(sline) > 5 and len(sline) < 45:
+                    if len(sline) > 5 and len(sline) < 47:
                         mode = 'GNSS'
-                    elif len(sline) == 46 or len(sline) == 45:
+                    elif len(sline) == 47 or len(sline) == 46:
                         mode = 'GNSS/INS'
                     else:
                         continue  # 如果行数据不足，跳过该行
@@ -70,18 +70,28 @@ def read_pos(navfile, skip_lines=28, row=10000, col=18, sample=5e-2, sol_type='G
                                     0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0] 
                         else:
-                            # GNSS: gps week, sow, pos[x/y/z], vel[x/y/z], ratio,
+                            # GNSS: gps week, sow, pos[x/y/z], vel[x/y/z], 
                             mline = [sline[0], sline[1], 
                                     sline[2], sline[3], sline[4], 
                                     sline[15], sline[16], sline[17], 
-                                    0, 0, 0, sline[14],
+                                    0, 0, 0, 
+                                    sline[5], sline[6], sline[14], sline[24],
+                                    0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0]  
-                    else:  # GNSS/INS: gps week, sow, pos[x/y/z],  vel[x/y/z], att[pitch/roll/heading], ratio, bg[x/y/z], ba[x/y/z]
+                    else:  # GNSS/INS: gps week, sow, pos[x/y/z],  vel[x/y/z], att[pitch/roll/heading], 
+                           # Q, ns, ratio, PDOP
+                           # bg[x/y/z], ba[x/y/z]
+                           # pos_std, vel_std, att_std, bg_std, ba_std
                         mline = [sline[0], sline[1], 
                                 sline[2], sline[3], sline[4], 
                                 sline[15], sline[16], sline[17], 
-                                sline[24], sline[25], sline[26], sline[14],
-                            sline[33], sline[34], sline[35], sline[36], sline[37], sline[38]]
+                                sline[25], sline[26], sline[27], 
+                                sline[5], sline[6], sline[14], sline[24],
+                                sline[34], sline[35], sline[36], sline[37], sline[38], sline[39],
+                                sline[7], sline[8], sline[9], sline[18], sline[19], sline[20], sline[28], sline[29], sline[30],
+                                sline[40], sline[41], sline[42], sline[43], sline[44], sline[45]]
+                
                 else:
                     # 正确提取指定索引的数据
                     mline = [sline[i] for i in sol_idx]

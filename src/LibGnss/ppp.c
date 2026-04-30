@@ -589,9 +589,7 @@ static void udpos_ppp(rtk_t *rtk)
             for (i=0;i<3;i++) initx(rtk,rtk->ru[i],VAR_POS,i);
         }
         /* for tightly coupled mode, reset ins related state */
-        if (GINS_TC==popt->GI_mode) {
-            for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0; 
-        }   
+        if (GINS_TC==popt->GI_mode) reset_instat(rtk);
 
         return;
     }
@@ -786,7 +784,7 @@ static void udtrop_ppp(rtk_t *rtk)
 static void udiono_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 {
     prcopt_t *opt=&rtk->opt;
-    double freq1,freq2,ion,sinel,pos[3],*azel,P[2];
+    double freq1,freq2,ion,sinel,P[2];
     char *p;
     int i,j,k,gap_resion=GAP_RESION,sat,sys,fr,fr2[2],el,bias_ix;
 
@@ -833,8 +831,6 @@ static void udiono_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             }
             ion=(P[0]-P[1])/(SQR(FREQL1/freq1)-SQR(FREQL1/freq2));
             /* ion=(obs[i].P[fr2[0]]-obs[i].P[fr2[1]])/(SQR(FREQL1/freq1)-SQR(FREQL1/freq2)); */
-            ecef2pos(rtk->sol.rr,pos);
-            azel=rtk->ssat[sat-1].azel;
             /* The slant delay is estimated, not the zenith delay */
             initx(rtk,ion,VAR_IONO,j);
             trace(9,"ion init: sat=%d ion=%.4f\n",sat,ion);
@@ -1139,7 +1135,7 @@ static int model_iono(gtime_t time, const double *pos, const double *azel,
         return 1;
     }
     if (opt->ionoopt==IONOOPT_EST) {
-        /* Estimated delay is a vertical delay, apply the mapping function. */
+        /* Estimated delay is a slant delay */
         /* *dion=x[II(sat,opt)]*ionmapf(pos,azel); */
         *dion=x[II(sat,opt)];
         *var=0.0;
@@ -1257,8 +1253,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     /* initialize the position of the rover station in GNSS or GNSS/INS tightly integrated mode */
     init_pppos(rtk,x,dr,rr,post); ecef2pos(rr,pos);
 
-    for (i=0;i<n&&i<MAXOBS;i++) 
-    {
+    for (i=0;i<n&&i<MAXOBS;i++) {
         sat=obs[i].sat; satno2id(sat,id);
 
         /* calculate satellite-receiver geometric distance and satellite elevation angle */
@@ -1357,7 +1352,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             /* H of ionosphere */
             if (opt->ionoopt==IONOOPT_EST) {
                 if (rtk->x[II(sat,opt)]==0.0) continue;
-                /* The vertical iono delay is estimated, but the residual is in the direction of the slant, so apply the slat factor mapping function. */
+                /* The slant iono delay is estimated */
                 /* H[II(sat,opt)+nx*nv]=C*ionmapf(pos,azel+i*2); */
                 H[II(sat,opt)+nx*nv]=C;
             }
@@ -1413,22 +1408,11 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
         exc[maxobs]=1; rtk->ssat[sat-1].rejc[maxfrq]++; stat=0;
     }
 
-    /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
-    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    zupt_time=ins->zupt.count*ins->interval*ins->nn;    
-    if (GINS_TC==opt->GI_mode) {
-        if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
-            nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_ZUPT);
-            rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
-        }
-        else if (opt->constraint[0]) { /* nhc */
-            nv_cons=motion_update(rtk,H,v,var,nv,rtk->nx,CONS_NHC);
-        }
-        if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-            nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,rtk->nx,CONS_ZIHR);
-        }        
+    /* motion measurement */
+    if (GINS_TC==opt->GI_mode) {   
+        nv_cons=motion_meas(rtk,opt,H,v,var,nv,rtk->nx);   
     }    
-
+      
     /* update the measurement noise covariance matrix (MNCM) */
     nv=nv+nv_cons;
     if (R) diag_Cov(nv,var,R,diag_var);
@@ -1680,9 +1664,10 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         trace(7,"%s ppp (%d) iteration exceeds the limit, solution failed!\n",str,i);
     }
 
-    /* ins feedback correction */
+    /* ins feedback correction and state reset */
     if (GINS_TC==popt->GI_mode&&SOLQ_PPP==stat) {
         ins_fedback(rtk,xp); 
+        reset_instat(rtk);
     }
 
     /* if GNSS is not available, use pure inertial navigation solution and increment the outage count */

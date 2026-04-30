@@ -175,7 +175,7 @@ static void outheader(FILE *fp, const prcopt_t *popt, const solopt_t *sopt, cons
             if (*fopt->pos) fprintf(fp,"%s inp file  : %s\n",COMMENTH,fopt->pos);
         }
 
-        if (GINS_OFF!=popt->GI_mode) fprintf(fp,"%s inp file  : %s\n",COMMENTH,fopt->imu);
+        if (isGINS(popt)) fprintf(fp,"%s inp file  : %s\n",COMMENTH,fopt->imu);
         if (EPHOPT_PREC==popt->sateph&&PMODE_LC_POS!=popt->mode) {
             if (*fopt->sp3) fprintf(fp,"%s inp file  : %s\n",COMMENTH,fopt->sp3); 
             if (*fopt->clk) fprintf(fp,"%s inp file  : %s\n",COMMENTH,fopt->clk);
@@ -286,7 +286,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
     stat=(GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)?rtk->lcgins.sol.stat:rtk->sol.stat;
 
     if ((0<=iobsu&&iobsu<obss.n)||(PMODE_LC_POS==popt->mode&&0<=ipos&&ipos<poss.n)) {
-        time=(GINS_OFF==popt->GI_mode)?obss.data[iobsu].time:imus.data[iimu].time;
+        time=isGNSS(popt)?obss.data[iobsu].time:imus.data[iimu].time;
         if (checkbrk("processing : %s Q=%d",time_str(time,0),stat)) {
             aborts=1; showmsg("aborted"); return -1;
         }            
@@ -327,7 +327,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
         }
 
         /* NOTE: GNSS/INS time synchronization */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode) {
+        if (isGINS(popt)) {
             if (iimu>=imus.n) return -1;
 
             /* calculate the difference between the current time and the nominal measurement update time */
@@ -370,7 +370,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             }   
             
             /* get odo vel based on gins time */
-            if (rtk->align&&(rtk->nominal_upte==YES||rtk->upte==SYNC_YES)) {
+            if (popt->odopt&&rtk->align&&(rtk->nominal_upte==YES||rtk->upte==SYNC_YES)) {
                 iodo=getodovel(odos,ins,rtk->upte_time,iodo);
             } 
         } 
@@ -425,7 +425,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
         }
 
         /* NOTE: GNSS/INS time synchronization */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
+        if (isGINS(popt)){
             if (iimu<0) return -1;
 
             /* calculate the difference between the current time and the nominal measurement update time */
@@ -598,8 +598,9 @@ static int gnss_aid_ins(rtk_t *rtk, const int stat, const double *rr)
 }
 
 /* process positioning -------------------------------------------------------*/
-static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, int mode)
+static void procpos(FILE *fp, rtk_t *rtk, const solopt_t *sopt, int mode)
 {
+    prcopt_t *popt=&rtk->opt;
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
     rtk_t *rtk_tdcp=(rtk_t *)malloc(sizeof(rtk_t));   /* for tdcp module */
     obsd_t *obs=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2);     /* observations at the current epoch for rover and base */
@@ -615,7 +616,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     vrs.idx=(PMODE_FIXED==popt->mode)?1:0; /* init vrs index */
 
     /* initialize rtk_tdcp */
-    if (GINS_OFF!=popt->GI_mode) rtkinit(rtk_tdcp,popt,NULL);
+    if (isGINS(popt)) rtkinit(rtk_tdcp,popt,NULL);
 
     /* initialize GNSS sampling interval */
     if (!rtk->interval) gnss_intervel(rtk,&obss,&poss);
@@ -625,13 +626,13 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         n=ns=nu=nr=0; /* reset number of observations */
 
         /* DebugGlo initialization */
-        if (GINS_OFF!=popt->GI_mode) Debug_Glo.tNow=rtk->ins.time; 
+        if (isGINS(popt)) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,109268,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,115344,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
-        if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(&rtk->opt,obs,&vrs);
+        if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(popt,obs,&vrs);
 
         /* vehicle zero speed detection for ZUPT and ZIHR */
         zerovel_detect(rtk,imu);
@@ -642,11 +643,11 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (n>0) ns=obsPreprocess(rtk,obs,obs_old,&navs,n,nu_old,&nu,&nr);
 
         /* if no satellites are available in GNSS mode or initial alignment is not OK for GNSS/INS mode, exit current epoch processing */
-        if (GINS_OFF==popt->GI_mode&&nu<=0) continue;
-        else if (GINS_OFF!=popt->GI_mode&&nu<=0&&!rtk->align) continue;
+        if (isGNSS(popt)&&nu<=0) continue;
+        else if (isGINS(popt)&&nu<=0&&!rtk->align) continue;
 
         /* ins initial alignment */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
+        if (isGINS(popt)){
             if (NO==rtk->match) continue; 
             /* TDCP estimated velocity */
             if (SYNC_YES==rtk->upte&&PMODE_LC_POS!=popt->mode) {
@@ -666,14 +667,14 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         }
 
         /* INS mechanization and GNSS/INS time update */
-        if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode){
+        if (isGINS(popt)){
             ins_mech(&rtk->ins,imu,popt);            
             ins_update(rtk);           
             if (SYNC_NO==rtk->upte&&NO==rtk->nominal_upte) continue;
         }
 
         /* for GNSS/INS integration navigation, when GNSS is not available, use motion constraints to assist */
-        if (nu<=0&&GINS_OFF!=popt->GI_mode&&(popt->constraint[0]||popt->constraint[1]||popt->constraint[2])) {
+        if (nu<=0&&isGINS(popt)&&is_motionconstraints(popt)) {
             motion_constraints(rtk,popt);
         }
 
@@ -700,22 +701,21 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
         if (PMODE_LC_POS!=popt->mode) {
             /* navigation processing */
             if (!rtkpos(rtk,obs,ns,&navs)&&nu>0) {
-                /* whether to output a blank line when GNSS is outage  */
-                /* if (GINS_OFF==popt->GI_mode) continue; */
+                /* if (GINS_OFF==popt->GI_mode) continue; */ /* whether to output a blank line when GNSS is outage  */
             }            
         }
 
         /* GNSS/INS loosely coupled/semi-tight coupled integration */
-        if ((GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode||PMODE_LC_POS==popt->mode)&&nu>0){
+        if (isGINS_LC(popt)&&nu>0){
             lc_gins(rtk);            
         }
 
         /* forward or backward mode */
         if (mode==SOLMODE_SINGLE_DIR) {    
-            /* save old observation data for gnss dopple sgn judeg */
-            if (GINS_OFF==popt->GI_mode) save_old_obs(obs,obs_old,nu,&nu_old);
+            /* save old observation data for gnss dopple sgn judge */
+            if (isGNSS(popt)) save_old_obs(obs,obs_old,nu,&nu_old);
             /* output the GNSS/INS solution */
-            if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);
+            if (isGINS_LC(popt)) outsol(fp,&rtk->lcgins.sol,rtk->lcgins.sol.rr,popt,sopt);
             else outsol(fp,&rtk->sol,rtk->rb,popt,sopt);
             rtk->sol.iFlag=SOLF_GNSS; /* reset solution flag */
             oldsol=rtk->sol;
@@ -741,7 +741,7 @@ static void procpos(FILE *fp, prcopt_t *popt, const solopt_t *sopt, rtk_t *rtk, 
     }
 
     /* obs and obs_old point to the same memory and only need to free once */
-    if (GINS_OFF!=popt->GI_mode) rtkfree(rtk_tdcp);
+    if (isGINS(popt)) rtkfree(rtk_tdcp);
     free(rtk_tdcp); rtk_tdcp=NULL; /* free rtk_tdcp to avoid memory leak */
     free(obs); free(imu); obs=obs_old=NULL; /* free obs_old to avoid memory leak */
 }
@@ -835,7 +835,7 @@ static void combres(FILE *fp, rtk_t *rtk, const prcopt_t *popt, const solopt_t *
             covtosol(Qs,&sols);
 
             /* NOTE: smoother for velocity solution */
-            if (popt->dynamics||GINS_OFF!=popt->GI_mode) {
+            if (popt->dynamics||isGINS(popt)) {
                 /* solution to velocity covariance matrix */
                 soltocov_vel(solf+i,Qf);
                 soltocov_vel(solb+j,Qb);
@@ -1263,7 +1263,7 @@ static void closeses(nav_t *nav, spcvs_t *pcvs, rpcvs_t *pcvr)
     free(nav->erp.data); nav->erp.data=NULL; nav->erp.n=nav->erp.nmax=0;
 
     /* close solution statistics and debug trace */
-    rtkcloseoutfile();
+    closeoutfiles();
     traceclose();
 }
 /* set antenna parameters ----------------------------------------------------*/
@@ -1410,6 +1410,177 @@ static void namefiletm(char *outfiletm, const char *outfile)
     strncpy(outfiletm, outfile, i);
     strcat(outfiletm, "_events.pos");
 }
+
+static int readPVTfiles(gtime_t ts, gtime_t te, int ti, prcopt_t *popt, const solopt_t *sopt, filopt_t *fopt)
+{
+    int week;
+    char path[1024];
+    const char *ext;
+
+    /* read obs and nav data */
+    if (PMODE_LC_POS!=popt->mode) {
+        if (!readobsnav(ts,te,ti,fopt,popt,&obss,&navs,stas)) {
+            /* free obs and nav data */
+            freeobsnav(&obss,&navs);
+            showerr("Error : obs file open failed %s",fopt->obs_u);
+            return 0;
+        } 
+
+        /* read prec ephemeris and sbas data */
+        if (!readpreceph(fopt,popt,&navs,&sbss)) {
+            /* free prec ephemeris and clock data */
+            freepreceph(&navs,&sbss); 
+            showerr("Error : prec ephemeris file open failed %s",fopt->sp3);
+            return 0;       
+        }
+
+        /* read satellite and receiver antenna parameters */
+        if (*fopt->antp&&!(readpcv(fopt->antp,&pcvss,&pcvsr))) {
+            /* free antenna parameters */
+            freeant(&pcvss,&pcvsr);
+        }
+
+        /* read ionosphere data file */
+        if (*fopt->iono&&(ext=strrchr(fopt->iono,'.'))) {
+            if (strlen(ext)==4&&(ext[3]=='i'||ext[3]=='I'||strcmp(ext,".INX")==0||strcmp(ext,".inx")==0)) {
+                reppath(fopt->iono,path,ts,"","");
+                readtec(path,&navs,1);
+            }
+        }
+
+        /* read erp data */
+        if (*fopt->eop) {
+            free(navs.erp.data); navs.erp.data=NULL; navs.erp.n=navs.erp.nmax=0;
+            reppath(fopt->eop,path,ts,"","");
+            readerp(path,&navs.erp);
+        }   
+
+        /* read ocean tide loading parameters */
+        if (popt->mode>PMODE_SINGLE&&*fopt->blq) {
+            readotl(popt,fopt->blq,stas);
+        }
+
+        /* open geoid data */
+        if (sopt->geoid>0&&*fopt->geoid) {
+            if (!opengeoid(sopt->geoid,fopt->geoid)) {
+                /* close geoid data */
+                closegeoid();            
+            }
+        }
+
+        /* read dcb parameters from DCB, BIA, BSX files */
+        if (*fopt->mgex_dcb) {
+            readdcb(popt,fopt->mgex_dcb,&navs,stas);  
+        }
+
+        /* unify the correction format of TGD and DCB/OBS */
+        tgdarrge(popt,&navs);
+    }
+
+    /* read pos data for LC */
+    if (PMODE_LC_POS==popt->mode) {
+        week=popt->week;
+        if (!(*fopt->pos)) showerr("Error : pos file open failed %s",fopt->pos);
+        if (*fopt->pos&&!(readpos(fopt->pos,popt,&poss,week))){
+            /* free pos parameters */
+            freepos(&poss);
+            showerr("Error : pos file open failed %s",fopt->pos);
+            return 0;
+        }
+    }
+
+    /* read imu/odo data */
+    if (isGINS(popt)) {
+        if (PMODE_LC_POS==popt->mode) week=popt->week;
+        else time2gpst(obss.data[0].time,&week);
+        if (!(*fopt->imu)) showerr("Error : imu file open failed %s",fopt->imu); 
+        if (*fopt->imu&&!(readimu(ts,te,fopt->imu,popt,&imus,week))) {
+            /* free imu parameters */
+            freeimu(&imus);
+            showerr("Error : imu file open failed %s",fopt->imu);
+            return 0;
+        }     
+
+        /* ODO is enabled only when NHC is enabled */
+        if (*fopt->odo&&popt->odopt&&isNHC(popt)&&!(readodo(ts,te,fopt->odo,popt,&odos))) {
+            /* free odo parameters */
+            freeodo(&odos);
+        }
+    }
+
+    return 1;
+}
+
+static int setstapos(prcopt_t *popt, filopt_t *fopt)
+{
+    if (popt->mode==PMODE_FIXED) {
+        if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
+            showerr("Error : antpos failed %s",fopt->stapos);
+            return 0;
+        }
+        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
+            showerr("Error : antpos failed %s",fopt->stapos);
+            return 0;
+        }
+    }
+    else if (PMODE_DGPS<=popt->mode&&popt->mode<=PMODE_STATIC_START) {
+        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
+            showerr("Error : antpos failed %s",fopt->stapos);
+            return 0;
+        }
+    }  
+
+    return 1;
+}
+
+static void write_resultfiles(const prcopt_t *popt, const solopt_t *sopt, const filopt_t *fopt)
+{
+    char statfile[1024],iposfile[1024],azelfile[1024],satdopfile[1024];
+
+    if (PMODE_LC_POS!=popt->mode) {
+        closeoutfiles();
+        /* open solution statistics */
+        if (sopt->sstat>0) {
+            strcpy(statfile,fopt->sol);
+            strcat(statfile,".stat");
+            open_statfile(statfile,sopt->sstat);
+        }
+
+        /* output ipos file */
+        if (sopt->ipos) {
+            strcpy(iposfile,fopt->sol);
+            strcat(iposfile,".ipos");
+            open_iposfile(popt,iposfile);
+        }
+
+        /* output azel file */
+        if (sopt->azel) {
+            strcpy(azelfile,fopt->sol);
+            strcat(azelfile,".azel");
+            open_azelfile(popt,azelfile);
+        }
+
+        /* output satdop file */
+        if (sopt->satdop) {
+            strcpy(satdopfile,fopt->sol);
+            strcat(satdopfile,".satdop");
+            open_satdopfile(popt,satdopfile);
+        }        
+    }
+}
+
+static void free_memorys(rtk_t *rtk)
+{
+    free(rtk); rtk=NULL; /* free rtk to avoid memory leak */      
+    if (obss.n) freeobsnav(&obss,&navs);
+    if (imus.n) freeimu(&imus);
+    if (poss.n) freepos(&poss);
+    if (pcvss.n&&pcvsr.n) freeant(&pcvss,&pcvsr);
+    if (odos.n) freeodo(&odos);
+
+    closeoutfiles();
+}
+
 /* post-processing positioning -------------------------------------------------
 * post-processing positioning
 * args   : gtime_t ts       I   processing start time (ts.time==0: no limit)
@@ -1453,177 +1624,47 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     FILE *fp;
     /* moved from stack to heap to avoid stack overflow warning */
     rtk_t *rtk = (rtk_t *)malloc(sizeof(rtk_t)); 
-    char tracefile[1024],statfile[1024],iposfile[1024],azelfile[1024],satdopfile[1024],path[1024],outfiletm[1024]={0};
-    const char *ext;
+    char tracefile[1024],outfiletm[1024]={0};
     int i,j,k,week=0;  
 
     /* open debug trace */
     opentrace(popt,sopt,fopt);
 
-    /* read obs and nav data */
-    if (PMODE_LC_POS!=popt->mode) {
-        if (!readobsnav(ts,te,ti,fopt,popt,&obss,&navs,stas)) {
-            /* free obs and nav data */
-            freeobsnav(&obss,&navs);
-            free(rtk);
-            return 0;
-        } 
-
-        /* read prec ephemeris and sbas data */
-        if (!readpreceph(fopt,popt,&navs,&sbss)) {
-            /* free prec ephemeris and clock data */
-            freepreceph(&navs,&sbss); 
-            return 0;       
-        }
-
-        /* read satellite and receiver antenna parameters */
-        if (*fopt->antp&&!(readpcv(fopt->antp,&pcvss,&pcvsr))) {
-            /* free antenna parameters */
-            freeant(&pcvss,&pcvsr);
-            return 0;
-        }
-
-        /* read ionosphere data file */
-        if (*fopt->iono&&(ext=strrchr(fopt->iono,'.'))) {
-            if (strlen(ext)==4&&(ext[3]=='i'||ext[3]=='I'||strcmp(ext,".INX")==0||strcmp(ext,".inx")==0)) {
-                reppath(fopt->iono,path,ts,"","");
-                readtec(path,&navs,1);
-            }
-        }
-
-        /* read erp data */
-        if (*fopt->eop) {
-            free(navs.erp.data); navs.erp.data=NULL; navs.erp.n=navs.erp.nmax=0;
-            reppath(fopt->eop,path,ts,"","");
-            readerp(path,&navs.erp);
-        }   
-
-        /* read ocean tide loading parameters */
-        if (popt->mode>PMODE_SINGLE&&*fopt->blq) {
-            readotl(popt,fopt->blq,stas);
-        }
-
-        /* open geoid data */
-        if (sopt->geoid>0&&*fopt->geoid) {
-            if (!opengeoid(sopt->geoid,fopt->geoid)) {
-                /* close geoid data */
-                closegeoid();            
-            }
-        }
-
-        /* read dcb parameters from DCB, BIA, BSX files */
-        if (*fopt->mgex_dcb) {
-            readdcb(popt,fopt->mgex_dcb,&navs,stas);  
-        }
-
-        /* unify the correction format of TGD and DCB/OBS */
-        tgdarrge(popt,&navs);
-    }
-
-    /* read pos data for LC */
-    if (PMODE_LC_POS==popt->mode) {
-        week=popt->week;
-        if (*fopt->pos&&!(readpos(fopt->pos,popt,&poss,week))){
-            /* free pos parameters */
-            freepos(&poss);
-        }
-        if (!(*fopt->pos)) showerr("Error : pos file open failed %s",fopt->pos);
-    }
-    
-    /* read imu/odo data */
-    if (GINS_OFF!=popt->GI_mode) {
-        if (PMODE_LC_POS==popt->mode) week=popt->week;
-        else time2gpst(obss.data[0].time,&week);
-        if (*fopt->imu&&!(readimu(ts,te,fopt->imu,popt,&imus,week))) {
-            /* free imu parameters */
-            freeimu(&imus);
-        }    
-        if (!(*fopt->imu)) showerr("Error : imu file open failed %s",fopt->imu);  
-
-        /* ODO is enabled only when NHC is enabled */
-        if (*fopt->odo&&popt->odopt&&popt->constraint[0]&&!(readodo(ts,te,fopt->odo,popt,&odos))) {
-            /* free odo parameters */
-            freeodo(&odos);
-        }
+    /* read PVT files from input files */
+    if (!readPVTfiles(ts,te,ti,popt,sopt,fopt)) {
+        free_memorys(rtk);
+        return 0;
     }
 
     /* set antenna parameters */
     if (PMODE_LC_POS!=popt->mode&&popt->mode!=PMODE_SINGLE) {
-        setpcv(obss.n>0?obss.data[0].time:timeget(),popt,&navs,&pcvss,&pcvsr,
-               stas);
+        setpcv(obss.n>0?obss.data[0].time:timeget(),popt,&navs,&pcvss,&pcvsr,stas);
     }
 
     /* rover/reference fixed position */
-    if (popt->mode==PMODE_FIXED) {
-        if (!antpos(popt,1,&obss,&navs,stas,fopt->stapos)) {
-            freeobsnav(&obss,&navs);
-            free(rtk);
-            return 0;
-        }
-        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
-            freeobsnav(&obss,&navs);
-            free(rtk);
-            return 0;
-        }
-    }
-    else if (PMODE_DGPS<=popt->mode&&popt->mode<=PMODE_STATIC_START) {
-        if (!antpos(popt,2,&obss,&navs,stas,fopt->stapos)) {
-            freeobsnav(&obss,&navs);
-            free(rtk);
-            return 0;
-        }
+    if (!setstapos(popt,fopt)) {
+        free_memorys(rtk);
+        return 0;
     }
 
     /* write header to output file */
     if (!outhead(popt,sopt,fopt)) {
-        freeobsnav(&obss,&navs);
-        free(rtk);
+        free_memorys(rtk);
         return 0;
     }
 
-    if (PMODE_LC_POS!=popt->mode) {
-        /* open solution statistics */
-        if (sopt->sstat>0) {
-            strcpy(statfile,fopt->sol);
-            strcat(statfile,".stat");
-            rtkcloseoutfile();
-            rtkopenstat(statfile,sopt->sstat);
-        }
-
-        /* output ipos file */
-        if (sopt->ipos) {
-            strcpy(iposfile,fopt->sol);
-            strcat(iposfile,".ipos");
-            rtkcloseoutfile();
-            rtkopenipos(popt,iposfile);
-        }
-
-        /* output azel file */
-        if (sopt->azel) {
-            strcpy(azelfile,fopt->sol);
-            strcat(azelfile,".azel");
-            rtkcloseoutfile();
-            rtkopenazel(popt,azelfile);
-        }
-
-        /* output satdop file */
-        if (sopt->satdop) {
-            strcpy(satdopfile,fopt->sol);
-            strcat(satdopfile,".satdop");
-            rtkcloseoutfile();
-            rtkopensatdop(popt,satdopfile);
-        }        
-    }
+    /* write result files */
+    write_resultfiles(popt,sopt,fopt);
 
     /* index of obs/imu data */
     iobsu=iobsr=isbs=iimu=aborts=reverse_flag=0;
 
     /* forward solutions */
-    if ((GINS_OFF==popt->GI_mode&&popt->mode==PMODE_SINGLE)||popt->soltype==SOLTYPE_FORWARD) {
+    if ((isGNSS(popt)&&popt->mode==PMODE_SINGLE)||popt->soltype==SOLTYPE_FORWARD) {
         /* solution file (.pos) pointer */
         if (fp=openfile(fopt->sol)) {
             rtkinit(rtk,popt,sopt);
-            procpos(fp,popt,sopt,rtk,SOLMODE_SINGLE_DIR);
+            procpos(fp,rtk,sopt,SOLMODE_SINGLE_DIR);
             rtkfree(rtk); fclose(fp);
         }
     }
@@ -1631,9 +1672,9 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     else if (popt->soltype==SOLTYPE_BACKWARD) {
         if (fp=openfile(fopt->sol)) {
             rtk->opt.reverse=popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
-            if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
+            if (isGINS(popt)) iimu=imus.n-1;
             rtkinit(rtk,popt,sopt);
-            procpos(fp,popt,sopt,rtk,SOLMODE_SINGLE_DIR);
+            procpos(fp,rtk,sopt,SOLMODE_SINGLE_DIR);
             rtkfree(rtk); fclose(fp);
         }
     }
@@ -1647,17 +1688,17 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
         if (solf&&solb) {
             isolf=isolb=0;
             rtkinit(rtk,popt,sopt);
-            procpos(NULL,popt,sopt,rtk,SOLMODE_COMBINED); /* forward */
+            procpos(NULL,rtk,sopt,SOLMODE_COMBINED); /* forward */
 
             rtk->opt.reverse=popt->reverse=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1;
-            if (GINS_OFF!=popt->GI_mode) iimu=imus.n-1;
+            if (isGINS(popt)) iimu=imus.n-1;
             /* FBS with no state reset */
             if (popt->soltype!=SOLTYPE_COMBINED_NORESET) {
                 /* reset */
                 rtkfree(rtk);
                 rtkinit(rtk,popt,sopt);
             }
-            procpos(NULL,popt,sopt,rtk,SOLMODE_COMBINED); /* backward */
+            procpos(NULL,rtk,sopt,SOLMODE_COMBINED); /* backward */
             rtkfree(rtk);
 
             if (!aborts&&(fp=openfile(fopt->sol))) {
@@ -1671,12 +1712,7 @@ extern int execses(gtime_t ts, gtime_t te, double ti, prcopt_t *popt, const solo
     }
 
     /* free rtk, obs/nav , ant and imu data */
-    free(rtk); rtk=NULL; /* free rtk to avoid memory leak */      
-    if (obss.n)            freeobsnav(&obss,&navs);
-    if (imus.n)            freeimu(&imus);
-    if (poss.n)            freepos(&poss);
-    if (pcvss.n&&pcvsr.n)  freeant(&pcvss,&pcvsr);
-    rtkcloseoutfile();
+    free_memorys(rtk);
 
     return aborts?1:0;
 }

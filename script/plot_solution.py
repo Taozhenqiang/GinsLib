@@ -325,3 +325,232 @@ def plot_imubias(solution):
     
     # 返回两个图形对象
     return fig_bg, fig_ba
+
+def plot_nsatdop(solution):
+    """
+    Plot the number of satellites and pdop over GPS time.
+    :param solution: A numpy array where each row contains [time, ..., nsv, dop].
+    """
+
+    nsol = len(solution)
+    if nsol == 0:
+        raise ValueError('Solution is empty!!!')
+
+    nsat = np.zeros((nsol, 1))  # Number of satellites in view (NSV)
+    pdop = np.zeros((nsol, 1))  # pdop (DOP)
+    time = np.zeros(nsol)
+
+    for n in range(nsol):
+        time[n] = solution[n, 1]  # GPS time
+        if len(solution[n]) >= 15:
+            nsat[n, :] = solution[n, 12]  # nsat
+            pdop[n, :] = solution[n, 14]  # pdop
+        else:
+            nsat[n, :] = np.zeros(1)
+            pdop[n, :] = np.zeros(1)
+
+    # Plot number of satellites and pdop
+    Fcolor = ["#1a0dcf", "#14a959", "#ff6666"]
+
+    # Number of satellites plot
+    fig, ax = plt.subplots(2, 1)
+
+    ax[0].plot(time, nsat, color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[0].set_ylabel('NSAT', fontsize=12, family='Times New Roman')
+
+    ax[1].plot(time, pdop, color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[1].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[1].set_ylabel('PDOP', fontsize=12, family='Times New Roman')
+
+    # Remove scientific notation for axis labels
+    for ax in ax:
+        ax.ticklabel_format(style='plain', axis='x')
+        ax.ticklabel_format(style='plain', axis='y')
+
+    plt.tight_layout()
+    
+    # 返回图形对象
+    return fig
+
+def plot_ratio(solution):
+    """
+    Plot the ratio over GPS time.
+    :param solution: A numpy array where each row contains [time, ..., ratio].
+    """
+
+    nsol = len(solution)
+    if nsol == 0:
+        raise ValueError('Solution is empty!!!')
+
+    ratio = np.zeros((nsol, 1))  # Ratio (ratio)
+    time = np.zeros(nsol)  # GPS time  # ratio (ratio)
+
+    for n in range(nsol):
+        time[n] = solution[n, 1]  # GPS time
+        if len(solution[n]) >= 13:
+            ratio[n, :] = solution[n, 12]  # ratio
+        else:
+            ratio[n, :] = np.zeros(1)
+
+    Fcolor = ["#37bdab"]
+
+    # Plot ratio
+    thres = 3.0  # Threshold for ratio
+    ratio_idx = np.where(np.abs(ratio) > thres)[0]
+    rate = len(ratio_idx)/nsol*100
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(time, ratio, color=Fcolor[0], linestyle='none', linewidth=1.0, marker='.', markersize=2.5)
+    ax.plot(time, thres*np.ones(nsol), color='r', linestyle='-', linewidth=1.0)
+    ax.legend([f'Fix rate={rate:.2f}%(Thres={thres})'], fontsize=12)
+    ax.grid(True, linestyle='--', color='k', alpha=0.3)
+    ax.set_ylabel('Ratio', fontsize=12, family='Times New Roman')
+    ax.set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax.ticklabel_format(style='plain', axis='x')
+    ax.ticklabel_format(style='plain', axis='y')
+    plt.tight_layout()  
+
+def plot_solflag(solution):
+    """
+    Plot the solution flag over GPS time.
+    :param solution: A numpy array where each row contains [time, ..., solflag].
+    """
+
+    nsol = len(solution)
+    if nsol == 0:
+        raise ValueError('Solution is empty!!!')
+    
+    solflag = np.zeros((nsol, 1))  # Solution flag (solflag)
+    time = np.zeros(nsol)  # GPS time  # solflag (solflag)
+    
+    for n in range(nsol):
+        time[n] = solution[n, 1]  # GPS time
+        if len(solution[n]) >= 12:
+            solflag[n, :] = solution[n, 11]  # solflag
+        else:
+            solflag[n, :] = np.zeros(1)
+
+    # extract solution flag    
+    spp_idx = np.where(solflag == 5)[0]
+    ppd_idx = np.where(solflag == 4)[0]
+    float_idx = np.where(solflag == 2)[0]
+    fix_idx = np.where(solflag == 1)[0]
+    ins_idx = np.where(solflag == 7)[0]
+    cons_idx = np.where(solflag == 8)[0]
+
+    Fcolor = ["#14a959", "#ff6666", "#37bdb6", "#ff9900", "#0a4e21", "#1a0dcf",]
+
+    # plot solution flag
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(time[spp_idx], solflag[spp_idx], color=Fcolor[0], linestyle='none', marker='.', markersize=1.5)
+    ax.plot(time[ppd_idx], solflag[ppd_idx], color=Fcolor[1], linestyle='none', marker='.', markersize=1.5)
+    ax.plot(time[float_idx], solflag[float_idx], color=Fcolor[2], linestyle='none', marker='.', markersize=1.5)
+    ax.plot(time[fix_idx], solflag[fix_idx], color=Fcolor[3], linestyle='none', marker='.', markersize=1.5)
+    ax.plot(time[ins_idx], solflag[ins_idx], color=Fcolor[4], linestyle='none', marker='.', markersize=1.5)
+    ax.plot(time[cons_idx], solflag[cons_idx], color=Fcolor[5], linestyle='none', marker='.', markersize=1.5)
+    ax.legend([f'SPP={len(spp_idx)}({len(spp_idx)/nsol*100:.2f}%)', 
+               f'PPD={len(ppd_idx)}({len(ppd_idx)/nsol*100:.2f}%)', 
+               f'Float={len(float_idx)}({len(float_idx)/nsol*100:.2f}%)', 
+               f'Fix={len(fix_idx)}({len(fix_idx)/nsol*100:.2f}%)',     
+               f'INS={len(ins_idx)}({len(ins_idx)/nsol*100:.2f}%)', 
+               f'Cons={len(cons_idx)}({len(cons_idx)/nsol*100:.2f}%)'], fontsize=12)
+    ax.grid(True, linestyle='--', color='k', alpha=0.3)
+    ax.set_ylabel('Solution Status', fontsize=12, family='Times New Roman')
+    ax.set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax.ticklabel_format(style='plain', axis='x')
+    ax.ticklabel_format(style='plain', axis='y')
+    plt.tight_layout()  
+
+def plot_pvastd(solution):
+    """
+    Plot the position velocity standard deviation (PVASTD) over GPS time.
+    :param solution: A numpy array where each row contains [time, ..., pvastd].
+    """
+
+    nsol = len(solution)
+    if nsol == 0:
+        raise ValueError('Solution is empty!!!')
+
+    # Transform from XYZ to ENU frame
+    _, Cne = xyz2blh(solution[0, 2:5])  # Transformation matrix at the first position
+
+    posstd = np.zeros((nsol, 3))  # Position standard deviation (m) (posstd)
+    velstd = np.zeros((nsol, 3))  # Velocity standard deviation (m/s) (velstd)
+    attstd = np.zeros((nsol, 3))  # Attitude standard deviation (deg) (attstd)
+    bgstd = np.zeros((nsol, 3))  # gyro bias standard deviation (deg/h) (bgstd)
+    bastd = np.zeros((nsol, 3))  # accelerometer bias standard deviation (ug) (bastd)
+    time = np.zeros(nsol)  # GPS time   
+
+    for n in range(nsol):
+        time[n] = solution[n, 1]  # GPS time
+        if len(solution[n]) >= 15:
+            pos_cov = Cne @ np.diagflat(solution[n, 21:24]**2) @ Cne.T # posstd
+            posstd[n, :] = np.sqrt(np.diag(pos_cov))
+            vel_cov = Cne @ np.diagflat(solution[n, 24:27]**2) @ Cne.T # velstd
+            velstd[n, :] = np.sqrt(np.diag(vel_cov))
+            attstd[n, :] = solution[n, 27:30]  # attstd
+            bgstd[n, :] = solution[n, 30:33]  # bgstd
+            bastd[n, :] = solution[n, 33:36]  # bastd
+        else:
+            posstd[n, :] = np.zeros(3)
+            velstd[n, :] = np.zeros(3)
+            attstd[n, :] = np.zeros(3)
+            bgstd[n, :] = np.zeros(3)
+            bastd[n, :] = np.zeros(3)
+
+    # Plot pvt standard deviations
+    Fcolor = ["#ffcc66", "#14a959", "#ff6666"]
+
+    # Gyroscope bias plot
+    fig, ax = plt.subplots(3, 2)    
+
+    ax[0, 0].plot(time, posstd[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 0].plot(time, posstd[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 0].plot(time, posstd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[0, 0].legend(['E', 'N', 'U'], fontsize=12)
+    ax[0, 0].set_ylabel('PosStd [m]', fontsize=12, family='Times New Roman')
+    ax[0, 0].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax[0, 0].ticklabel_format(style='plain', axis='x')
+    ax[0, 0].ticklabel_format(style='plain', axis='y')
+
+    ax[0, 1].plot(time, velstd[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 1].plot(time, velstd[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 1].plot(time, velstd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[0, 1].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[0, 1].legend(['E', 'N', 'U'], fontsize=12)
+    ax[0, 1].set_ylabel('VelStd [m/s]', fontsize=12, family='Times New Roman')
+    ax[0, 1].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax[0, 1].ticklabel_format(style='plain', axis='x')
+    ax[0, 1].ticklabel_format(style='plain', axis='y')
+
+    ax[1, 0].plot(time, attstd[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[1, 0].plot(time, attstd[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[1, 0].plot(time, attstd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[1, 0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[1, 0].legend(['Pitch', 'Roll', 'Yaw'], fontsize=12)
+    ax[1, 0].set_ylabel('AttStd [deg]', fontsize=12, family='Times New Roman')
+    ax[1, 0].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax[1, 0].ticklabel_format(style='plain', axis='x')
+    ax[1, 0].ticklabel_format(style='plain', axis='y')
+
+    ax[2, 0].plot(time, bgstd[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[2, 0].plot(time, bgstd[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[2, 0].plot(time, bgstd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[2, 0].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[2, 0].legend(['x', 'y', 'z'], fontsize=12)
+    ax[2, 0].set_ylabel('BgStd [deg/h]', fontsize=12, family='Times New Roman') 
+    ax[2, 0].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax[2, 0].ticklabel_format(style='plain', axis='x')
+    ax[2, 0].ticklabel_format(style='plain', axis='y')
+
+    ax[2, 1].plot(time, bastd[:, 0], color=Fcolor[0], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[2, 1].plot(time, bastd[:, 1], color=Fcolor[1], linestyle='-', linewidth=1.0, marker='.', markersize=2.5)
+    ax[2, 1].plot(time, bastd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5) 
+    ax[2, 1].grid(True, linestyle='--', color='k', alpha=0.3)
+    ax[2, 1].legend(['x', 'y', 'z'], fontsize=12)
+    ax[2, 1].set_ylabel('Bastd [ug]', fontsize=12, family='Times New Roman')
+    ax[2, 1].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
+    ax[2, 1].ticklabel_format(style='plain', axis='x')
+    ax[2, 1].ticklabel_format(style='plain', axis='y')

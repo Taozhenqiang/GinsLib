@@ -1726,7 +1726,7 @@ int main(int argc, char **argv)
         fprintf(stderr,"no navigation data: %s\n",NAVIFILE);
     } */
     if (outstat>0) {
-        rtkopenstat(STATFILE,outstat);
+        open_statfile(STATFILE,outstat);
     }
     /* open monitor port */
     if (moniport>0&&!openmoni(moniport)) {

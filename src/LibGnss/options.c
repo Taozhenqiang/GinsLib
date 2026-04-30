@@ -59,7 +59,7 @@ static char stat_[statopt];
 #define FILOPT  "0:KF,1:Robust_INO,2:Robust_RES,3:Robust_Chi,4:Robust_ST,5:Robust_MST"
 #define MESOPT  "0:IGG3,1:Huber,2:MCKF"
 #define TYPOPT  "0:forward,1:backward,2:combined,3:combined-nophasereset"
-#define IONOPT  "0:off,1:brdc,2:sbas,3:dual-freq,4:est-stec,5:ionex-tec,6:qzs-brdc"
+#define IONOPT  "0:off,1:brdc,2:sbas,3:IF,4:est-stec,5:ionex-tec,6:qzs-brdc,7:DF"
 #define TRPOPT  "0:off,1:saas,2:sbas,3:est-ztd,4:est-ztdgrad"
 #define EPHOPT  "0:brdc,1:precise,2:brdc+sbas,3:brdc+ssrapc,4:brdc+ssrcom"
 #define NAVOPT  "1:gps+2:sbas+4:glo+8:gal+16:qzs+32:bds+64:navic"

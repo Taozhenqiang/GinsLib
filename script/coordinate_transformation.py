@@ -73,7 +73,7 @@ def xyz2blh(xyz):
     转换ECEF坐标为大地坐标
     :param xyz: ECEF坐标数组 [x, y, z] (米)
     :return: blh: 大地坐标数组 [纬度, 经度, 高度] (弧度, 米)
-    :        Cne: ECEF到局部坐标变换矩阵 (3x3 numpy数组)
+    :        Cne: ECEF到ENU系变换矩阵 (3x3 numpy数组)
     """
     # Convert ECEF (XYZ) to BLH using ecef2pos
     pos = ecef2pos(xyz)  # Assuming ecef2pos is defined elsewhere

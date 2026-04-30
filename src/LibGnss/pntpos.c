@@ -50,6 +50,19 @@
 /* state variable index */
 #define IC(s,opt)   (NP(opt)+(s))
 
+/* check if the satellite is a BDS GEO satellite */
+extern int isGEOsat(int sat)
+{
+    int sys,prn;
+
+    sys=satsys(sat,&prn);
+
+    if (sys!=SYS_CMP) return 0;
+
+    if (prn<=5||prn>=59) return 1;
+    else return 0;
+}
+
 /* determine the number of observations */
 extern int obsNum(const rtk_t *rtk, obsd_t *obs, int nobs) 
 {
@@ -57,7 +70,7 @@ extern int obsNum(const rtk_t *rtk, obsd_t *obs, int nobs)
     int i,n;
 
     /* if GNSS and INS are not synchronized, return 0 observations */
-    if (GINS_OFF!=popt->GI_mode&&SYNC_NO==rtk->upte) return 0;
+    if (isGINS(popt)&&SYNC_NO==rtk->upte) return 0;
 
     if (PMODE_LC_POS==popt->mode) n=nobs;
     else { /* exclude satellites */
@@ -351,7 +364,7 @@ extern int obsPreprocess(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, const nav_t *
     int ns;
 
     /* check observation data */
-    if (n<=0||(GINS_OFF!=popt->GI_mode&&SYNC_NO==rtk->upte)) return 0;
+    if (n<=0||(isGINS(popt)&&SYNC_NO==rtk->upte)) return 0;
 
     /* for LC_POS mode, no observation preprocessing is required */
     if (PMODE_LC_POS==popt->mode) {
@@ -363,7 +376,7 @@ extern int obsPreprocess(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, const nav_t *
     ns=obsScan(popt,obs,n,nu_,nr_);
 
     /* the sign of Doppler observations is determined based on pseudorange variation between adjacent epochs */
-    if ((GINS_OFF==popt->GI_mode||SYNC_YES==rtk->upte)&&PMODE_LC_POS!=popt->mode&&!rtk->dopsgn) dopple_sgn(rtk,obs,obs_old,*nu_,n_old);
+    if ((isGNSS(popt)||SYNC_YES==rtk->upte)&&PMODE_LC_POS!=popt->mode&&!rtk->dopsgn) dopple_sgn(rtk,obs,obs_old,*nu_,n_old);
     
     /* carrier-phase bias correction */
     if (PMODE_DGPS<popt->mode&&!strstr(popt->pppopt,"-ENA_FCB")) {
@@ -583,10 +596,11 @@ static double prange(const int fr, const obsd_t *obs, const nav_t *nav, const pr
 *          double *var      O   ionospheric delay (L1) variance (m^2)
 * return : status(1:ok,0:error)
 *-----------------------------------------------------------------------------*/
-extern int ionocorr(gtime_t time, const nav_t *nav, int sat, const double *pos,
-                    const double *azel, int ionoopt, double *ion, double *var)
+extern int ionocorr(const obsd_t *obs, gtime_t time, const nav_t *nav, int sat, const double *pos,
+                    const double *azel, const prcopt_t *opt, double *ion, double *var)
 {
-    int err=0;
+    int i,ionoopt=opt->ionoopt,sys,fr2[2],flag=0;
+    double freq1=0.0,freq2=0.0;
 
     trace(9,"ionocorr: time=%s opt=%d sat=%2d pos=%.3f %.3f azel=%.3f %.3f\n",
           time_str(time,3),ionoopt,sat,pos[0]*R2D,pos[1]*R2D,azel[0]*R2D,
@@ -595,12 +609,10 @@ extern int ionocorr(gtime_t time, const nav_t *nav, int sat, const double *pos,
     /* SBAS ionosphere model */
     if (ionoopt==IONOOPT_SBAS) {
         if (sbsioncorr(time,nav,pos,azel,ion,var)) return 1;
-        err=1;
     }
     /* IONEX TEC model */
     if (ionoopt==IONOOPT_TEC) {
         if (iontec(time,nav,pos,azel,1,ion,var)) return 1;
-        err=1;
     }
     /* QZSS broadcast ionosphere model */
     if (ionoopt==IONOOPT_QZS&&norm(nav->ion_qzs,8)>0.0) {
@@ -608,12 +620,30 @@ extern int ionocorr(gtime_t time, const nav_t *nav, int sat, const double *pos,
         *var=SQR(*ion*ERR_BRDCI);
         return 1;
     }
+    /* Double-frequency ionosphere model */
+    if (ionoopt==IONOOPT_DF) {
+        sys=satsys(sat,NULL);
+        fr2[0]=sys2freid(sys,0,opt);
+        fr2[1]=sys2freid(sys,1,opt);
+        freq1=sat2freq(sat,obs->code[fr2[0]],nav);
+        freq2=sat2freq(sat,obs->code[fr2[1]],nav);
+        if (obs->P[fr2[0]]==0.0||obs->P[fr2[1]]==0.0||freq1==0.0||freq2==0.0) {
+            flag=0;
+        }
+        else {
+            /* slant ionospheric delay based GPS L1 frequency */
+            *ion=(obs->P[fr2[0]]-obs->P[fr2[1]])/(SQR(FREQL1/freq1)-SQR(FREQL1/freq2));
+            *var=SQR(*ion*ERR_BRDCI);
+            return 1;            
+        }
+    }    
     /* GPS broadcast ionosphere model */
-    if (ionoopt==IONOOPT_BRDC||ionoopt==IONOOPT_EST||err==1) {
+    if (ionoopt==IONOOPT_BRDC||ionoopt==IONOOPT_EST||!flag) {
         *ion=ionmodel(time,nav->ion_gps,pos,azel);
         *var=SQR(*ion*ERR_BRDCI);
         return 1;
     }
+
     *ion=0.0;
     *var=ionoopt==IONOOPT_OFF?SQR(ERR_ION):0.0;
     return 1;
@@ -751,7 +781,7 @@ static int rescode(int iter, const obsd_t *obs, int n, int nx_code, const double
                 if (!snrmask(iter,obs+i,azel+i*2,opt)) continue;
 
                 /* ionospheric correction */
-                if (!ionocorr(time,nav,sat,pos,azel+i*2,opt->ionoopt,&dion,&vion)) {
+                if (!ionocorr(obs+i,time,nav,sat,pos,azel+i*2,opt,&dion,&vion)) {
                     continue;
                 }
                 if ((freq=sat2freq(sat,obs[i].code[fr],nav))==0.0) continue;
@@ -907,7 +937,7 @@ static int rescode_filter(rtk_t *rtk, const obsd_t *obs, int n, const double *rs
             if (!snrmask(0,obs+i,azel+i*2,opt)) continue;
 
             /* ionospheric correction */
-            if (!ionocorr(time,nav,sat,pos,azel+i*2,opt->ionoopt,&dion,&vion)) {
+            if (!ionocorr(obs+i,time,nav,sat,pos,azel+i*2,opt,&dion,&vion)) {
                 continue;
             }
             if ((freq=sat2freq(sat,obs[i].code[fr],nav))==0.0) continue;
@@ -1074,6 +1104,7 @@ extern int valsol(sol_t *sol, const double *azel, const int *vsat, int n,
         azels[1+ns*2]=azel[1+i*2];
         ns++;
     }
+    /* compute DOP */
     dops(ns,azels,opt->elmin,dop);
     matcpy(sol->dop,dop,4,1);
 
@@ -1138,7 +1169,7 @@ static void udpos_spp(rtk_t *rtk)
         }
 
         /* NOTE: for tightly coupled mode, reset ins related state after feedback */
-        for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0;
+        if (GINS_TC==opt->GI_mode) reset_instat(rtk);
 
         return;  
     }
@@ -1569,6 +1600,41 @@ static int dopvel_cons(rtk_t *rtk, int nx, int nx_code, const double *x_pre, con
     return nv;
 }
 
+static void save_postat(const double *x, const double *Q, int nx, sol_t *sol, const int *mask, const int *clock_idx)
+{
+    int j;
+
+    sol->type=0; /* not used ? */
+    sol->dtr[0]=x[clock_idx[0]]/CLIGHT; /* receiver clock bias (s) */
+    if (mask[1]) sol->dtr[1]=x[clock_idx[1]]/CLIGHT; /* GLO-GPS time offset (s) */
+    if (mask[2]) sol->dtr[2]=x[clock_idx[2]]/CLIGHT; /* GAL-GPS time offset (s) */
+    if (mask[3]) sol->dtr[3]=x[clock_idx[3]]/CLIGHT; /* BDS-GPS time offset (s) */
+    if (mask[4]) sol->dtr[4]=x[clock_idx[4]]/CLIGHT; /* IRN-GPS time offset (s) */
+    if (mask[5]) sol->dtr[5]=x[clock_idx[5]]/CLIGHT; /* QZS-GPS time offset (s) */               
+    for (j=0;j<3;j++) sol->rr[j]=x[j];
+    /* if (GINS_OFF==opt->GI_mode) for (j=0;j<3;j++) sol->rr[j+3]=0.0; */
+    for (j=0;j<3;j++) sol->qr[j]=(float)Q[j+j*nx];
+    sol->qr[3]=(float)Q[1];    /* cov xy */
+    sol->qr[4]=(float)Q[2+nx]; /* cov yz */
+    sol->qr[5]=(float)Q[2];    /* cov zx */
+
+    sol->age=sol->ratio=sol->ADOP=0.0; 
+}
+
+/* save vel state for spp based on pseudorange and doppler */
+static void save_velstat(const double *x, const double *Q, int nx, sol_t *sol)
+{
+    int j;
+
+    sol->dtr[6]=x[nx-1];
+    for (j=0;j<3;j++) sol->rr_old[j+3]=sol->rr[j+3];
+    for (j=0;j<3;j++) sol->rr[j+3]=x[nx-4+j];
+    for (j=0;j<3;j++) sol->qv[j]=(float)Q[(j+nx-4)+(j+nx-4)*nx];
+    sol->qv[3]=(float)Q[(nx-3)+(nx-4)*nx];    /* cov xy */
+    sol->qv[4]=(float)Q[(nx-2)+(nx-3)*nx];    /* cov yz */
+    sol->qv[5]=(float)Q[(nx-2)+(nx-4)*nx];    /* cov zx */
+}
+
 /* estimate receiver position ------------------------------------------------*/
 extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const double *dts,
                   const double *vare, const int *svh, const nav_t *nav,
@@ -1580,7 +1646,7 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     double *xp,*Pp,vx[4];
     int i,j,k,m,info,nx=0,nx_code=0,stat=SOLQ_NONE,LS_mode=opt->respp?Robust_RES:Robust_OFF,mode,nv=0,*sati,*vi,nf=opt->mfspp?(IONOOPT_IFLC==opt->ionoopt?1:opt->nf):1,ns[nf];
     int max_sat,mask[NX-3]={0},clock_idx[NX-3]={0},spp_mode=opt->spp_mode,dop_cons_flag=0,spp_kf_flag=0;
-    int iter,nv_code=0,nv_dop=0,nv_cons=0,spp_tc_flag=0; /* spp/ins tc flag */
+    int nv_code=0,nv_dop=0,nv_cons=0,spp_tc_flag=0,f=(SPP_LS_CD==spp_mode)?2:1; /* spp/ins tc flag */
     
     trace(8,"estpos  : n=%d\n",n);
     
@@ -1593,16 +1659,10 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     nx=nx_code=spp_sys(opt,clock_idx);
     /* if the sign of doppler observations is no initialized, use SPP_LS_C mode */
     if (!rtk->dopsgn) spp_mode=SPP_LS_C;
-    /* add dopple estimation parameters */
-    if (SPP_LS_CD==spp_mode) {
-        nx+=4; /* ecef velocity and clock drift */
-        v=mat((2*n+5)*nf,1); H=zeros((2*n+5)*nf,nx); var=mat((2*n+5)*nf,1); P=mat((2*n+5)*nf,(2*n+5)*nf);
-        sati=imat((2*n+5)*nf,1); vi=imat((2*n+5)*nf,1);        
-    }
-    else {
-        v=mat((n+5)*nf,1); H=zeros((n+5)*nf,nx); var=mat((n+5)*nf,1); P=mat((n+5)*nf,(n+5)*nf);
-        sati=imat((n+5)*nf,1); vi=imat((n+5)*nf,1);  
-    }
+    if (SPP_LS_CD==spp_mode) nx+=4; /* add dopple estimation parameters, ecef velocity and clock drift */
+
+    v=mat((f*n+5)*nf,1); H=zeros((f*n+5)*nf,nx); var=mat((f*n+5)*nf,1); P=mat((f*n+5)*nf,(f*n+5)*nf);
+    sati=imat((f*n+5)*nf,1); vi=imat((f*n+5)*nf,1);        
     
     /* use the previous epoch position as the initial position */
     for (i=0;i<3;i++) x[i]=sol->rr[i];
@@ -1621,12 +1681,10 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             nv+=resdop_filter(rtk,obs,i,n,nx,rs,dts,nav,x,x+(nx-4),azel,vsat,v+nv,H+nv*nx,var+nv,SPP_LS_CD,vi+nv);
         }
 
-#if 1
         /* outlier recject based on standard normal distribution */
         if (i>=2&&nv>=nx) {
             nv=outrej_spp(nv,&nv_code,nx,nx_code,thres,v,H,var,ssat,sati,vi,vsat,i,clock_idx);
         }
-#endif
 
         /* dopple velocity constraint */
         if (SPP_LS_CD==spp_mode&&dop_cons_flag&&i>2) {
@@ -1660,46 +1718,13 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             x[j]+=dx[j];
         }
         if (norm(dx,nx)<1E-4) {
-            sol->type=0;
-            sol->time=timeadd(obs[0].time,-x[3]/CLIGHT);
-            sol->dtr[0]=x[clock_idx[0]]/CLIGHT; /* receiver clock bias (s) */
-            if (mask[1]) sol->dtr[1]=x[clock_idx[1]]/CLIGHT; /* GLO-GPS time offset (s) */
-            if (mask[2]) sol->dtr[2]=x[clock_idx[2]]/CLIGHT; /* GAL-GPS time offset (s) */
-            if (mask[3]) sol->dtr[3]=x[clock_idx[3]]/CLIGHT; /* BDS-GPS time offset (s) */
-            if (mask[4]) sol->dtr[4]=x[clock_idx[4]]/CLIGHT; /* IRN-GPS time offset (s) */
-            if (mask[5]) sol->dtr[5]=x[clock_idx[5]]/CLIGHT; /* QZS-GPS time offset (s) */
-#if 0            
-            /* position consistency check between epochs */
-            if (dop_cons_flag&&norm(sol->rr+3,3)>0.0) {
-                for (j=0;j<3;j++) dpos[j]=x[j]-sol->rr[j];
-                /* if the position is too far away from the previous epoch, use the doppler velocity to correct the position */
-                if (norm(dpos,3)>120e3/3600.0) { /* dpos thres=120km/h */
-                    for (j=0;j<3;j++) ave_vel[j]=(sol->rr[j+3]+x[nx-4+j])/2.0;
-                    for (j=0;j<3;j++) x[j]=sol->rr[j]+ave_vel[j]*interval;
-                     trace(7,"spp position jump detected, doppler velocity is applied to correct the position!\n");
-                }
-            }
-#endif                
-            for (j=0;j<3;j++) sol->rr[j]=x[j];
-            /* if (GINS_OFF==opt->GI_mode) for (j=0;j<3;j++) sol->rr[j+3]=0.0; */
-            for (j=0;j<3;j++) sol->qr[j]=(float)Q[j+j*nx];
-            sol->qr[3]=(float)Q[1];    /* cov xy */
-            sol->qr[4]=(float)Q[2+nx]; /* cov yz */
-            sol->qr[5]=(float)Q[2];    /* cov zx */
-            /* spp based on pseudorange and doppler */
-            if (SPP_LS_CD==spp_mode) {
-                sol->dtr[6]=x[nx-1];
-                for (j=0;j<3;j++) sol->rr_old[j+3]=sol->rr[j+3];
-                for (j=0;j<3;j++) sol->rr[j+3]=x[nx-4+j];
-                for (j=0;j<3;j++) sol->qv[j]=(float)Q[(j+nx-4)+(j+nx-4)*nx];
-                sol->qv[3]=(float)Q[(nx-3)+(nx-4)*nx];    /* cov xy */
-                sol->qv[4]=(float)Q[(nx-2)+(nx-3)*nx];    /* cov yz */
-                sol->qv[5]=(float)Q[(nx-2)+(nx-4)*nx];    /* cov zx */
-            }
-
-            rtk->outage=0; /* reset outage counter */
+            sol->time=timeadd(obs[0].time,-x[3]/CLIGHT); /* receiver time */
             sol->ns=(uint8_t)ns[0];
-            sol->age=sol->ratio=sol->ADOP=0.0;
+            save_postat(x,Q,nx,sol,mask,clock_idx);
+            /* spp based on pseudorange and doppler */
+            if (SPP_LS_CD==spp_mode) save_velstat(x,Q,nx,sol);
+            /* for GINS mode, may spp is ok but ppk is not ok */
+            if (isGNSS(opt)) rtk->outage=0; /* reset outage counter */
             
             /* validate solution */
             if ((stat=valsol(sol,azel,vsat,n,opt,v,P,nv,nx))) {
@@ -1727,95 +1752,65 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
     if (rtk&&(spp_tc_flag||spp_kf_flag)) {
         nx=(spp_tc_flag)?rtk->nx:NX; /* number of states parameters */
         mode=rtk->opt.filter; /* fusion filter mode */
-        iter=1;
-        /* detected vehicle stationary time (s) */
-        if (spp_tc_flag) zupt_time=rtk->ins.zupt.count*rtk->ins.interval*rtk->ins.nn;
         /* initialize receiver velocity and clock drift */
         if (spp_kf_flag) estvel(rtk,obs,n,rs,dts,nav,opt,sol,azel,vsat);
 
         /* if GNSS solution fails, do not enable GNSS/INS integration mode */
         if (stat) {
             /* initialization, consider motion constraints (NHC/ZUPT/ZIHR) */
-            xp=zeros(nx,1); Pp=zeros(nx,nx);
             nv=2*n*nf+3+1; /* ZUPT+ZIHR */
-            v=mat(nv,1); H=mat(nv,nx); var=mat(nv,1); R=zeros(nv,nv); sati=imat(2*n,1);  
+            xp=zeros(nx,1); Pp=zeros(nx,nx); v=mat(nv,1); H=mat(nv,nx); var=mat(nv,1); R=zeros(nv,nv); sati=imat(2*n,1);
 
             /* time update of ekf states*/
             udstate_spp(rtk);
 
             /* copy states */
-            matcpy(xp,rtk->x,nx,1);
+            matcpy(xp,rtk->x,nx,1); matcpy(Pp,rtk->P,nx,nx);
 
-            for (k=0;k<iter;k++) {
-                /* initialize velocity-related state parameters */
-                for (i=0;i<3;i++) {
-                    if (spp_tc_flag) vx[i]=rtk->ru[i+3]; /* spp/in tc */
-                    else vx[i]=rtk->x[i+3];              /* spp */    
-                }
-                vx[3]=rtk->x[IC(6,opt)];
-
-                /* prefit residuals (v=z-h(x))*/
-                nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,(spp_tc_flag?rtk->ru:xp),opt,ssat,v,H,var,azel,vsat,resp,ns,sati);
-#if 0
-                /* dopple velocity constraint */
-                if (spp_kf_flag&&dop_cons_flag) {
-                    /* if the variance of the velocity estimate is too large, doppler constraints should not be used */
-                    if ((sol->qv[0]+sol->qv[1]+sol->qv[2])/3.0>velvar_thres) {
-                        dop_cons_flag=0;
-                    }
-                    if (dop_cons_flag) {
-                        nv+=dopvel_cons(rtk,nx,3,sol->rr_old,sol->rr_old+3,xp,v+nv,H+nv*nx,var+nv);
-                    }
-                }
-#endif                
-                /* doppler obs */
-                if (rtk->dopsgn) {
-                    nv_dop=resdop_filter(rtk,obs,1,n,-1,rs,dts,nav,(spp_tc_flag?rtk->ru:xp),vx,azel,vsat,v+nv,H+nv*nx,var+nv,(spp_tc_flag?GINS_TC:SPP_KF),NULL);                
-                }
-                
-                /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
-                the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-                if (spp_tc_flag) {
-                    if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt */
-                        nv_cons=motion_update(rtk,H,v,var,nv+nv_dop,nx,CONS_ZUPT);
-                        sol->iFlag=SOLF_ZUPT; /* zupt flag */
-                    }
-                    else if (opt->constraint[0]) { /* nhc */
-                        nv_cons=motion_update(rtk,H,v,var,nv+nv_dop,nx,CONS_NHC);        
-                    }
-                    if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-                        nv_cons+=motion_update(rtk,H,v,var,nv+nv_dop+nv_cons,nx,CONS_ZIHR);
-                    }                    
-                }      
-
-                /* measurement noise covariance matrix R */
-                diag_Cov(nv+nv_dop+nv_cons,var,R,diag_var);
-
-                /* kalman filter measurement update */
-                matcpy(Pp,rtk->P,nx,nx);
-                if ((info=filter_gins(rtk,xp,Pp,H,v,R,nx,(nv+nv_dop+nv_cons),(spp_tc_flag?KF_GINS:KF_GNSS),mode))) {
-                    trace(7,"SPP/INS filter error (info=%d)\n",info);
-                    free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
-                    return SOLQ_NONE;
-                };                
-
-                /* save receiver clock drift (m/s) */
-                for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr[1]=xp[IC(6,opt)];
-
-                /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_dop+nv_cons,R,H,rtk->P,Pp,v,rtk->x,xp); */
-
-                /* updates states */
-                matcpy(rtk->x,xp,nx,1); 
+            /* initialize velocity-related state parameters */
+            for (i=0;i<3;i++) {
+                if (spp_tc_flag) vx[i]=rtk->ru[i+3]; /* spp/in tc */
+                else vx[i]=rtk->x[i+3];              /* spp */    
             }
-            matcpy(rtk->P,Pp,nx,nx);
+            vx[3]=rtk->x[IC(6,opt)];
+
+            /* prefit residuals (v=z-h(x))*/
+            nv=rescode_filter(rtk,obs,n,rs,dts,vare,svh,nav,(spp_tc_flag?rtk->ru:xp),opt,ssat,v,H,var,azel,vsat,resp,ns,sati);               
+            /* doppler obs */
+            if (rtk->dopsgn) {
+                nv_dop=resdop_filter(rtk,obs,1,n,-1,rs,dts,nav,(spp_tc_flag?rtk->ru:xp),vx,azel,vsat,v+nv,H+nv*nx,var+nv,(spp_tc_flag?GINS_TC:SPP_KF),NULL);                
+            }
+            
+            /* motion constraints (nhc/zupt/zihr) */
+            if (spp_tc_flag) {  
+                nv_cons=motion_meas(rtk,opt,H,v,var,nv+nv_dop,nx);                  
+            }      
+
+            /* measurement noise covariance matrix R */
+            diag_Cov(nv+nv_dop+nv_cons,var,R,diag_var);
+
+            /* kalman filter measurement update */
+            if ((info=filter_gins(rtk,xp,Pp,H,v,R,nx,(nv+nv_dop+nv_cons),(spp_tc_flag?KF_GINS:KF_GNSS),mode))) {
+                trace(7,"SPP/INS filter error (info=%d)\n",info);
+                free(xp); free(Pp); free(v); free(H); free(R); free(var); free(sati);
+                return SOLQ_NONE;
+            };                
+
+            /* save receiver clock drift (m/s) */
+            for (j=0;j<n;j++) if (ssat) ssat[obs[j].sat-1].cdtr[1]=xp[IC(6,opt)];
+
+            /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_dop+nv_cons,R,H,rtk->P,Pp,v,rtk->x,xp); */
+
+            /* updates states */
+            matcpy(rtk->x,xp,nx,1); matcpy(rtk->P,Pp,nx,nx);
+
             /* reset cross-covariance */
             /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
 
-            /* ins feedback correction */
+            /* ins feedback correction and state reset */
             if (spp_tc_flag) {
                 ins_fedback(rtk,xp);
-                /* for spp/ins tc mode, reset ins related state after ins feedback correction */
-                for(i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0;
+                reset_instat(rtk);
             }
 
             /* update solution status */
@@ -1825,7 +1820,8 @@ extern int estpos(rtk_t *rtk, const obsd_t *obs, int n, const double *rs, const 
             return stat;
         }
         /* motion constraints (nhc/zupt/zihr) */
-        else if (GINS_TC==opt->GI_mode&&(opt->constraint[0]||opt->constraint[1]||opt->constraint[2])) {
+        else if (GINS_TC==opt->GI_mode&&is_motionconstraints(opt)) {
+            rtk->outage++;
             motion_constraints(rtk,opt);
             return SOLQ_CONS;
         }
@@ -1951,7 +1947,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     if (rtk&&ssat) init_ssatpar(rtk,obs,n,SPP_ssat,SOLQ_NONE);
     
     if (opt_.mode!=PMODE_SINGLE||opt_.GI_mode!=GINS_OFF) { /* for precise positioning */
-        opt_.spp_mode=SPP_LS_C; /* TOdo */
+        opt_.spp_mode=SPP_LS_C; /* TODO */
         opt_.sateph=EPHOPT_BRDC;
         opt_.ionoopt=IONOOPT_BRDC;
         opt_.tropopt=TROPOPT_SAAS;
@@ -1968,8 +1964,8 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
         /* NOTE: reset spp position if gnss outage in spp_kf mode */
         if (SPP_KF==opt_.spp_mode) for (i=0;i<6;i++) rtk->x[i]=0.0;
         /* in the GNSS framework, only TC is processed; LC/STC is processed in lc_gins */
-        if (GINS_TC==opt->GI_mode) {
-            if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
+        if (GINS_TC==opt->GI_mode) { /* for ppd/ppk/ppp-ins tc mode */
+            if (is_motionconstraints(opt)) {
                 motion_constraints(rtk,opt);
             }
             else {
@@ -1986,7 +1982,7 @@ extern int pntpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav,
     }
 
     /* estimate receiver velocity with Doppler */
-    if ((GINS_OFF==opt->GI_mode)&&(SPP_LS_C==opt->spp_mode)&&stat&&rtk->dopsgn) {
+    if (isGNSS(opt)&&(SPP_LS_C==opt->spp_mode)&&stat&&rtk->dopsgn) {
         estvel(rtk,obs,n,rs,dts,nav,&opt_,sol,azel_,vsat);
     }
 

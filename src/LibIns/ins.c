@@ -1616,17 +1616,41 @@ extern void zerovel_detect(rtk_t *rtk, imud_t *imu)
     zupt->old_Gd=zupt->Gd;
 }
 
+/* motion measurement */
+extern int motion_meas(rtk_t *rtk, const prcopt_t *popt, double *H, double *v, double *var, int nv, int nx)
+{
+    ins_t *ins=&rtk->ins;
+    sol_t *sol=(GINS_TC==popt->GI_mode)?&rtk->sol:&rtk->lcgins.sol;
+    double zupt_time=0.0,vel=0.0;
+    int nv_cons=0;
+
+    /* detected vehicle stationary time (s) and GNSS velocity */
+    zupt_time=ins->zupt.count*ins->interval*ins->nn;
+    vel=norm(rtk->sol.rr+3,3);
+
+    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
+    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
+    if (popt->constraint[1]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zupt */
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_ZUPT);
+        sol->iFlag=SOLF_ZUPT; /* zupt flag */
+    }
+    else if (popt->constraint[0]) { /* nhc */
+        nv_cons=motion_update(rtk,H,v,var,nv,nx,CONS_NHC);        
+    }
+    if (popt->constraint[2]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zihr */
+        nv_cons+=motion_update(rtk,H,v,var,nv+nv_cons,nx,CONS_ZIHR);
+    }   
+    
+    return nv_cons;
+}
+
 /* motion constraints */
 extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt) 
 {
     ins_t *ins=&rtk->ins;
     sol_t *sol=(GINS_TC==popt->GI_mode)?&rtk->sol:&rtk->lcgins.sol;
     int i,j,nx=ins->nx,nv=4,info; /* max nv:ZUPT+ZIHR=4 */
-    double zupt_time,vel,*xp,*Pp,*H,*v,*var,*R;
-
-    /* detected vehicle stationary time (s) and GNSS velocity */
-    zupt_time=ins->zupt.count*ins->interval*ins->nn;
-    vel=norm(rtk->sol.rr+3,3);
+    double *xp,*Pp,*H,*v,*var,*R;
 
     /* initializing memory */
     xp=zeros(nx,1); Pp=zeros(nx,nx); R=zeros(nv,nv);
@@ -1636,18 +1660,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt)
     if (GINS_LC==popt->GI_mode||GINS_STC==popt->GI_mode) matcpy(Pp,rtk->lcgins.P,nx,nx);
     else if (GINS_TC==popt->GI_mode) pmatcpy(Pp,nx,nx,0,0,nx,nx,rtk->P,rtk->nx,rtk->nx,0,0,nx,nx); 
 
-    /* NOTE: the vehicle is considered stationary only when the zero speed detection is passed, 
-    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
-    if (popt->constraint[1]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zupt */
-        nv=motion_update(rtk,H,v,var,0,nx,CONS_ZUPT);
-        sol->iFlag=SOLF_ZUPT; /* zupt flag */
-    }
-    else if (popt->constraint[0]) { /* nhc */
-        nv=motion_update(rtk,H,v,var,0,nx,CONS_NHC);        
-    }
-    if (popt->constraint[2]&&zupt_time>1.0&&(vel>0&&vel<0.1)) { /* zihr */
-        nv=motion_update(rtk,H,v,var,nv,nx,CONS_ZIHR);
-    }
+    nv=motion_meas(rtk,popt,H,v,var,0,nx);
     
     /* measurement noise covariance matrix */
     diag_Cov(nv,var,R,diag_var);
@@ -1660,6 +1673,7 @@ extern void motion_constraints(rtk_t *rtk, const prcopt_t *popt)
         update_instat(popt,ins,Pp,sol,nx);
         
         free(xp); free(Pp); free(H); free(v); free(var);
+        return;
     }
     /* update solution status */
     sol->stat=SOLQ_CONS;

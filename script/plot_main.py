@@ -6,6 +6,10 @@ from plot_solution import plot_trajectory
 from plot_solution import plot_position
 from plot_solution import plot_velocity
 from plot_solution import plot_attitude
+from plot_solution import plot_nsatdop
+from plot_solution import plot_ratio
+from plot_solution import plot_solflag
+from plot_solution import plot_pvastd
 from plot_solution import plot_imubias
 from plot_err    import plot_err, plot_err_multi
 import matplotlib.pyplot as plt
@@ -13,12 +17,12 @@ import matplotlib.pyplot as plt
 def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
-    # 可用选项: 'trj'(轨迹), 'pos_(位置), 'vel_'(速度), 'att_(姿态), 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
+    # 可用选项: 'trj'(轨迹), 'pos_(位置), 'vel_'(速度), 'att_(姿态), 'nsat(卫星数)', 'ratio', 'solflag', 'pvastd', 'bias'(零偏), 'err'(误差)
+    PLOT_OPTIONS = ['solflag','err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
-    ERROR_TYPE = 'pva'
+    ERROR_TYPE = 'p'
     
     # 文件路径配置
     PATH_NAME = './GNSS/LG69T_Vehicle_complex_20250414'
@@ -27,7 +31,7 @@ def main():
     MULTI_FILE_ANALYSIS = False  # True: 多文件对比分析, False: 单文件分析
     
     # 单文件分析配置
-    SOLFILE_PATH = './result/LG69T_Vehicle_complex_20250414_PPK_F_TC.pos'  # pos文件路径
+    SOLFILE_PATH = './result/GNSS_Vehicle_complex_20250414_SPP_F.pos'  # pos文件路径
     
     # 多文件分析配置（当MULTI_FILE_ANALYSIS为True时使用）
     SOLFILE_PATHS = [
@@ -51,11 +55,11 @@ def main():
     # 图片保存配置
     SAVE_IMAGES = False  # 设置为True保存图像，False不保存
     DEFINE_PATH = True
-    SAVE_PATH =  './figure/PPK_INS_TC/GECJ+IGG3+ODO+INST_PAR-BIE'
+    SAVE_PATH =  './figure/PPK/GECJ+CONT_FLOAT'
     # ================= 配置结束 =================
     
     # 检查配置是否有效
-    valid_options = ['trj', 'pos_', 'vel_', 'att_', 'bias', 'err']
+    valid_options = ['trj', 'pos_', 'vel_', 'att_', 'nsat', 'ratio', 'solflag', 'pvastd', 'bias', 'err']
     for option in PLOT_OPTIONS:
         if option not in valid_options:
             print(f"错误: 无效的绘制选项 '{option}'")
@@ -88,7 +92,7 @@ def main():
             skip_lines = 0
             row = 10000
             # GINLIB: gps week, sow, pos[x/y/z], ratio, vel[x/y/z], att[pitch/roll/heading], bg[x/y/z], ba[x/y/z]
-            col = 18
+            col = 36
             sample = 1/100
             data = read_pos(solfile, skip_lines, row, col, sample, SOL_TYPE, SOL_IDX, SOLPOS_TYPE, SOLVEL_TYPE)
             if data is not None:
@@ -123,7 +127,7 @@ def main():
         skip_lines = 0
         row = 10000
         # GINLIB: gps week, sow, pos[x/y/z], ratio, vel[x/y/z], att[pitch/roll/heading], bg[x/y/z], ba[x/y/z]
-        col = 18
+        col = 36
         sample = 1/100
 
         # 读取结果文件
@@ -193,6 +197,18 @@ def main():
             print("绘制姿态图...")
             fig = plot_attitude(data)
             figures.append(('att_', fig))
+        elif plot_type== 'nsat':
+            fig = plot_nsatdop(data)
+            figures.append(('nsat', fig))
+        elif plot_type == 'ratio':
+            fig = plot_ratio(data)
+            figures.append(('ratio', fig))
+        elif plot_type == 'solflag':
+            fig = plot_solflag(data)
+            figures.append(('solflag', fig))
+        elif plot_type == 'pvastd':
+            fig = plot_pvastd(data)
+            figures.append(('pvastd', fig))
         elif plot_type == 'bias':
             print("绘制IMU零偏图...")
             fig_bg, fig_ba = plot_imubias(data)
@@ -208,7 +224,7 @@ def main():
                 figures.extend(fig)  # 添加所有误差图
             else:
                 # 单文件误差分析
-                fig, rms_stats, cep_stats = plot_err(data, ref_data, ERROR_TYPE, False)
+                fig, rms_stats, cep_stats = plot_err(data, ref_data, ERROR_TYPE, True)
                 figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件

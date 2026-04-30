@@ -533,7 +533,7 @@ extern void DebugTime(rtk_t *rtk, gtime_t t, int t1, int t2)
     double sec;
     sec=time2gpst(t,&week);
 
-    if (GINS_OFF==rtk->opt.GI_mode&&(int) floor(sec+0.5)==t1&&week==t2) {
+    if (isGNSS(&rtk->opt)&&(int) floor(sec+0.5)==t1&&week==t2) {
         flag=1;
     }
     else if ((int) round(sec+rtk->ins.interval/2.0)==t1&&week==t2) {
@@ -554,7 +554,7 @@ extern int isoutage(rtk_t *rtk, gtime_t t, outsim_t outsim)
 
     if (outsim.sim_flag==0) return 0;
     if (week!=outsim.week) return 0;
-    if (GINS_OFF==rtk->opt.GI_mode) time=(int) floor(sec+0.5);
+    if (isGNSS(&rtk->opt)) time=(int) floor(sec+0.5);
     else time=(int) floor(sec+rtk->ins.interval/2.0);
 
     for (i=0;i<MAXOUT;i++) {
@@ -1497,7 +1497,7 @@ extern int32_t getbits(const uint8_t *buff,int pos,int len) {
 *         [u]int32_t data  I   unsigned/signed data
 *return:none
  *-----------------------------------------------------------------------------*/
-extern void setbitu(uint8_t *buff,int pos,int len,uint32_t data) {
+extern void setbitu(uint8_t *buff, int pos, int len, uint32_t data) {
     uint32_t mask=1u << (len-1);
     int i;
     if (len <=0||32<len)
@@ -2572,7 +2572,7 @@ extern int filter_(rtk_t *rtk, const double *x,const double *P,const double *H,
     double *vk=mat(m,1),*Hk=mat(m,m),*R_=mat(m,m),*D=mat(m,m),*Pv=mat(m,m);
     double *xp_pre=mat(n,1); /* iteration termination judgment */
     int info;
-    int i,j,nx=(GINS_OFF!=rtk->opt.GI_mode)?rtk->ins.nx:3,iter=(Robust_RES==mode||Robust_ST==mode||Robust_MST==mode)?MAXITR_ROBUST:1;
+    int i,j,nx=isGINS(&rtk->opt)?rtk->ins.nx:3,iter=(Robust_RES==mode||Robust_ST==mode||Robust_MST==mode)?MAXITR_ROBUST:1;
     int M_function;
     
     /* determine the robust weight function to be used */
@@ -4304,7 +4304,7 @@ static int readblqrecord(FILE *fp,double *odisp) {
 *         double *odisp      O   ocean tide loading parameters
 *return:status (1:ok,0:file open error)
  *-----------------------------------------------------------------------------*/
-extern int readblq(const char *file,const char *sta,double *odisp) {
+extern int readblq(const char *file, const char *sta, double *odisp) {
     FILE *fp;
     char buff[256],staname[17]="",name[17],*p;
 

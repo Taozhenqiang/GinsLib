@@ -172,7 +172,7 @@ extern "C"
 #define MECH_FORWARD  0   /* forward ins mechanization */
 #define MECH_BACKWARD 1   /* backward ins mechanization */
 
-#define MAX_OUTIME       60  /* INS maximum independent working time 60 */
+#define MAX_OUTIME       600  /* INS maximum independent working time 60 */
 #define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length 20 */
 
 /* position file format (for LC) */
@@ -259,7 +259,7 @@ extern "C"
 #define EFACT_CMP 1.0 /* error factor: BeiDou */
 #define EFACT_IRN 1.5 /* error factor: IRNSS */
 #define EFACT_SBS 3.0 /* error factor: SBAS */
-#define EFACT_GEO 5.0 /* error factor: GEO satellites */
+#define EFACT_GEO 100.0 /* error factor: GEO satellites */
 
 #define SYS_NONE 0x00 /* navigation system: none */
 #define SYS_GPS 0x01  /* navigation system: GPS */
@@ -576,6 +576,7 @@ extern "C"
 #define IONOOPT_EST 4  /* ionosphere option: estimation */
 #define IONOOPT_TEC 5  /* ionosphere option: IONEX TEC model */
 #define IONOOPT_QZS 6  /* ionosphere option: QZSS broadcast model */
+#define IONOOPT_DF  7  /* ionosphere option: double frequency model */
 
 #define TROPOPT_OFF 0  /* troposphere option: correction off */
 #define TROPOPT_SAAS 1 /* troposphere option: Saastamoinen model */
@@ -2261,8 +2262,8 @@ extern "C"
     EXPORT int iontec(gtime_t time, const nav_t *nav, const double *pos,
                       const double *azel, int opt, double *delay, double *var);
     EXPORT void readtec(const char *file, nav_t *nav, int opt);
-    EXPORT int ionocorr(gtime_t time, const nav_t *nav, int sat, const double *pos,
-                        const double *azel, int ionoopt, double *ion, double *var);
+    EXPORT int ionocorr(const obsd_t *obs, gtime_t time, const nav_t *nav, int sat, const double *pos,
+                        const double *azel, const prcopt_t *opt, double *ion, double *var);
     EXPORT int tropcorr(gtime_t time, const nav_t *nav, const double *pos,
                         const double *azel, int tropopt, double *trp, double *var);
     EXPORT int seliflc(int optnf, int sys);
@@ -2560,6 +2561,7 @@ extern "C"
     EXPORT int obsPreprocess(rtk_t *rtk, obsd_t *obs, obsd_t *obs_old, const nav_t *nav, const int n, const int n_old, int *nu_, int *nr_);
 
     /* standard positioning ------------------------------------------------------*/
+    EXPORT int isGEOsat(int sat);
     EXPORT int spp_sys(const prcopt_t *popt, int *clock_idx);
     EXPORT int maxobsat(const int *ns, int nf);
     EXPORT void save_old_obs(const obsd_t *obs, obsd_t *obs_old, const int ns, int *nu_old_);
@@ -2584,11 +2586,11 @@ extern "C"
     EXPORT void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt);
     EXPORT void rtkfree(rtk_t *rtk);
     EXPORT int rtkpos(rtk_t *rtk, obsd_t *obs, int nobs, const nav_t *nav);
-    EXPORT int rtkopenstat(const char *file, int level);
-    EXPORT int rtkopenipos(prcopt_t *opt, const char *file);
-    EXPORT int rtkopenazel(prcopt_t *opt, const char *file);
-    EXPORT int rtkopensatdop(prcopt_t *opt, const char *file);
-    EXPORT void rtkcloseoutfile(void);
+    EXPORT int open_statfile(const char *file, int level);
+    EXPORT int open_iposfile(const prcopt_t *opt, const char *file);
+    EXPORT int open_azelfile(const prcopt_t *opt, const char *file);
+    EXPORT int open_satdopfile(const prcopt_t *opt, const char *file);
+    EXPORT void closeoutfiles(void);
     EXPORT void rtkclosestat(void);
     EXPORT int rtkoutstat(rtk_t *rtk, int level, char *buff);
 
@@ -2607,6 +2609,12 @@ extern "C"
           
     /* ins positioning ------------------------------------------------------------*/ 
     EXPORT void repspace(char *str);
+    EXPORT int solflags(sol_t *sol);
+    EXPORT int isGNSS(const prcopt_t *popt);
+    EXPORT int isGINS(const prcopt_t *popt);
+    EXPORT int isGINS_LC(const prcopt_t *popt);
+    EXPORT int is_motionconstraints(const prcopt_t *popt);
+    EXPORT int isNHC(const prcopt_t *popt);
     EXPORT void getpos(pos_t pos, sol_t *sol, int ipos);
     EXPORT int getodovel(odo_t odo, ins_t *ins, gtime_t gins_time, int iodo);
     EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
@@ -2620,8 +2628,10 @@ extern "C"
     EXPORT int  ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag);
     EXPORT int  tdcp_vel(rtk_t *rtk, rtk_t *rtk_main, const obsd_t *obs, const obsd_t *obs_old, int n, int n_old, const nav_t *nav, const prcopt_t *opt);
     EXPORT void zerovel_detect(rtk_t *rtk, imud_t *imu);
+    EXPORT int motion_meas(rtk_t *rtk, const prcopt_t *popt, double *H, double *v, double *var, int nv, int nx);
     EXPORT void motion_constraints(rtk_t *rtk, const prcopt_t *opt);
     EXPORT int  motion_update(rtk_t *rtk, double *H, double *v, double *var, int nv, int nx, int mode);
+    EXPORT void reset_instat(rtk_t *rtk);
     EXPORT void gins_init(rtk_t *rtk, const prcopt_t *popt);
     EXPORT void pos_reverse(const prcopt_t *popt, ins_t *ins, int *reverse_flag);
     EXPORT void ins_mech(ins_t *ins, imud_t *imu, const prcopt_t *opt);

@@ -197,6 +197,9 @@ int main(int argc, char **argv)
         }
         else if (*argv[i]=='-') printhelp();
     }
+
+    /* adjust time for gins mode, TDCP defaults to non-positioning of the first epoch */
+    if (isGINS(&prcopt)) ts.time-=1.0;
     if (!prcopt.navsys) {
         prcopt.navsys=SYS_GPS|SYS_GLO;
         showerr("No navigation system specified, defaulting to GPS+GLO!\n");

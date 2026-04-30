@@ -229,19 +229,19 @@ static void update_valid_sats(rtk_t *rtk, const int *sat, const int ns)
 *          lambda   : wavelength
 *
 *-----------------------------------------------------------------------------*/
-extern int rtkopenstat(const char *file, int level)
+extern int open_statfile(const char *file, int level)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024];
 
-    trace(3,"rtkopenstat: file=%s level=%d\n",file,level);
+    trace(3,"open_statfile: file=%s level=%d\n",file,level);
 
     if (level<=0) return 0;
 
     reppath(file,path,time,"","");
 
     if (!(fp_stat=fopen(path,"w"))) {
-        trace(1,"rtkopenstat: file open error path=%s\n",path);
+        trace(1,"open_statfile: file open error path=%s\n",path);
         return 0;
     }
     strcpy(file_stat,file);
@@ -250,18 +250,18 @@ extern int rtkopenstat(const char *file, int level)
     return 1;
 }
 
-extern int rtkopenipos(prcopt_t *opt, const char *file)
+extern int open_iposfile(const prcopt_t *opt, const char *file)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
     int n,nf=(PMODE_SINGLE==opt->mode)?1:opt->nf;
 
-    trace(3,"rtkopenipos: file=%s\n",file);
+    trace(3,"open_iposfile: file=%s\n",file);
 
     reppath(file,path,time,"","");
 
     if (!(fp_ipos=fopen(path,"w"))) {
-        trace(1,"rtkopenipos: file open error path=%s\n",path);
+        trace(1,"open_iposfile: file open error path=%s\n",path);
         return 0;
     }
 
@@ -315,18 +315,18 @@ extern int rtkopenipos(prcopt_t *opt, const char *file)
     return 1;
 }
 
-extern int rtkopenazel(prcopt_t *opt, const char *file)
+extern int open_azelfile(const prcopt_t *opt, const char *file)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
     int n,nf=(PMODE_SINGLE==opt->mode)?1:NF(opt);
 
-    trace(3,"rtkopenazel: file=%s\n",file);
+    trace(3,"open_azelfile: file=%s\n",file);
 
     reppath(file,path,time,"","");
 
     if (!(fp_azel=fopen(path,"w"))) {
-        trace(1,"rtkopenazel: file open error path=%s\n",path);
+        trace(1,"open_azelfile: file open error path=%s\n",path);
         return 0;
     }
 
@@ -342,17 +342,17 @@ extern int rtkopenazel(prcopt_t *opt, const char *file)
     return 1;
 }
 
-extern int rtkopensatdop(prcopt_t *opt, const char *file)
+extern int open_satdopfile(const prcopt_t *opt, const char *file)
 {
     gtime_t time=utc2gpst(timeget());
     char path[1024],buff[2*MAXSOLMSG+1],*p=buff;
     int n,nf=(PMODE_SINGLE==opt->mode)?1:NF(opt);
 
-    trace(3,"rtkopenazel: file=%s\n",file);
+    trace(3,"open_satdopfile: file=%s\n",file);
     reppath(file,path,time,"","");
 
     if (!(fp_satdop=fopen(path,"w"))) {
-        trace(1,"rtkopensatdop: file open error path=%s\n",path);
+        trace(1,"open_satdopfile: file open error path=%s\n",path);
         return 0;
     }
 
@@ -373,9 +373,9 @@ extern int rtkopensatdop(prcopt_t *opt, const char *file)
 * args   : none
 * return : none
 *-----------------------------------------------------------------------------*/
-extern void rtkcloseoutfile(void)
+extern void closeoutfiles(void)
 {
-    trace(3,"rtkcloseoutfile:\n");
+    trace(3,"closeoutfiles:\n");
 
     if (fp_stat) fclose(fp_stat);
     if (fp_ipos) fclose(fp_ipos);
@@ -432,7 +432,7 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
     else {
         /* receiver position */
         if (rtk->sol.stato[0]) {
-            if (est&&GINS_OFF==opt->GI_mode) {
+            if (est&&isGNSS(opt)) {
                 for (int i=0;i<3;i++) xa[i]=i<rtk->na?rtk->xa[i]:0.0;
                 p+=sprintf(p,"$POS,%d,%.3f,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",week,tow,
                         rtk->sol.stat,rtk->x[0],rtk->x[1],rtk->x[2],xa[0],xa[1],
@@ -638,17 +638,17 @@ extern int rtkoutstat(rtk_t *rtk, int level, char *buff)
             fr=sys2freid(ssat->sys,j,opt);
             if (PMODE_DGPS<=opt->mode&&!ssat->vsat[fr]) continue;
             int k=IB(i+1,j,opt);
-            /* p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u\n",
+            p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u\n",
                        week,tow,id,fr+1,ssat->azel[0]*R2D,ssat->azel[1]*R2D,
                        ssat->resp[fr],ssat->resc[fr],ssat->vsat[fr],ssat->snr_rover[fr]*SNR_UNIT,
                        ssat->fix[fr],ssat->slip[fr]&3,ssat->lock[fr],ssat->outc[fr],
-                       ssat->slipc[fr],ssat->rejc[fr]); */
-            p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u,%8.2f,%8.2f,%.3f\n",
+                       ssat->slipc[fr],ssat->rejc[fr]);
+            /* p+=sprintf(p,"$SAT,%d,%.3f,%s,%d,%5.1f,%4.1f,%+10.4f,%+10.4f,%d,%4.0f,%d,%d,%4d,%4u,%4u,%4u,%8.2f,%8.2f,%.3f\n",
                        week,tow,id,fr+1,ssat->azel[0]*R2D,ssat->azel[1]*R2D,
                        ssat->resp[fr],ssat->resc[fr],ssat->vsat[fr],ssat->snr_rover[fr]*SNR_UNIT,
                        ssat->fix[fr],ssat->slip[fr]&3,ssat->lock[fr],ssat->outc[fr],
                        ssat->slipc[fr],ssat->rejc[fr],k<rtk->nx?rtk->x[k]:0,
-                       k<rtk->nx?rtk->P[k+k*rtk->nx]:0,ssat->icbias[fr]);
+                       k<rtk->nx?rtk->P[k+k*rtk->nx]:0,ssat->icbias[fr]); */
         }
     }
 
@@ -895,6 +895,7 @@ static double mwobs(rtk_t *rtk, const obsd_t *obs, int i, int j, int k, const na
     if (freq1==0.0||freq2==0.0||MW_u==0.0||MW_b==0.0) return 0.0;
     return MW_u-MW_b;
 }
+
 /* single-differenced measurement error variance -----------------------------*/
 static double varerr(rtk_t *rtk, int sat, int sys, double el, double snr_rover, double snr_base,
                      double bl, double dt, int f, const prcopt_t *opt, const obsd_t *obs)
@@ -902,9 +903,8 @@ static double varerr(rtk_t *rtk, int sat, int sys, double el, double snr_rover, 
     ssat_t *ssat=rtk->ssat+sat-1;
     double a,b,c,d,e;
     double snr_slid=0.0,snr_thres=5.0,dsnr,fact,var;
-    int nf=NF(opt),frq,code,prn,fr,fr2;
+    int nf=NF(opt),frq,code,fr,fr2;
 
-    satsys(sat,&prn);
     frq=f%nf;code=f<nf?0:1;
     fr=sys2freid(sys,frq,opt);
     fr2=sys2freid(sys,1,opt);
@@ -934,7 +934,7 @@ static double varerr(rtk_t *rtk, int sat, int sys, double el, double snr_rover, 
         case SYS_SBS: fact*=EFACT_SBS;break;
         case SYS_QZS: fact*=EFACT_QZS;break;
         case SYS_CMP: 
-            if (prn<=5||prn>=59)  fact*=EFACT_CMP*EFACT_GEO;
+            if (isGEOsat(sat))  fact*=EFACT_CMP*EFACT_GEO;
             else fact*=EFACT_CMP;
             break;
         case SYS_IRN: fact*=EFACT_IRN;break;
@@ -1138,7 +1138,7 @@ static void udpos(rtk_t *rtk, double tt)
         }
 
         /* NOTE: for tightly coupled mode, reset ins related state after feedback */
-        for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0;
+        if (GINS_TC==popt->GI_mode) reset_instat(rtk);
 
         return;
     }
@@ -1334,7 +1334,7 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, const int *iu, const int *i
     for (i=0;i<ns;i++) {
         for (rcv=1;rcv<3;rcv++) {
             sat=obs[iu[i]].sat; sys=satsys(sat,NULL);
-            j=(1==rcv)?iu[i]:ir[i]; /*rcv:  1=rover,2=base*/
+            j=(1==rcv)?iu[i]:ir[i]; /*rcv: 1=rover,2=base */
 
             for (f=0;f<rtk->opt.nf;f++) {
                 fr=sys2freid(sys,f,opt);
@@ -1555,7 +1555,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
 
     /* single-epoch mode does not perform cycle slip detection */
     if (ARMODE_INST!=opt->modear) {
-        /* detect cycle slip by LLI (rcv:  1=rover,2=base)*/
+        /* detect cycle slip by LLI (rcv: 1=rover,2=base) */
         detslp_ll(rtk,obs,iu,ir,ns);
 
         /* detect cycle slip by doppler and phase difference */
@@ -2402,6 +2402,7 @@ static int ddres_tc(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc
 
     return nv;
 }
+
 /* double-differenced residuals and partial derivatives of loose coupling  -----------------------------------
         O rtk->ssat[i].resp[j]=residual pseudorange error
         O rtk->ssat[i].resc[j]=residual carrier phase error
@@ -2426,6 +2427,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
 {
     ins_t *ins=&rtk->ins;
     prcopt_t *opt=&rtk->opt;
+    ssat_t *ssat=rtk->ssat;
     double rr[3],bl,dr[3],posu[3],posr[3],didxi=0.0,didxj=0.0,*im,threshadj=1.0,zupt_time=0.0;
     double *tropr,*tropu,*dtdxr,*dtdxu,*Ri,*Rj,freqi,freqj,*Hi=NULL,df,icb;
     double thres,thres_post; /* prior and post thresholds */
@@ -2471,16 +2473,17 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
             
             /* find reference satellite with highest elevation, set to i */
             for (i=-1,j=0;j<ns;j++) {
-                sysi=rtk->ssat[sat[j]-1].sys;
+                sysi=ssat[sat[j]-1].sys;
                 fr=sys2freid(sysi,frq,opt);
-                if (!test_sys(sysi,m)||sysi==SYS_SBS||exc[j]) continue;
-                /* if the SNR drops suddenly, exclude the satellite */
-                /* if ((rtk->ssat[sat[j]-1].snr_slidr[fr]-rtk->ssat[sat[j]-1].snr_rover[fr]*SNR_UNIT)>5.0) continue; */
+                if (!test_sys(sysi,m)||sysi==SYS_SBS||exc[j]) continue;     
+                if (isGEOsat(sat[j])) continue; /* TODO: skip GEO satellites */
+                /* TODO: if the SNR drops suddenly, exclude the satellite */
+                /* if ((ssat[sat[j]-1].snr_slidr[fr]-ssat[sat[j]-1].snr_rover[fr]*SNR_UNIT)>5.0) continue; */
                 /* check if it is a common satellite */
                 if (!validobs(iu[j],ir[j],f,nf,y)) continue;
                 if (ARMODE_INST!=opt->modear) { /* TODO */
                     /* skip sat with slip unless no other valid sat */
-                    if (i>=0&&rtk->ssat[sat[j]-1].slip[fr]&LLI_SLIP) {
+                    if (i>=0&&ssat[sat[j]-1].slip[fr]&LLI_SLIP) {
                         satno2id(sat[j],id); trace(5,"%s LLI: slip detected!\n",id);
                         continue;  
                     }                    
@@ -2493,13 +2496,14 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
             for (j=0;j<ns;j++) {
                 if (i==j) continue;  /* skip ref sat */
                 satno2id(sat[j],id);
-                sysi=rtk->ssat[sat[i]-1].sys;
-                sysj=rtk->ssat[sat[j]-1].sys;
+                sysi=ssat[sat[i]-1].sys;
+                sysj=ssat[sat[j]-1].sys;
                 fr=sys2freid(sysj,frq,opt);
                 freqi=freq[frq+iu[i]*nf];
                 freqj=freq[frq+iu[j]*nf];
                 if (freqi<=0.0||freqj<=0.0) continue;
                 if (!test_sys(sysj,m)||exc[j]) continue;
+                if (isGEOsat(sat[j])) continue; /* TODO: skip GEO satellites */
                 if (!validobs(iu[j],ir[j],f,nf,y)) continue;
 
                 if (H&&!post) {
@@ -2581,8 +2585,8 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                 }
 
                 /* save residuals */
-                if (code) rtk->ssat[sat[j]-1].resp[fr]=v[nv];  /* pseudorange */
-                else      rtk->ssat[sat[j]-1].resc[fr]=v[nv];  /* carrier phase */
+                if (code) ssat[sat[j]-1].resp[fr]=v[nv];  /* pseudorange */
+                else      ssat[sat[j]-1].resc[fr]=v[nv];  /* carrier phase */
 
                 /* open up outlier threshold if one of the phase biases was just initialized */
                 /* if (PMODE_DGPS<opt->mode&&PMODE_FIXED>=opt->mode) {
@@ -2591,10 +2595,10 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                 } */
 
                 /* single-differenced measurement error variances (m) */
-                Ri[nv]=varerr(rtk,sat[i],sysi,azel[1+iu[i]*2],SNR_UNIT*rtk->ssat[sat[i]-1].snr_rover[fr],
-                              SNR_UNIT*rtk->ssat[sat[i]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[i]]);
-                Rj[nv]=varerr(rtk,sat[j],sysj,azel[1+iu[j]*2],SNR_UNIT*rtk->ssat[sat[j]-1].snr_rover[fr],
-                              SNR_UNIT*rtk->ssat[sat[j]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[j]]);
+                Ri[nv]=varerr(rtk,sat[i],sysi,azel[1+iu[i]*2],SNR_UNIT*ssat[sat[i]-1].snr_rover[fr],
+                              SNR_UNIT*ssat[sat[i]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[i]]);
+                Rj[nv]=varerr(rtk,sat[j],sysj,azel[1+iu[j]*2],SNR_UNIT*ssat[sat[j]-1].snr_rover[fr],
+                              SNR_UNIT*ssat[sat[j]-1].snr_base[fr],bl,dt,f,opt,&obs[iu[j]]);
 
 #if 0                 
                 /* TODO: calculate pre-fit and post-fit threshold */          
@@ -2620,8 +2624,8 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                     /* reject this satellite */
                     exc[j]=1;
                     if (!code) {
-                        rtk->ssat[sat[i]-1].rejc[fr]++; 
-                        rtk->ssat[sat[j]-1].rejc[fr]++;                        
+                        ssat[sat[i]-1].rejc[fr]++; 
+                        ssat[sat[j]-1].rejc[fr]++;                        
                     }
                     sys2frech(sysj,fr,fc);
                     trace(7,"(prio) outlier rejected(ppk) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
@@ -2637,7 +2641,7 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
                     /* record large post-fit residuals */                 
                     thres_post=sqrt(Ri[nv]+Rj[nv]);             
                     if (post>0&&fabs(v[nv])>thres_post*THRES_REJECT) {
-                        obsi[ne]=j; frqi[ne]=fr; ve[ne]=v[nv]; vari[ne]=(Ri[nv]+Rj[nv]); codei[ne]=code; sysix[ne]=sysi; ne++;
+                        obsi[ne]=j; frqi[ne]=fr; ve[ne]=v[nv]; vari[ne]=Ri[nv]+Rj[nv]; codei[ne]=code; sysix[ne]=sysi; ne++;
                         sys2frech(sysj,fr,fc);
                         trace(8,"(post) outlier record(ppk) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",id,code?"P":"L",
                             fr+1,fc,v[nv],sqrt((Ri[nv]+Rj[nv]))*THRES_REJECT,azel[1+iu[j]*2]*R2D);
@@ -2646,24 +2650,24 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
 
                 /* NOTE: set valid data flags, for PPK mode, if only pseudorange observations are available, the valid flag is set to 0 */
                 if (opt->mode>PMODE_DGPS) {
-                    if (!code) rtk->ssat[sat[i]-1].vsat[fr]=rtk->ssat[sat[j]-1].vsat[fr]=1;
+                    if (!code) ssat[sat[i]-1].vsat[fr]=ssat[sat[j]-1].vsat[fr]=1;
                 }
                 else {
-                    rtk->ssat[sat[i]-1].vsat[fr]=rtk->ssat[sat[j]-1].vsat[fr]=1;
+                    ssat[sat[i]-1].vsat[fr]=ssat[sat[j]-1].vsat[fr]=1;
                 }
 
 #ifdef TRACE
                 if (PMODE_DGPS<opt->mode&&PMODE_FIXED>=opt->mode) {
                     double icb;
-                    if (rtk->opt.glomodear==GLO_ARMODE_AUTOCAL)
+                    if (opt->glomodear==GLO_ARMODE_AUTOCAL)
                         icb=x[IL(frq,opt)];
                     else
-                        icb=rtk->ssat[sat[i]-1].icbias[fr]*CLIGHT/freqi -
-                            rtk->ssat[sat[j]-1].icbias[fr]*CLIGHT/freqj;
-                    jj=IB(sat[j],frq,&rtk->opt);
+                        icb=ssat[sat[i]-1].icbias[fr]*CLIGHT/freqi -
+                            ssat[sat[j]-1].icbias[fr]*CLIGHT/freqj;
+                    jj=IB(sat[j],frq,opt);
                     trace(3,"sat=%3d-%3d %s%d v=%13.3f R=%9.6f %9.6f icb=%9.3f lock=%5d x=%9.3f P=%.3f\n",
                             sat[i],sat[j],code?"P":"L",fr+1,v[nv],Ri[nv],Rj[nv],icb,
-                            rtk->ssat[sat[j]-1].lock[fr],x[jj],P[jj+jj*rtk->nx]);                    
+                            ssat[sat[j]-1].lock[fr],x[jj],P[jj+jj*rtk->nx]);                    
                 }
 #endif
 
@@ -2685,37 +2689,20 @@ static int ddres(int post, rtk_t *rtk, const obsd_t *obs, double dt, int *exc, c
         trace(7,"(post) outlier rejected(ppk) (iter=%d) sat=%s %s%d(%3s), res=%9.4f, thres=%9.4f, el=%4.1f\n",post,id,codemax?"P":"L",
             maxfrq+1,fc,vmax,varmax,azel[1+iu[maxobs]*2]*R2D);
         /* if the post-fit test fails, the solution flag is set to 0 */    
-        exc[maxobs]=1; rtk->ssat[sat[maxobs]-1].rejc[maxfrq]++; stat=0;
+        exc[maxobs]=1; ssat[sat[maxobs]-1].rejc[maxfrq]++; stat=0;
     }
 
     /* baseline length constraint, for fixed distance between base and rover */
-    if (H&&!post&&rtk->opt.baseline[0]>0.0&&constbl(rtk,x,P,v,H,Ri,Rj,nv)) {
+    if (H&&!post&&opt->baseline[0]>0.0&&constbl(rtk,x,P,v,H,Ri,Rj,nv)) {
         vflg[nv++]=3<<4;
         nb[b++]++;
     }
 
-    /* NOTE the vehicle is considered stationary only when the zero speed detection is passed, 
-    the stationary state is greater than 1s and the calculated vehicle speed is less than 0.1m/s */
+    /* motion measurement */
     if (GINS_TC==opt->GI_mode&&H&&!post) {
-        /* zero-speed time detection */
-        zupt_time=ins->zupt.count*ins->interval*ins->nn; 
-
-        if (opt->constraint[1]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zupt*/
-            nv_cons=motion_update(rtk,H,v,Rj,nv,rtk->nx,CONS_ZUPT);
-            rtk->sol.iFlag=SOLF_ZUPT; /* zupt flag */
-            for (k=0;k<nv_cons;k++) Ri[nv++]=0.0;
-            nb[b++]=nv_cons;
-        }
-        else if (opt->constraint[0]) { /* nhc */
-            nv_cons=motion_update(rtk,H,v,Rj,nv,rtk->nx,CONS_NHC);
-            for (k=0;k<nv_cons;k++) Ri[nv++]=0.0;   
-            nb[b++]=nv_cons;     
-        } 
-        if (opt->constraint[2]&&zupt_time>1.0&&(norm(rtk->sol.rr+3,3)>0&&norm(rtk->sol.rr+3,3)<0.1)) { /* zihr */
-            nv_cons=motion_update(rtk,H,v,Rj,nv,rtk->nx,CONS_ZIHR);
-            for (k=0;k<nv_cons;k++) Ri[nv++]=0.0;   
-            nb[b++]=nv_cons; 
-        }        
+        nv_cons=motion_meas(rtk,opt,H,v,Rj,nv,rtk->nx);  
+        for (k=0;k<nv_cons;k++) Ri[nv++]=0.0;   
+        nb[b++]=nv_cons;       
     }       
 
     if (H) { trace(8,"H=\n"); tracemat(8,H,rtk->nx,nv,7,4); }
@@ -2876,7 +2863,7 @@ static int ddidx(rtk_t *rtk, int *ix, int *lower_ix, int gps, int glo, int sbs)
 static int ddidx(rtk_t *rtk, int *ix, int *ixf, int *lower_ix, int gps, int glo, int sbs)
 {
     prcopt_t *opt=&rtk->opt;
-    int i,j,k,m,f,nb=0,na=rtk->na,nf=NF(&rtk->opt),nofix,sat,fr,prn;
+    int i,j,k,m,f,nb=0,na=rtk->na,nf=NF(&rtk->opt),nofix,sat,fr;
     int n=0,obs_i[MAXOBS]={0},obs_mi[MAXSYS*MAXFREQ]={0},temp,temp2[2]={0},nm=0;
     char id_ref[4],id_tgt[4];
 
@@ -2891,14 +2878,14 @@ static int ddidx(rtk_t *rtk, int *ix, int *ixf, int *lower_ix, int gps, int glo,
             /* look for valid sat and sorting (i=state index, i-k=sat index) */
             for (n=0,i=k;i<k+MAXSAT;i++) 
             {
-                sat=i-k; satsys(sat+1,&prn);
+                sat=i-k;
                 /* skip if sat does not belong to the current system */
                 if (!test_sys(rtk->ssat[sat].sys,m)) continue;
 
                 fr=sys2freid(rtk->ssat[sat].sys,f,opt);
                 /* if ((rtk->ssat[sat].snr_slidr[fr]-rtk->ssat[sat].snr_rover[fr]*SNR_UNIT)>5.0) continue; */
                 /* skip if sat not active or invalid for par (including GEO satellites(C01-C05/C59 C60 ...) of BDS) */
-                if (rtk->x[i]==0.0||!rtk->ssat[sat].vsat[fr]||rtk->ssat[sat].par_ivsat[fr]||(m==3&&prn<=5)||(m==3&&prn>=59)) { 
+                if (rtk->x[i]==0.0||!rtk->ssat[sat].vsat[fr]||rtk->ssat[sat].par_ivsat[fr]||isGEOsat(sat)) { 
                     continue;
                 }
                 /* set sat to use for fixing ambiguity if meets criteria */
@@ -3625,7 +3612,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     int info,vflg[MAXOBS*NFREQ*2+1],svh[MAXOBS*2];
     int stat=rtk->opt.mode<=PMODE_DGPS?SOLQ_DGPS:SOLQ_FLOAT;
     int nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf,sys,fr,mode=rtk->opt.filter;
-    int factor=(GINS_TC==opt->GI_mode)?1:2,maxiter=MAX_ITER*factor;
+    int factor=(GINS_TC==opt->GI_mode)?2:2,maxiter=MAX_ITER*factor;
 
     trace(3,"relpos  : nu=%d nr=%d\n",nu,nr);
 
@@ -3746,9 +3733,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     }
 
     /* ins feedback correction */
-    if (GINS_TC==opt->GI_mode&&stat) {
-        ins_fedback(rtk,xp);
-    }
+    if (GINS_TC==opt->GI_mode&&stat) ins_fedback(rtk,xp);
 
     /* resolve integer ambiguity by LAMBDA */
     if (stat==SOLQ_FLOAT&&rtk->sol.ns>=2) {
@@ -3780,9 +3765,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     }
 
     /* NOTE: for tightly coupled mode, reset ins related state after feedback */
-    if (GINS_TC==opt->GI_mode) {
-        for (i=0;i<rtk->ins.nx;i++) rtk->x[i]=0.0; 
-    }
+    if (GINS_TC==opt->GI_mode) reset_instat(rtk);
 
     /* reset cross-covariance */
     /* init_crosscov(rtk,rtk->ins.nx,rtk->nx); */
@@ -3790,7 +3773,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     /* if GNSS is not available, use pure inertial navigation solution and increment the outage count */
     if (SOLQ_NONE==stat) {
         if (GINS_TC==opt->GI_mode) {
-            if (opt->constraint[0]||opt->constraint[1]||opt->constraint[2]) {
+            rtk->outage++; 
+            if (is_motionconstraints(opt)) {
                 motion_constraints(rtk,opt);
 
                 free(rs); free(dts); free(var); free(y); free(e); free(azel); free(freq);
@@ -3798,8 +3782,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
                 return SOLQ_CONS;                
             }
             else stat=SOLQ_INS;                  
-        }                
-        rtk->outage++;          
+        }                         
     }
 
     /* update solution status */
@@ -3877,7 +3860,7 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *popt, const solopt_t *sopt)
     rtk->gnss_aid_age=0;
 
     /* initialize GINS parameters */
-    if (GINS_LC==popt->GI_mode||GINS_TC==popt->GI_mode||GINS_STC==popt->GI_mode)
+    if (isGINS(popt))
     {
         gins_init(rtk,popt);
     }
@@ -3898,7 +3881,7 @@ extern void rtkfree(rtk_t *rtk)
     free(rtk->Pa); rtk->Pa=NULL;
 
     /* free GINS memory */
-    if (GINS_LC==rtk->opt.GI_mode||GINS_TC==rtk->opt.GI_mode||GINS_STC==rtk->opt.GI_mode)
+    if (isGINS(&rtk->opt))
     {
         free(rtk->ins.F);   rtk->ins.F=NULL;
         free(rtk->ins.G);   rtk->ins.G=NULL;    
@@ -4012,8 +3995,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
         return 1;
     }
 
-    /* NOTE: suppress output of single solution 
-     if the spp solution be output when the solution fails in DGPS/PPK/PPP mode. */
+    /* NOTE: suppress output of single solution, whether the spp solution be output when the solution fails in DGPS/PPK/PPP mode */
     if (!opt->outsingle) {
         rtk->sol.stat=SOLQ_NONE;
     }

@@ -920,7 +920,7 @@ static void saveslips(uint8_t slips[][NFREQ+NEXOBS], obsd_t *data)
 {
     int i;
     for (i=0;i<NFREQ+NEXOBS;i++) {
-        if (data->LLI[i]&1) slips[data->sat-1][i]|=LLI_SLIP;
+        if (data->LLI[i]&1) slips[data->sat-1][i]|=LLI_SLIP;    
     }
 }
 /* restore cycle slips -------------------------------------------------------*/
@@ -1130,7 +1130,7 @@ static int readrnxobs(FILE *fp, gtime_t ts, gtime_t te, double tint,
     while ((n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta))>=0&&stat>=0) {
 
         if (flag==5) {
-            eventime = data[0].eventime;
+            eventime=data[0].eventime;
             n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
             if (fabs(timediff(data[0].time,time1)-dtime1)>=DTTOL)
                 n=readrnxobsb(fp,opt,ver,tsys,tobs,&flag,data,sta);
@@ -1140,12 +1140,15 @@ static int readrnxobs(FILE *fp, gtime_t ts, gtime_t te, double tint,
            for (i=0;i<n;i++) data[i].eventime = eventime;
         }  else {
            /* add event to previous epoch if delayed */
-            for (i=0;i<n1;i++) obs->data[obs->n-i-1].eventime = eventime;
+            for (i=0;i<n1;i++) obs->data[obs->n-i-1].eventime=eventime;
             for (i=0;i<n;i++) data[i].eventime=time0;
         }
         /* set to zero eventime for the next iteration */
-        eventime.time = 0;
-        eventime.sec = 0;
+        eventime.time=0;
+        eventime.sec=0;
+
+        /* TZQ: clear cycle slip flag */
+        memset(slips,0,sizeof(slips));
 
         for (i=0;i<n;i++) {
 
@@ -1606,8 +1609,7 @@ static int readrnxfp(FILE *fp, gtime_t ts, gtime_t te, double tint,
 
     /* read RINEX file body */
     switch (*type) {
-        case 'O': return readrnxobs(fp,ts,te,tint,opt,index,ver,&tsys,tobs,obs,
-                                    sta);
+        case 'O': return readrnxobs(fp,ts,te,tint,opt,index,ver,&tsys,tobs,obs,sta);
         case 'N': return readrnxnav(fp,opt,ver,sys    ,nav);
         case 'G': return readrnxnav(fp,opt,ver,SYS_GLO,nav);
         case 'H': return readrnxnav(fp,opt,ver,SYS_SBS,nav);
