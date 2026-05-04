@@ -11,7 +11,8 @@
                 "_UNICODE"  // Windows特有宏
             ],
             "intelliSenseMode": "windows-gcc-x86",
-            "compilerPath": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe"
+            // "compilerPath": "D:\\mingw\\mingw_x86_64-8.1.0-release-win32\\mingw64\\bin\\gcc.exe",
+            "compilerPath":"D:\\Program Files (x86)\\Mingw\\x86_64-8.1.0-release-win32-seh-rt_v6-rev0\\mingw64\\bin\\gcc.exe" //laptop
         }
         // {
         //     "name": "Linux",  // 新增Linux配置
