@@ -79,7 +79,7 @@ def read_pos(navfile, skip_lines=28, row=10000, col=18, sample=5e-2, sol_type='G
                                     0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0]  
-                    else:  # GNSS/INS: gps week, sow, pos[x/y/z],  vel[x/y/z], att[pitch/roll/heading], 
+                    else:  # GNSS/INS: gps week, sow, pos[x/y/z], vel[x/y/z], att[pitch/roll/heading], 
                            # Q, ns, ratio, PDOP
                            # bg[x/y/z], ba[x/y/z]
                            # pos_std, vel_std, att_std, bg_std, ba_std

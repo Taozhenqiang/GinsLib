@@ -1340,7 +1340,7 @@ static void update_stat(rtk_t *rtk, int n, int stat)
     int nx=rtk->nx,i;
     
     /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
-    if (rtk->outage<=MAX_OUTIME) rtk->outage=0;
+    if (rtk->outage<=ins->max_outime) rtk->outage=0;
     sol->ns=n;
     sol->stat=stat;
     

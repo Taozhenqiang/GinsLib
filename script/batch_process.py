@@ -407,7 +407,7 @@ def batch_process_gins(exe_path_input, err_analysis=False):
                     # [exe_path,"-k",conf_file,"-p","1","-gins","2","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0"], #ppd/ins TC
                     # [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","2","-amb","2","-ambt","4","-solt","0"], #ppk
                     # [exe_path,"-k",conf_file,"-p","2","-gins","1","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","2","-amb","0","-ambt","4","-solt","0","-imu",f"{psd_gyro}",f"{psd_acc}",f"{psd_bg}",f"{psd_ba}"], #ppk/ins LC
-                    [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GECJ","-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","4","-solt","0"], #ppk/ins LC
+                    [exe_path,"-k",conf_file,"-p","2","-gins","0","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","0","-solt","0"], #ppk/ins LC
                     # [exe_path,"-k",conf_file,"-p","2","-gins","2","-sys","GE","-ion","1","-tro","1","-eph","0","-flt","1","-amb","2","-ambt","1","-solt","0"], #ppk/ins TC
                 ]
 

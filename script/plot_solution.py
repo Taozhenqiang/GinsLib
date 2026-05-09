@@ -264,8 +264,8 @@ def plot_imubias(solution):
     for n in range(nsol):
         time[n] = solution[n, 1]  # GPS time
         if len(solution[n]) >= 18:
-            bg[n, :] = solution[n, 12:15]  # Gyroscope biases (deg/h)
-            ba[n, :] = solution[n, 15:18]  # Accelerometer biases (ug) 
+            bg[n, :] = solution[n, 15:18]  # Gyroscope biases (deg/h)
+            ba[n, :] = solution[n, 18:21]  # Accelerometer biases (ug) 
         else:
             bg[n, :] = np.zeros(3)
             ba[n, :] = np.zeros(3)
@@ -411,6 +411,8 @@ def plot_ratio(solution):
     ax.ticklabel_format(style='plain', axis='y')
     plt.tight_layout()  
 
+    return fig
+
 def plot_solflag(solution):
     """
     Plot the solution flag over GPS time.
@@ -461,6 +463,8 @@ def plot_solflag(solution):
     ax.ticklabel_format(style='plain', axis='x')
     ax.ticklabel_format(style='plain', axis='y')
     plt.tight_layout()  
+
+    return fig
 
 def plot_pvastd(solution):
     """
@@ -550,7 +554,9 @@ def plot_pvastd(solution):
     ax[2, 1].plot(time, bastd[:, 2], color=Fcolor[2], linestyle='-', linewidth=1.0, marker='.', markersize=2.5) 
     ax[2, 1].grid(True, linestyle='--', color='k', alpha=0.3)
     ax[2, 1].legend(['x', 'y', 'z'], fontsize=12)
-    ax[2, 1].set_ylabel('Bastd [ug]', fontsize=12, family='Times New Roman')
+    ax[2, 1].set_ylabel('BaStd [ug]', fontsize=12, family='Times New Roman')
     ax[2, 1].set_xlabel('GPS Time [s]', fontsize=12, family='Times New Roman')
     ax[2, 1].ticklabel_format(style='plain', axis='x')
     ax[2, 1].ticklabel_format(style='plain', axis='y')
+
+    return fig

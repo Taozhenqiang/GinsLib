@@ -12,7 +12,7 @@
             "args": [
                 "-k",
                 // "CPT_Vehicle_open_20190328.conf",
-                // "EG320N_Vehicle_complex_20250419.conf",
+                "EG320N_Vehicle_complex_20250419.conf",
                 // "EG320N_Vehicle_open_20250418.conf",                
                 // "EG320N_Vehicle_open_20250418_campus1.conf",
                 // "EG320N_Vehicle_open_20250418_campus2.conf",
@@ -47,20 +47,20 @@
                 // "ADIS16488_Vehicle_complex_20210728.conf",     
                 
                 // "LG69T_Vehicle_complex_20260211.conf",
-                "LG69T_Vehicle_complex_20250414.conf",
+                // "LG69T_Vehicle_complex_20250414.conf",
                 // "gnssloger_20260116.conf",
                 // "gnssloger_20251010.conf",
                
 
-                "-p","0","-gins","0","-sys","GECJ",
-                "-ion","1","-tro","1","-eph","0","-flt","0","-amb","0","-ambt","0","-solt","0", 
+                "-p","2","-gins","2","-sys","GE",
+                "-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","0","-solt","0", 
                 "-ref","./truth.truth",
                 // "-kml",
                 "-pcolor","2",
                 
                 "-x","4224",//trace level:12,7,4
             ],
-            "cwd": "${workspaceFolder}/data/GNSS/LG69T_Vehicle_complex_20250414",
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle/EG320N_Vehicle_complex_20250419",
             
         },  
         {
@@ -174,7 +174,7 @@
             
             // for Windows
             "program": "${workspaceFolder}/script/batch_process.py",
-            "cwd": "${workspaceFolder}/data/GNSS", //工作路径,
+            "cwd": "${workspaceFolder}/data/GNSS_INS_Vehicle", //工作路径,
             "console": "externalTerminal",
         },
         {

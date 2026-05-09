@@ -18,33 +18,33 @@ def main():
     # ================= 配置区域 =================
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos_(位置), 'vel_'(速度), 'att_(姿态), 'nsat(卫星数)', 'ratio', 'solflag', 'pvastd', 'bias'(零偏), 'err'(误差)
-    PLOT_OPTIONS = ['solflag','err']  # 修改这里来选择要绘制的图表
+    PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
     
     # 误差类型配置（仅当选择err时使用）
     # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
     ERROR_TYPE = 'p'
     
     # 文件路径配置
-    PATH_NAME = './GNSS/LG69T_Vehicle_complex_20250414'
+    PATH_NAME = './GNSS_INS_Vehicle/EG320N_Vehicle_complex_20250419'
     
     # 多文件误差分析选项
     MULTI_FILE_ANALYSIS = False  # True: 多文件对比分析, False: 单文件分析
     
     # 单文件分析配置
-    SOLFILE_PATH = './result/GNSS_Vehicle_complex_20250414_SPP_F.pos'  # pos文件路径
+    SOLFILE_PATH = './result/EG320N_Vehicle_complex_20250419_PPK_F_TC.pos'  # pos文件路径
     
     # 多文件分析配置（当MULTI_FILE_ANALYSIS为True时使用）
     SOLFILE_PATHS = [
-        './result/GNSS_Vehicle_complex_20250414_PPK_F_INST.pos',
-        './result/ASM330_Vehicle_complex_20250414_GNSS_F_LC.pos', 
+        './result/EG320N_Vehicle_complex_20250419_PPK_F_LC.pos',
+        './result/EG320N_Vehicle_complex_20250419_PPK_F_TC.pos', 
     ]
     SOLFILE_LABELS = [
-        'PPK',
         'PPK/INS-LC',
+        'PPK/INS-TC',
     ]
     TIME_SYNC_MODE = 1  # 时间同步模式 (1: 各自独立时间序列; 2: 以第一个文件为基准同步)
 
-    REFFILE_PATH = 'truth_pva.truth'  # ref参考文件路径
+    REFFILE_PATH = 'truth.truth'  # ref参考文件路径
 
     # pos文件配置
     SOL_TYPE = 'GINSLIB'  # pos文件类型，GINSLIB/OTHER
@@ -55,7 +55,7 @@ def main():
     # 图片保存配置
     SAVE_IMAGES = False  # 设置为True保存图像，False不保存
     DEFINE_PATH = True
-    SAVE_PATH =  './figure/PPK/GECJ+CONT_FLOAT'
+    SAVE_PATH =  './figure/PPK_INS_TC/GE+IGG3+INST-FLOAT'
     # ================= 配置结束 =================
     
     # 检查配置是否有效
@@ -224,7 +224,7 @@ def main():
                 figures.extend(fig)  # 添加所有误差图
             else:
                 # 单文件误差分析
-                fig, rms_stats, cep_stats = plot_err(data, ref_data, ERROR_TYPE, True)
+                fig, rms_stats, cep_stats = plot_err(data, ref_data, ERROR_TYPE, False)
                 figures.extend(fig)  # 添加所有误差图
     
     # 保存所有图像到文件
@@ -264,6 +264,14 @@ def main():
                 filename = f"{data_name_without_ext}_vel.png"
             elif plot_type == 'att_':
                 filename = f"{data_name_without_ext}_att.png"
+            elif plot_type == 'nsat':
+                filename = f"{data_name_without_ext}_nsat.png"
+            elif plot_type == 'ratio':
+                filename = f"{data_name_without_ext}_ratio.png"
+            elif plot_type == 'solflag':
+                filename = f"{data_name_without_ext}_solflag.png"
+            elif plot_type == 'pvastd':
+                filename = f"{data_name_without_ext}_pvastd.png"
             elif plot_type == 'bg':
                 filename = f"{data_name_without_ext}_bg.png"
             elif plot_type == 'ba':

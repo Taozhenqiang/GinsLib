@@ -224,9 +224,9 @@ Debug_Glo_t Debug_Glo={
 outsim_t outsim={
     0,       /* outage simulation flag (0:off, 1:on) */
     0,       /* Is the current epoch within the set interruption period? (0:no, 1:yes) */
-    2188,    /* GPS week */
-    600,     /* outage interval (s) = outage end time- outage start time */
-    {447454} /* outage start time series */
+    2362,    /* GPS week */
+    200,     /* outage interval (s) = outage end time- outage start time */
+    {546930} /* outage start time series */
 };
 
 const prcopt_t prcopt_default={
@@ -719,7 +719,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
             sys=satsys(i+1,NULL);
             for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
-                ssat[i].fix[fr]=ssat[i].par_ivsat[fr]=0;
+                ssat[i].fix[fr]=ssat[i].par_ivsat[fr]=AMB_FLOAT;
             }       
         } 
     }   
@@ -740,7 +740,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
             for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 /* don't lose track of which sats were used to try and resolve the ambiguities */
-                if (ssat[i].fix[j]==2&&stat!=SOLQ_FIX) ssat[i].fix[j]=1;
+                if (ssat[i].fix[j]==AMB_HOLD&&stat!=SOLQ_FIX) ssat[i].fix[j]=AMB_FIX;
                 if (ssat[i].slip[fr]&1) ssat[i].slipc[fr]++;
             }
         }
@@ -755,7 +755,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
             sys=satsys(i+1,NULL);
             for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
-                ssat[i].fix[fr]=0;
+                ssat[i].fix[fr]=AMB_FLOAT;
             }
         }
         for (i=0;i<n&&i<MAXOBS;i++) {
@@ -784,7 +784,7 @@ extern int init_ssatpar(rtk_t *rtk, const obsd_t *obs, int n, int mode, int stat
             for (j=0;j<nf;j++) {
                 fr=sys2freid(sys,j,opt);
                 if (ssat[i].slip[fr]&3) ssat[i].slipc[fr]++;
-                if (ssat[i].fix[fr]==2&&stat!=SOLQ_FIX) ssat[i].fix[fr]=1;
+                if (ssat[i].fix[fr]==AMB_HOLD&&stat!=SOLQ_FIX) ssat[i].fix[fr]=AMB_FIX;
             }
         }
     }

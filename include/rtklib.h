@@ -172,7 +172,6 @@ extern "C"
 #define MECH_FORWARD  0   /* forward ins mechanization */
 #define MECH_BACKWARD 1   /* backward ins mechanization */
 
-#define MAX_OUTIME       600  /* INS maximum independent working time 60 */
 #define MAX_GNSS_AID_AGE 20  /* GNSS-assisted INS status detection window length 20 */
 
 /* position file format (for LC) */
@@ -233,6 +232,11 @@ extern "C"
 #define OPT_DCB 1       /* option: dcb correction */
 #define OPT_OSB 2       /* option: osb correction */
 #define OPT_TGD 3       /* option: tgd correction */
+
+/* amb state */
+#define AMB_FLOAT 0       /* amb state: float */
+#define AMB_FIX   1       /* amb state: fix */
+#define AMB_HOLD  2       /* amb state: fix and hold */
 
 #define FREQL1 1.57542E9      /* L1/E1/B1C  frequency (Hz) */
 #define FREQL2 1.22760E9      /* L2     frequency (Hz) */
@@ -874,6 +878,7 @@ extern "C"
         int nn;                      /* number of samples */
         int bias_flag;               /* static bias initialization flag (0:off, 1:on) */
         double dttol;
+        double max_outime;           /* ins maximum independent working time (s) */
         double interval;             /* ins sample interval (s) */
         double n1dw[3];              /* gyroscope angle increment of the next epoch */
         double n1dv[3];              /* accelerometer speed increment of the next epoch */
@@ -1555,7 +1560,7 @@ extern "C"
 
         int week;                /* GPS week for GNSS/INS LC with pos file */
         int postype;             /* pos file type (POSF_???) */
-        int odopt;              /* odo velocity option (ODO_???) */
+        int odopt;               /* odo velocity option (ODO_???) */
         int imudatype;           /* imu data type (IMUT_???) */
         char imu_order[10];      /* imu data order (AgGd, AgGr, GdAg, GrAg) */
         int bodyframe;           /* body frame direction(0:RFU,1:FRD) */
@@ -1565,6 +1570,7 @@ extern "C"
         int alingetype;          /* ins initial alignment type (0:manual alignment,1:velocity vector alignment) */
         int att_type;            /* attitude update method (0:DCM, 1:quat) */
         int err_model;           /* ins error model (0:phi,1:psi) */
+        double max_outime;       /* ins maximum independent working time (s) */
         int constraint[3];       /* constraint type (CONS_???) [1]NHC,[2]ZUPT,[3]ZIHR */
         double rotation_angle[3];/* ins rotation angle, [pitch,roll,yaw] (deg), from v frame to b' frame */
         double lever_nhc[3];     /* lever frame from imu to nhc effective point in b frame (m) */

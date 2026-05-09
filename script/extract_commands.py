@@ -7,10 +7,10 @@ from collections import Counter
 # 在这里修改配置参数（如果使用命令行参数，这些配置将被覆盖）
 
 # 输入文件路径
-INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LG69TAP01-TEMP0711-1HZ_INS.dat"
+INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LUA501RA_1_COM287.log"
 
 # 输出文件路径
-OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/imu.txt"  # None表示自动生成
+OUTPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LUA501RA_imu.txt"  # None表示自动生成
 
 # 目标指令列表（支持多个指令）
 TARGET_COMMANDS = ["$PQTMRAWIMU"]  # 示例：提取$PQTMDRPVA指令

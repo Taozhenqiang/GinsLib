@@ -188,7 +188,7 @@ extern int ins_update(rtk_t *rtk)
     else matcpy(rtk->lcgins.P,P,nx,nx);
 
     /* NOTE: update GNSS/INS cross-covariance!!! */
-    if (rtk->outage>0) init_crosscov(rtk,nx,rtk->nx);
+    if (GINS_TC==rtk->opt.GI_mode&&rtk->outage>0) init_crosscov(rtk,nx,rtk->nx);
     if (GINS_TC==rtk->opt.GI_mode&&rtk->outage==0) update_crosscov(rtk);
 
     /* if (GINS_TC==rtk->opt.GI_mode) trace(12,"P_pre=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,9,2); */
@@ -477,21 +477,38 @@ extern void update_lcstat(rtk_t *rtk, int stat){
     update_instat(&rtk->opt,ins,rtk->lcgins.P,sol,nx);
 
     /* solution status */
-    if (stat!=SOLQ_NONE) sol->stat=stat;
-    if (SOLQ_INS==stat) {
+    sol->stat=stat;
+    if (SOLQ_INS==stat||SOLQ_CONS==stat) {
         sol->time=ins->time;
         sol->ns=0;
-        for (i=0;i<4;i++) sol->dop[i]=0.0;
         sol->ratio=0.0;
+        for (i=0;i<4;i++) sol->dop[i]=0.0;
     }
     else {
         /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
-        if (rtk->outage<=MAX_OUTIME) rtk->outage=0;
+        if (rtk->outage<=ins->max_outime) rtk->outage=0;
         sol->time=rtk->sol.time;
         sol->ns=rtk->sol.ns;
         sol->ratio=rtk->sol.ratio;
         matcpy(sol->dop,rtk->sol.dop,4,1);   
     }
+}
+
+/* check GNSS solution quality */
+static int quality_check(rtk_t *rtk)
+{
+    int i;
+    double posvar=0.0,posvar_thres=10.0;
+
+    /* calc average position variance, will skip LC if too high */
+    for (i=0;i<3;i++) posvar+=rtk->P[i+i*rtk->nx];
+    posvar/=3.0; 
+
+    if (posvar>posvar_thres||rtk->sol.ns<4) {
+        trace(7,"GNSS solution quality check failed(LC), posvar=%f, ns=%d\n",posvar,rtk->sol.ns);
+        return 0;
+    }
+    else return 1;
 }
 
 /* GNSS/INS loosely coupled integration measurement (H/v/R) */
@@ -530,11 +547,14 @@ extern int lc_gins(rtk_t *rtk)
     ins_t *ins=&rtk->ins;
     sol_t *sol=&rtk->lcgins.sol;
     prcopt_t *popt=&rtk->opt;
-    int nx=rtk->lcgins.nx,nv,nv_cons=0,info,stat=rtk->sol.stat,mode=popt->lcfilter;
+    int nx=rtk->lcgins.nx,nv,nv_cons=0,info,gnss_stat=0,stat=rtk->sol.stat,mode=popt->lcfilter;
     double *I3,*x,*P,*xp,*Pp,*v,*H,*var,*R;
 
+    /* check GNSS solution quality */
+    gnss_stat=(solflags(&rtk->sol)&&quality_check(rtk));
+
     /* check GNSS status and output INS navigation information if GNSS is unavailable */
-    if (!solflags(&rtk->sol)&&(!popt->constraint[0]&&!popt->constraint[1])) {
+    if (!gnss_stat&&(!popt->constraint[0]&&!popt->constraint[1])) {
         rtk->outage++;
         sol->stat=SOLQ_INS;
         update_instat(popt,ins,rtk->lcgins.P,sol,nx);
@@ -542,7 +562,7 @@ extern int lc_gins(rtk_t *rtk)
     }
 
     /* number of GNSS pos measurements */
-    nv=(solflags(&rtk->sol))?3:0;
+    nv=(gnss_stat)?3:0;
 
     /* initialize heap memory, consider NHC/ZUPT/ZIHR constraints (max num=ZUPT+ZIHR=4) */
     x=zeros(nx,1); P=zeros(nx,nx); xp=zeros(nx,1); Pp=zeros(nx,nx);
@@ -552,7 +572,7 @@ extern int lc_gins(rtk_t *rtk)
     matcpy(P,rtk->lcgins.P,nx,nx);
 
     /* if GNSS is available, don't using GNSS/INS LC */
-    if (solflags(&rtk->sol)) {
+    if (gnss_stat) {
         LCI_meas(rtk,H,v,var,nx,nv);
     }
     else stat=SOLQ_CONS;
@@ -566,7 +586,7 @@ extern int lc_gins(rtk_t *rtk)
     /* measurement update of ekf states */
     if ((info=filter_(rtk,x,P,H,v,R,nx,nv+nv_cons,xp,Pp,mode))) {
         trace(2,"lc_gins filter error info=%d\n",info);
-        stat=SOLQ_NONE;
+        stat=SOLQ_INS;
     }   
     /* tracefilter(12,TRAE_R|TRAE_H|TRAE_Ppre|TRAE_Pp|TRAE_v|TRAE_xpre|TRAE_xp,nx,nv+nv_cons,R,H,P,Pp,v,x,xp); */
 

@@ -17,7 +17,7 @@ def main():
     # 在这里直接设置IMU数据文件的参数配置
     
     # 文件路径配置
-    INPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/ASM330.txt'  # 输入文件路径
+    INPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/LUA501RA.txt'  # 输入文件路径
     
     # 数据列索引配置
     TIME_COL = 1                        # 时间列索引（从0开始）

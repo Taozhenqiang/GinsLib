@@ -562,13 +562,13 @@ static int vrs_pos(prcopt_t *popt, const obsd_t *obs, vrs_t *vrs)
 static int gnss_aid_ins(rtk_t *rtk, const int stat, const double *rr)
 {
     prcopt_t *opt=&rtk->opt;
-    double rr_[3],ins_pos[3],dpos[3],thres_ins_ouj=50.0;
+    double rr_[3],ins_pos[3],dpos[3],max_outime=rtk->ins.max_outime,thres_ins_ouj=50.0;
     int i;
 
     /* GNSS-assisted detection INS status count, used for INS reinitialization */
     if (stat&&rtk->align&&(GINS_LC==opt->GI_mode||GINS_TC==opt->GI_mode||GINS_STC==opt->GI_mode))
     {
-        if (rtk->outage<MAX_OUTIME&&!outsim.valid_flag) {
+        if (rtk->outage<max_outime&&!outsim.valid_flag) {
             ins2gnss(opt,&rtk->ins,rr_,3);
             pos2ecef(rr_,ins_pos);
             for (i=0;i<3;i++) dpos[i]=ins_pos[i]-rr[i];
@@ -585,7 +585,7 @@ static int gnss_aid_ins(rtk_t *rtk, const int stat, const double *rr)
 
     /* check GNSS-assisted INS status */
     if (rtk->gnss_aid_age>MAX_GNSS_AID_AGE&&!outsim.valid_flag) {
-        rtk->outage+=(MAX_OUTIME+1); /* trigger INS reinitialization */
+        rtk->outage+=(max_outime+1); /* trigger INS reinitialization */
         rtk->gnss_aid_age=0;         /* reset GNSS-assisted INS status count */
         trace(7,"warning: The GNSS and INS positions differ too much!\n");
         return 0;
@@ -629,7 +629,7 @@ static void procpos(FILE *fp, rtk_t *rtk, const solopt_t *sopt, int mode)
         if (isGINS(popt)) Debug_Glo.tNow=rtk->ins.time; 
         else Debug_Glo.tNow=obs[0].time;           
         Debug_Glo=DebugGlo_init(Debug_Glo);     
-        DebugTime(rtk,Debug_Glo.tNow,115344,2362); 
+        DebugTime(rtk,Debug_Glo.tNow,545878,2362); 
 
         /* determine the position of the current reference station (vrs mode) */
         if (PMODE_DGPS<=popt->mode&&PMODE_FIXED>=popt->mode&&STA_VRS==popt->statype) vrs_pos(popt,obs,&vrs);
@@ -660,7 +660,7 @@ static void procpos(FILE *fp, rtk_t *rtk, const solopt_t *sopt, int mode)
                 save_old_obs(obs,obs_old,nu,&nu_old);              
             }  
             /* velocity vector assisted alignment */  
-            if (!rtk->align||rtk->outage>MAX_OUTIME) {
+            if (!rtk->align||rtk->outage>rtk->ins.max_outime) {
                 rtk->align=ins_align(rtk,obs,ns,&navs,popt,vel_flag);
             }    
             if (!rtk->align) continue;  

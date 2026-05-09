@@ -1454,7 +1454,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     }
     else {
         /* if GNSS/INS integration solution is available, reset GNSS outage count to 0 */
-        if (GINS_TC==popt->GI_mode&&rtk->outage<=MAX_OUTIME) rtk->outage=0;
+        if (GINS_TC==popt->GI_mode&&rtk->outage<=ins->max_outime) rtk->outage=0;
         sol->stat=sol->ns<MIN_NSAT_SOL?SOLQ_NONE:stat; 
     }
 

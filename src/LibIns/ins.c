@@ -1126,6 +1126,7 @@ extern int ins_init(ins_t *ins, const prcopt_t *popt)
     ins->G=zeros(nx,nx); ins->Q=zeros(nx,nx);
 
     ins->time.sec=0.0; ins->time.time=0.0;
+    ins->max_outime=popt->max_outime;
     ins->interval=1.0/popt->insample;
     ins->nn=popt->nn;
     ins->dttol=ins->interval/1e3;
@@ -1227,6 +1228,28 @@ static void save_tdcp_att(rtk_t *rtk, const double *att)
     else rtk->sol.yaw=360.0-rtk->sol.yaw;
 }
 
+/* check if the GNSS status meets the INS alignment requirements */
+static int gnss_aid_insalign(rtk_t *rtk)
+{
+    prcopt_t *popt=&rtk->opt;
+    sol_t *sol=&rtk->sol;
+    int flag=0;
+
+    if (PMODE_SINGLE==popt->mode&&sol->ns>=6) flag=1; /* spp mode */
+    else if (PMODE_DGPS==popt->mode&&sol->ns>=6) flag=1; /* DGPS mode */
+    else if (PMODE_KINEMA<=popt->mode&&popt->mode<=PMODE_FIXED) { /* rtk mode */
+        /* AR is fixed and ns is greater than 6 */
+        if (popt->artype>OFF&&sol->stat==SOLQ_FIX&&sol->ns>=6) flag=1;
+        else if (OFF==popt->artype&&sol->ns>=6) flag=1;
+    }
+    else if (PMODE_PPP_KINEMA<=popt->mode&&popt->mode<=PMODE_PPP_FIXED) { /* ppp mode */
+        if (sol->ns>=6) flag=1;
+    }
+
+    return flag;
+
+}
+
 /* ins initial alignment -------------------------------------------*/
 extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t *opt, int vel_flag)
 {
@@ -1270,7 +1293,7 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
         /* velocity vector assisted yaw initialization based on tdcp */
         if (!rtk->align&&INSALI_VELTOR==popt.alingetype)  {
             /* initialize INS position using GNSS solution */
-            if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
+            if (!rtkpos(&rtk_,obs,n,nav)||!gnss_aid_insalign(&rtk_)) {
                 if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS align!\n");
                 return 0;
             }
@@ -1303,9 +1326,9 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
         }
 
         /* reinitialize INS in the event of a long-term GNSS outage */
-        if (rtk->align&&rtk->outage>MAX_OUTIME&&!outsim.valid_flag) {
+        if (rtk->align&&rtk->outage>ins->max_outime&&!outsim.valid_flag) {
             /* initialize INS position using GNSS solution */
-            if (!rtkpos(&rtk_,obs,n,nav)||rtk_.sol.ns<=4) {
+            if (!rtkpos(&rtk_,obs,n,nav)||!gnss_aid_insalign(&rtk_)) {
                 if (init_flag) rtkfree(&rtk_); trace(7,"rtkpos error: GNSS unavailable during INS reinitialization!\n");
                 return rtk->align?1:0;
             }
@@ -1318,27 +1341,6 @@ extern int ins_align(rtk_t *rtk, obsd_t *obs, int n, nav_t *nav, const prcopt_t 
             gnss2ins(rtk,pos,ins->pos,1);
             gnss2ins(rtk,vn,ins->vel,2);
             init_inspva(ins,ins->pos,ins->vel,NULL);
-
-            /* for (i=3;i<6;i++) {
-                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[i+j*rtk->lcgins.nx]=0.0;
-                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[j+i*rtk->lcgins.nx]=0.0; 
-                rtk->lcgins.P[i+i*rtk->lcgins.nx]=1.0;
-
-                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[(i+3)+j*rtk->lcgins.nx]=0.0;
-                for (j=0;j<rtk->lcgins.nx;j++) rtk->lcgins.P[j+(i+3)*rtk->lcgins.nx]=0.0;
-                rtk->lcgins.P[(i+3)+(i+3)*rtk->lcgins.nx]=10.0;
-            } */
-            /* for (i=0;i<3;i++) {
-                for (j=0;j<rtk->nx;j++) rtk->P[(i+3)+j*rtk->nx]=0.0;
-                for (j=0;j<rtk->nx;j++) rtk->P[j+(i+3)*rtk->nx]=0.0; 
-                rtk->P[(i+3)+(i+3)*rtk->nx]=1.0;
-
-                for (j=0;j<rtk->nx;j++) rtk->P[(i+6)+j*rtk->nx]=0.0;
-                for (j=0;j<rtk->nx;j++) rtk->P[j+(i+6)*rtk->nx]=0.0;
-                rtk->P[(i+6)+(i+6)*rtk->nx]=100.0;
-            } */
-            /* trace(12,"P=\n"); tracemat(12,rtk->P,rtk->nx,rtk->nx,16,8); */
-            /* trace(12,"P=\n"); tracemat(12,rtk->lcgins.P,rtk->lcgins.nx,rtk->lcgins.nx,16,8); */
 
             trace(12,"INS reinitialization completed: %s!\n",Debug_Glo.chTime);
             showerr("INS reinitialization completed: %s!",Debug_Glo.chTime);   

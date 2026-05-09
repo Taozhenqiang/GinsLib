@@ -9,13 +9,13 @@ from time_conversion import epoch2time, utc2gpst, time2gpst, GTimeT
 from common import cal_gravity
 
 # ========================= 配置区域 =========================
-# 在这里修改配置参数（如果使用命令行参数，这些配置将被覆盖）
+# 提取指定列/时间系统转换/加计速度转换(g 转 m/s^2)
 
 # 输入文件路径
-INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/imu.txt"  
+INPUT_FILE = "./GNSS/LG69T_Vehicle_complex_20250414/LUA501RA_imu.txt"  
 
 # 要跳过的行数（通常是表头或注释行）
-SKIP_LINES = 2940 # 5000
+SKIP_LINES = 0 # 5000
 
 # 时间系统配置
 TIME_SYSTEM = "UNIX"  # 可选: "GPST", "UTC", "UNIX"
@@ -37,10 +37,10 @@ TIME_COLS = [1]  # 默认: 年月日时分秒格式 # [0, 1, 2, 3, 4, 5]
 IMU_SAMPLE_INTERVAL = 0.01  # 默认10ms采样间隔
 
 # 输出文件路径（如果为None，则自动生成）
-OUTPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/asm330lhh1.txt'
+OUTPUT_FILE = './GNSS/LG69T_Vehicle_complex_20250414/LUA501RA.txt'
 
 # 日志文件路径
-LOG_FILE = './GNSS/LG69T_Vehicle_complex_20250414/asm330lhh.log'  # None表示自动生成
+LOG_FILE = './GNSS/LG69T_Vehicle_complex_20250414/LUA501RA.log'  # None表示自动生成
 
 # 文件分隔符（手动设置，避免自动检测错误）
 DELIMITER = ''  # 建议手动指定，如",", "\t", " "等
