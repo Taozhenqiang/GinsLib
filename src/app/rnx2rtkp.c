@@ -114,6 +114,8 @@ int main(int argc, char **argv)
         }
     }
 
+    checkopts(&prcopt);
+
     ts=prcopt.ts;te=prcopt.te;
 
     for (i=1,n=0;i<argc;i++) {

@@ -3826,7 +3826,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr, const nav_t *na
     return stat!=SOLQ_NONE;
 }
 /* initialize RTK control ------------------------------------------------------
-* initialize RTK control struct
 * args   : rtk_t    *rtk    IO  TKk control/result struct
 *          prcopt_t *opt    I   positioning options (see rtklib.h)
            solopt_t *sopt   I   solution options (see rtklib.h)
@@ -4061,9 +4060,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
                 }                
             }
         } 
-        else {
-            solb.time=obs[nu].time;            
-        } 
+        else { solb.time=obs[nu].time; } 
         trace(3,"basex= %.3f %.3f\n",rtk->rb[0],solb.rr[0]);
 
         /* age of differential (s) */
@@ -4076,7 +4073,7 @@ extern int rtkpos(rtk_t *rtk, obsd_t *obs, int n, const nav_t *nav)
 
         /* time-synchronized position of base station */
         /* single position velocity solution too noisy to be helpful */
-        /*for (i=0;i<3;i++) rtk->rb[i]+=rtk->rb[i+3]*rtk->sol.age; */
+        for (i=0;i<3;i++) rtk->rb[i]+=rtk->rb[i+3]*rtk->sol.age;
         trace(3,"base pos: "); tracemat(3,rtk->rb,1,3,13,4);
     }
 

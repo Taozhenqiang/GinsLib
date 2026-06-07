@@ -32,4 +32,5 @@ else ()
     link_directories(${ROOT}/build/Lib)
 endif ()
 
+# 将当前库/可执行文件与其他库进行链接，这意味着当前库/可执行文件可以调用其他库中的函数和变量
 target_link_libraries(${PROJECT_NAME} ${libGnss} ${libIns})

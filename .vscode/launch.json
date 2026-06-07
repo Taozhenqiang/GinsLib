@@ -53,7 +53,7 @@
                
 
                 "-p","2","-gins","2","-sys","GE",
-                "-ion","1","-tro","1","-eph","0","-flt","0","-amb","1","-ambt","0","-solt","0", 
+                "-ion","1","-tro","1","-eph","0","-flt","0","-amb","2","-ambt","0","-solt","0", 
                 "-ref","./truth.truth",
                 // "-kml",
                 "-pcolor","2",

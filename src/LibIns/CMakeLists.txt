@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.10.0)	#项目执行所需最低版本cmake
 project(${libIns} VERSION 0.1.0)	#设置项目名称
 
 # set include path
-include_directories(${libGnssSrc})
 
 # for all the header files and source_files
 file(GLOB_RECURSE header_files ${libInsSrc}/*.h)
@@ -30,5 +29,3 @@ if (CMAKE_SYSTEM_NAME MATCHES "Windows")
 else ()
     link_directories(${ROOT}/build/Lib)
 endif ()
-
-target_link_libraries(${PROJECT_NAME} ${libGnss})

@@ -833,3 +833,12 @@ extern void setsysopts(const prcopt_t *prcopt, const solopt_t *solopt,
     if (filopt) filopt_=*filopt;
     sysopts2buff();
 }
+
+/* pre-check options ---------------------------------------------------------*/
+extern void checkopts(prcopt_t *popt)
+{
+    if (!popt) return;
+
+    if (popt->max_outime<=0) popt->max_outime=60; /* default max outage time */
+
+}

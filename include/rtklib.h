@@ -2523,6 +2523,8 @@ extern "C"
     EXPORT void getsysopts(prcopt_t *popt, solopt_t *sopt, filopt_t *fopt);
     EXPORT void setsysopts(const prcopt_t *popt, const solopt_t *sopt,
                            const filopt_t *fopt);
+    EXPORT void checkopts(prcopt_t *popt);
+                           
 
     /* stream data input and output functions ------------------------------------*/
     EXPORT void strinitcom(void);
@@ -2623,7 +2625,7 @@ extern "C"
     EXPORT int isNHC(const prcopt_t *popt);
     EXPORT void getpos(pos_t pos, sol_t *sol, int ipos);
     EXPORT int getodovel(odo_t odo, ins_t *ins, gtime_t gins_time, int iodo);
-    EXPORT void imucpy(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
+    EXPORT void getimu(const prcopt_t *popt, imud_t *imu, imu_t imus, int iimu, const int nn);
     EXPORT int  ins_init(ins_t *ins, const prcopt_t *prcopt);
     EXPORT void init_inspva(ins_t *ins, const double *pos, const double *vel, const double *att);
     EXPORT int  readodo(gtime_t ts, gtime_t te, const char *file, const prcopt_t *popt, odo_t *odo);

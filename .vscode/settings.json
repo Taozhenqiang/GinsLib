@@ -1,7 +1,8 @@
 {
     // for windows
     // "cmake.cmakePath": "D:/Program Files (x86)/cmake-3.30.3-windows-x86_64/bin/cmake.exe", //laptop
-    "cmake.cmakePath": "F:/software/cmake/bin/cmake.exe", //quectel
+    // "cmake.cmakePath": "F:/software/cmake/bin/cmake.exe", //quectel
+    "cmake.cmakePath": "D:/cmake/cmake-3.31.10-windows-x86_64/bin/cmake.exe",
     "cmake.generator": "MinGW Makefiles",
 
     // for linux

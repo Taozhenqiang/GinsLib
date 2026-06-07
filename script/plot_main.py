@@ -19,10 +19,8 @@ def main():
     # 在这里直接设置您要绘制的图表类型
     # 可用选项: 'trj'(轨迹), 'pos_(位置), 'vel_'(速度), 'att_(姿态), 'nsat(卫星数)', 'ratio', 'solflag', 'pvastd', 'bias'(零偏), 'err'(误差)
     PLOT_OPTIONS = ['bias','err']  # 修改这里来选择要绘制的图表
-    
-    # 误差类型配置（仅当选择err时使用）
-    # 可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
-    ERROR_TYPE = 'p'
+    # 误差类型配置（仅当选择err时使用）,可用选项: 'p'(位置误差), 'v'(速度误差), 'a'(姿态误差)
+    ERROR_TYPE = 'pva'
     
     # 文件路径配置
     PATH_NAME = './GNSS_INS_Vehicle/EG320N_Vehicle_complex_20250419'

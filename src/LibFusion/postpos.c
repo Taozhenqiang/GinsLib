@@ -112,8 +112,8 @@ static int checkbrk(const char *format, ...)
 
     return 0;
 }
-/* Solution option to field separator ----------------------------------------*/
-/* Repeated from solution.c */
+/* solution option to field separator ----------------------------------------*/
+/* repeated from solution.c */
 static const char *opt2sep(const solopt_t *opt)
 {
     if (!*opt->sep) return " ";
@@ -348,7 +348,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             /* calculate the difference between the current IMU and GNSS observation time */
             GI_dt=timediff(ins->time,gnss_time);
             rtk->upte=SYNC_NO;   
-            imucpy(popt,imu,imus,iimu,ins->nn); 
+            getimu(popt,imu,imus,iimu,ins->nn); 
 
             /* GNSS/INS matching and synchronization */
             if ((fabs(GI_dt)-ins->dttol)<=(ins->nn*ins->interval)/2.0){
@@ -448,7 +448,7 @@ static int inputobs(rtk_t *rtk, obsd_t *obs, imud_t *imu, int stat, const prcopt
             rtk->upte=SYNC_NO;   
             /* for backward processing mode, the sign of the INS velocity and gyroscope bias is inverted */
             if (!reverse_flag) pos_reverse(popt,ins,&reverse_flag);
-            imucpy(popt,imu,imus,iimu,ins->nn); 
+            getimu(popt,imu,imus,iimu,ins->nn); 
 
             /* GNSS/INS matching and synchronization */
             if ((fabs(GI_dt)-ins->dttol)<=(ins->nn*ins->interval)/2.0){
